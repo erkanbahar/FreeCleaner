@@ -121,6 +121,11 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<DiskBenchmarkResultItem> DiskBenchmarkResults { get; } = [];
     public ObservableCollection<HardwareSpecItem> HardwareSpecs { get; } = [];
     public ObservableCollection<UsbHistoryItem> UsbHistoryItems { get; } = [];
+    public ObservableCollection<ProcessSecurityAuditItem> ProcessSecurityItems { get; } = [];
+    public ObservableCollection<BatchRenamePreviewItem> BatchRenameItems { get; } = [];
+    public ObservableCollection<NetworkAdapterDetailItem> NetworkAdapters { get; } = [];
+    public ObservableCollection<SystemFontItem> InstalledFonts { get; } = [];
+    public ObservableCollection<ClipboardAuditEntryItem> ClipboardAuditItems { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -132,6 +137,7 @@ public class MainViewModel : INotifyPropertyChanged
     public int[] AvailableShredPasses { get; } = [1, 3, 7];
     public int[] AvailableInstallerAgeDays { get; } = [0, 7, 14, 30, 60, 90];
     public int[] AvailableBenchmarkBlockSizesMb { get; } = [64, 128, 256, 512, 1024];
+    public string[] AvailableRenameCaseModes { get; } = ["Değiştirme (Olduğu Gibi)", "küçük harf (lowercase)", "BÜYÜK HARF (UPPERCASE)", "Baş Harfler Büyük (Title Case)"];
 
     // Cleaner Commands
     public ICommand AnalyzeCommand { get; }
@@ -266,6 +272,23 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand RefreshHardwareInventoryCommand { get; }
     public ICommand ScanUsbHistoryCommand { get; }
     public ICommand CleanUsbHistoryCommand { get; }
+
+    // 7th Gen Process Security, Batch Renamer, Network Adapter Doctor, Font Manager & Clipboard Shield Commands
+    public ICommand ScanProcessSecurityCommand { get; }
+    public ICommand OpenProcessSecurityFileCommand { get; }
+    public ICommand KillProcessSecurityItemCommand { get; }
+    public ICommand BrowseRenameFolderCommand { get; }
+    public ICommand PreviewBatchRenameCommand { get; }
+    public ICommand ApplyBatchRenameCommand { get; }
+    public ICommand UndoBatchRenameCommand { get; }
+    public ICommand RefreshNetworkAdaptersCommand { get; }
+    public ICommand RunNetworkRepairActionCommand { get; }
+    public ICommand ScanInstalledFontsCommand { get; }
+    public ICommand RemoveSelectedUserFontsCommand { get; }
+    public ICommand OpenWindowsFontsFolderCommand { get; }
+    public ICommand InspectClipboardNowCommand { get; }
+    public ICommand ApplySanitizedClipboardCommand { get; }
+    public ICommand ClearClipboardNowCommand { get; }
 
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
@@ -509,6 +532,43 @@ public class MainViewModel : INotifyPropertyChanged
         ScanUsbHistoryCommand = new RelayCommand(async _ => await LoadUsbHistoryAsync(), _ => !IsBusy);
         CleanUsbHistoryCommand = new RelayCommand(_ => ExecuteCleanUsbHistory(), _ => !IsBusy && UsbHistoryItems.Any(x => x.IsSelected));
 
+        // 7th Gen Commands initialization
+        ScanProcessSecurityCommand = new RelayCommand(async _ => await LoadProcessSecurityItemsAsync(), _ => !IsBusy);
+        OpenProcessSecurityFileCommand = new RelayCommand(param =>
+        {
+            if (param is ProcessSecurityAuditItem item)
+                OpenExplorerPath(item.ExecutablePath);
+        });
+        KillProcessSecurityItemCommand = new RelayCommand(async param =>
+        {
+            if (param is ProcessSecurityAuditItem item)
+                await KillSecurityProcessAndRefreshAsync(item);
+        }, _ => !IsBusy);
+        BrowseRenameFolderCommand = new RelayCommand(_ => BrowseRenameFolder(), _ => !IsBusy);
+        PreviewBatchRenameCommand = new RelayCommand(_ => GenerateBatchRenamePreview(), _ => !IsBusy);
+        ApplyBatchRenameCommand = new RelayCommand(_ => ExecuteApplyBatchRename(), _ => !IsBusy && BatchRenameItems.Any(x => x.IsSelected));
+        UndoBatchRenameCommand = new RelayCommand(_ => ExecuteUndoBatchRename(), _ => !IsBusy);
+        RefreshNetworkAdaptersCommand = new RelayCommand(async _ => await LoadNetworkAdaptersAsync(), _ => !IsBusy);
+        RunNetworkRepairActionCommand = new RelayCommand(async param =>
+        {
+            if (param is string actionKey)
+                await ExecuteNetworkRepairActionAsync(actionKey);
+        }, _ => !IsBusy);
+        ScanInstalledFontsCommand = new RelayCommand(async _ => await LoadInstalledFontsAsync(), _ => !IsBusy);
+        RemoveSelectedUserFontsCommand = new RelayCommand(_ => ExecuteRemoveSelectedUserFonts(), _ => !IsBusy && InstalledFonts.Any(x => x.IsSelected && x.IsUserFont));
+        OpenWindowsFontsFolderCommand = new RelayCommand(_ => OpenExplorerPath(Environment.GetFolderPath(Environment.SpecialFolder.Fonts)));
+        InspectClipboardNowCommand = new RelayCommand(_ => ExecuteInspectClipboardNow());
+        ApplySanitizedClipboardCommand = new RelayCommand(param =>
+        {
+            if (param is ClipboardAuditEntryItem entry && !string.IsNullOrEmpty(entry.SanitizedContent))
+            {
+                Clipboard.SetText(entry.SanitizedContent);
+                StatusMessage = "Temizlenmiş/arındırılmış içerik panoya kopyalandı!";
+                AddLog($"[PANO KALKANI] Temizlenmiş veri panoya aktarıldı: {entry.SanitizedContent}");
+            }
+        });
+        ClearClipboardNowCommand = new RelayCommand(_ => ExecuteClearClipboardNow());
+
         // Background Auto-Monitor Timer (checks every 5 minutes if enabled)
         _autoMonitorTimer = new DispatcherTimer
         {
@@ -518,7 +578,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();
 
-        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 31 uzman modül kullanıma hazır.");
+        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 36 uzman modül kullanıma hazır.");
     }
 
     public SystemMetricsSnapshot SystemMetrics
@@ -574,6 +634,11 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsDiskBenchSection));
                 OnPropertyChanged(nameof(IsHardwareSpecsSection));
                 OnPropertyChanged(nameof(IsUsbForensicsSection));
+                OnPropertyChanged(nameof(IsProcessSecuritySection));
+                OnPropertyChanged(nameof(IsBatchRenamerSection));
+                OnPropertyChanged(nameof(IsNetworkAdapterDoctorSection));
+                OnPropertyChanged(nameof(IsFontManagerSection));
+                OnPropertyChanged(nameof(IsClipboardShieldSection));
                 OnPropertyChanged(nameof(IsSettingsSection));
                 OnPropertyChanged(nameof(SectionTitle));
 
@@ -633,6 +698,16 @@ public class MainViewModel : INotifyPropertyChanged
                     _ = LoadHardwareSpecsAsync();
                 else if (_activeSection == "UsbForensics" && UsbHistoryItems.Count == 0)
                     _ = LoadUsbHistoryAsync();
+                else if (_activeSection == "ProcessSecurity" && ProcessSecurityItems.Count == 0)
+                    _ = LoadProcessSecurityItemsAsync();
+                else if (_activeSection == "BatchRenamer" && BatchRenameItems.Count == 0)
+                    GenerateBatchRenamePreview();
+                else if (_activeSection == "NetworkAdapterDoctor" && NetworkAdapters.Count == 0)
+                    _ = LoadNetworkAdaptersAsync();
+                else if (_activeSection == "FontManager" && InstalledFonts.Count == 0)
+                    _ = LoadInstalledFontsAsync();
+                else if (_activeSection == "ClipboardShield" && ClipboardAuditItems.Count == 0)
+                    ExecuteInspectClipboardNow();
             }
         }
     }
@@ -672,6 +747,11 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsDiskBenchSection => ActiveSection == "DiskBench";
     public bool IsHardwareSpecsSection => ActiveSection == "HardwareSpecs";
     public bool IsUsbForensicsSection => ActiveSection == "UsbForensics";
+    public bool IsProcessSecuritySection => ActiveSection == "ProcessSecurity";
+    public bool IsBatchRenamerSection => ActiveSection == "BatchRenamer";
+    public bool IsNetworkAdapterDoctorSection => ActiveSection == "NetworkAdapterDoctor";
+    public bool IsFontManagerSection => ActiveSection == "FontManager";
+    public bool IsClipboardShieldSection => ActiveSection == "ClipboardShield";
     public bool IsSettingsSection => ActiveSection == "Settings";
 
     public string SectionTitle => ActiveSection switch
@@ -708,6 +788,11 @@ public class MainViewModel : INotifyPropertyChanged
         "DiskBench" => "Canlı SSD / NVMe Disk Okuma & Yazma Hız Testi (Benchmark)",
         "HardwareSpecs" => "Derin Donanım Envanteri, BIOS & OEM Windows Lisans Anahtarı",
         "UsbForensics" => "USB Depolama Geçmişi (USBSTOR Adli Analiz) & İz Temizleyici",
+        "ProcessSecurity" => "Süreç & Dijital İmza Denetçisi (Unsigned Binary & SHA-256 Hunter)",
+        "BatchRenamer" => "Toplu Dosya Yeniden Adlandırıcı (PowerRename & Geri Alma Merkezi)",
+        "NetworkAdapterDoctor" => "Ağ Adaptörü, IP/MAC & TCP/IP Winsock Onarım Doktoru",
+        "FontManager" => "Sistem & Kullanıcı Font (Yazı Tipi) Yöneticisi ve Canlı Önizleme",
+        "ClipboardShield" => "Akıllı Pano (Clipboard) Kalkanı & Takip URL Temizleyici",
         "Settings" => "Beyaz Liste (İstisnalar), Otomasyon & Raporlama",
         _ => "Akıllı Temizlik & Tüm Kategoriler"
     };
@@ -3313,6 +3398,316 @@ public class MainViewModel : INotifyPropertyChanged
         _ = LoadUsbHistoryAsync();
         StatusMessage = $"{cleaned} USB cihaz geçmiş kaydı temizlendi (Yönetici izni gerektirebilir).";
         AddLog($"[USB GEÇMİŞİ] {cleaned} USBSTOR kaydı silindi.");
+    }
+
+    // ==================== 13. 7TH GEN SECURITY, BATCH RENAMER, NET ADAPTERS, FONTS & CLIPBOARD SHIELD ====================
+
+    private bool _onlyUnsignedProcessesFilter;
+    public bool OnlyUnsignedProcessesFilter
+    {
+        get => _onlyUnsignedProcessesFilter;
+        set
+        {
+            if (_onlyUnsignedProcessesFilter != value)
+            {
+                _onlyUnsignedProcessesFilter = value;
+                OnPropertyChanged();
+                _ = LoadProcessSecurityItemsAsync();
+            }
+        }
+    }
+
+    private string _batchRenameFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+    public string BatchRenameFolderPath
+    {
+        get => _batchRenameFolderPath;
+        set
+        {
+            if (_batchRenameFolderPath != value)
+            {
+                _batchRenameFolderPath = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string _batchRenameFindText = string.Empty;
+    public string BatchRenameFindText
+    {
+        get => _batchRenameFindText;
+        set
+        {
+            if (_batchRenameFindText != value)
+            {
+                _batchRenameFindText = value;
+                OnPropertyChanged();
+                GenerateBatchRenamePreview();
+            }
+        }
+    }
+
+    private string _batchRenameReplaceText = string.Empty;
+    public string BatchRenameReplaceText
+    {
+        get => _batchRenameReplaceText;
+        set
+        {
+            if (_batchRenameReplaceText != value)
+            {
+                _batchRenameReplaceText = value;
+                OnPropertyChanged();
+                GenerateBatchRenamePreview();
+            }
+        }
+    }
+
+    private string _batchRenamePrefixText = string.Empty;
+    public string BatchRenamePrefixText
+    {
+        get => _batchRenamePrefixText;
+        set
+        {
+            if (_batchRenamePrefixText != value)
+            {
+                _batchRenamePrefixText = value;
+                OnPropertyChanged();
+                GenerateBatchRenamePreview();
+            }
+        }
+    }
+
+    private string _batchRenameSuffixText = string.Empty;
+    public string BatchRenameSuffixText
+    {
+        get => _batchRenameSuffixText;
+        set
+        {
+            if (_batchRenameSuffixText != value)
+            {
+                _batchRenameSuffixText = value;
+                OnPropertyChanged();
+                GenerateBatchRenamePreview();
+            }
+        }
+    }
+
+    private bool _batchRenameAddNumbers;
+    public bool BatchRenameAddNumbers
+    {
+        get => _batchRenameAddNumbers;
+        set
+        {
+            if (_batchRenameAddNumbers != value)
+            {
+                _batchRenameAddNumbers = value;
+                OnPropertyChanged();
+                GenerateBatchRenamePreview();
+            }
+        }
+    }
+
+    private string _batchRenameCaseMode = "Değiştirme (Olduğu Gibi)";
+    public string BatchRenameCaseMode
+    {
+        get => _batchRenameCaseMode;
+        set
+        {
+            if (_batchRenameCaseMode != value)
+            {
+                _batchRenameCaseMode = value;
+                OnPropertyChanged();
+                GenerateBatchRenamePreview();
+            }
+        }
+    }
+
+    private string _fontSearchFilter = string.Empty;
+    public string FontSearchFilter
+    {
+        get => _fontSearchFilter;
+        set
+        {
+            if (_fontSearchFilter != value)
+            {
+                _fontSearchFilter = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private async Task LoadProcessSecurityItemsAsync()
+    {
+        IsBusy = true;
+        ProcessSecurityItems.Clear();
+        StatusMessage = "Çalışan tüm işlemlerin dijital imzaları (Authenticode X.509) ve SHA-256 özetleri denetleniyor...";
+        try
+        {
+            var items = await SeventhGenSecurityAndPowerSuiteService.ScanRunningProcessSecurityAsync(OnlyUnsignedProcessesFilter);
+            foreach (var item in items)
+                ProcessSecurityItems.Add(item);
+
+            int unsignedCount = ProcessSecurityItems.Count(x => x.IsUnsignedOrSuspicious);
+            StatusMessage = $"Süreç Güvenlik Denetimi: {ProcessSecurityItems.Count} işlem incelendi ({unsignedCount} imzasız veya dikkat gerektiren işlem).";
+            AddLog($"[SÜREÇ GÜVENLİĞİ] {ProcessSecurityItems.Count} işlem tarandı, {unsignedCount} imzasız/şüpheli tespit edildi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task KillSecurityProcessAndRefreshAsync(ProcessSecurityAuditItem item)
+    {
+        if (SixthGenHardwareAndDevSuiteService.KillProcessByPortPid(item.ProcessId, 0, out string msg))
+        {
+            AddLog($"[SÜREÇ GÜVENLİĞİ] {item.ProcessName} (PID: {item.ProcessId}) sonlandırıldı.");
+            StatusMessage = $"{item.ProcessName} (PID: {item.ProcessId}) başarıyla sonlandırıldı.";
+            await LoadProcessSecurityItemsAsync();
+        }
+        else
+        {
+            MessageBox.Show(msg, "İşlem Sonlandırılamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private void BrowseRenameFolder()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Toplu Yeniden Adlandırılacak Klasörü Seçin"
+        };
+        if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
+        {
+            BatchRenameFolderPath = dialog.FolderName;
+            GenerateBatchRenamePreview();
+        }
+    }
+
+    private void GenerateBatchRenamePreview()
+    {
+        BatchRenameItems.Clear();
+        var items = SeventhGenSecurityAndPowerSuiteService.BuildBatchRenamePreview(
+            BatchRenameFolderPath,
+            BatchRenameFindText,
+            BatchRenameReplaceText,
+            BatchRenamePrefixText,
+            BatchRenameSuffixText,
+            BatchRenameAddNumbers,
+            BatchRenameCaseMode);
+
+        foreach (var item in items)
+            BatchRenameItems.Add(item);
+
+        int changedCount = BatchRenameItems.Count(x => x.IsSelected);
+        StatusMessage = $"PowerRename Önizleme: Klasörde {BatchRenameItems.Count} dosya bulundu ({changedCount} dosya yeniden adlandırılacak).";
+    }
+
+    private void ExecuteApplyBatchRename()
+    {
+        var (count, msg) = SeventhGenSecurityAndPowerSuiteService.ApplyBatchRename(BatchRenameItems);
+        StatusMessage = msg;
+        AddLog($"[TOPLU ADLANDIRICI] {msg}");
+        GenerateBatchRenamePreview();
+    }
+
+    private void ExecuteUndoBatchRename()
+    {
+        var (_, msg) = SeventhGenSecurityAndPowerSuiteService.UndoLastBatchRename();
+        StatusMessage = msg;
+        AddLog($"[TOPLU ADLANDIRICI - GERİ AL] {msg}");
+        GenerateBatchRenamePreview();
+    }
+
+    private async Task LoadNetworkAdaptersAsync()
+    {
+        IsBusy = true;
+        NetworkAdapters.Clear();
+        StatusMessage = "Fiziksel ve sanal ağ adaptörleri, MAC adresleri, IPv4, Ağ Geçidi ve DNS yapılandırmaları okunuyor...";
+        try
+        {
+            var items = await SeventhGenSecurityAndPowerSuiteService.GetNetworkAdaptersAsync();
+            foreach (var item in items)
+                NetworkAdapters.Add(item);
+            StatusMessage = $"Ağ Adaptörü Doktoru: {NetworkAdapters.Count} ağ arayüzü (Ethernet, Wi-Fi, Sanal Adaptör) listelendi.";
+            AddLog($"[AĞ ADAPTÖRÜ DOKTORU] {NetworkAdapters.Count} ağ adaptörü incelendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteNetworkRepairActionAsync(string actionKey)
+    {
+        IsBusy = true;
+        StatusMessage = "Ağ protokol ve önbellek onarım komutu uygulanıyor...";
+        try
+        {
+            var (_, msg) = await SeventhGenSecurityAndPowerSuiteService.RunNetworkRepairActionAsync(actionKey);
+            StatusMessage = msg;
+            AddLog($"[AĞ ONARIM] {msg}");
+            await LoadNetworkAdaptersAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadInstalledFontsAsync()
+    {
+        IsBusy = true;
+        InstalledFonts.Clear();
+        StatusMessage = "Windows Sistem Fontları ve Kullanıcı Fontları (.ttf, .otf, .ttc) taranıyor...";
+        try
+        {
+            var fonts = await SeventhGenSecurityAndPowerSuiteService.ScanInstalledFontsAsync(FontSearchFilter);
+            foreach (var f in fonts)
+                InstalledFonts.Add(f);
+            int userCount = InstalledFonts.Count(x => x.IsUserFont);
+            StatusMessage = $"Font Yöneticisi: {InstalledFonts.Count} yazı tipi listelendi ({userCount} kullanıcı fontu).";
+            AddLog($"[FONT YÖNETİCİSİ] {InstalledFonts.Count} yazı tipi yüklendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ExecuteRemoveSelectedUserFonts()
+    {
+        var (_, _, msg) = SeventhGenSecurityAndPowerSuiteService.RemoveSelectedUserFonts(InstalledFonts);
+        StatusMessage = msg;
+        AddLog($"[FONT YÖNETİCİSİ] {msg}");
+        _ = LoadInstalledFontsAsync();
+    }
+
+    private void ExecuteInspectClipboardNow()
+    {
+        try
+        {
+            string? text = Clipboard.ContainsText() ? Clipboard.GetText() : null;
+            var entry = SeventhGenSecurityAndPowerSuiteService.InspectAndSanitizeText(text);
+            ClipboardAuditItems.Insert(0, entry);
+            StatusMessage = $"Pano Kalkanı: {entry.CategoryBadge} — {entry.SecurityAdvice}";
+            AddLog($"[PANO KALKANI] {entry.CategoryBadge}");
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Pano okunamadı: {ex.Message}";
+        }
+    }
+
+    private void ExecuteClearClipboardNow()
+    {
+        try
+        {
+            Clipboard.Clear();
+            ExecuteInspectClipboardNow();
+            StatusMessage = "Windows Panosu (Clipboard) tamamen sıfırlandı ve hassas veriler temizlendi.";
+            AddLog("[PANO KALKANI] Pano tamamen temizlendi.");
+        }
+        catch { }
     }
 
     private void OpenFileLocation(object? parameter)

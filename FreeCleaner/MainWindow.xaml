@@ -525,6 +525,62 @@
                             </StackPanel>
                         </RadioButton>
 
+                        <TextBlock Text="GÜVENLİK, AĞ &amp; VERİMLİLİK"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="12,14,0,6"/>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsProcessSecuritySection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="ProcessSecurity">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xEA18;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Süreç &amp; İmza Denetçisi" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsBatchRenamerSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="BatchRenamer">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8AC;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Toplu Dosya Adlandırıcı" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsNetworkAdapterDoctorSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="NetworkAdapterDoctor">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE839;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Ağ Adaptörü &amp; IP Doktoru" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsFontManagerSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="FontManager">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Font (Yazı Tipi) Yöneticisi" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsClipboardShieldSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="ClipboardShield">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE77F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Akıllı Pano (Clipboard) Kalkanı" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                      IsChecked="{Binding IsSettingsSection, Mode=OneWay}"
                                      Command="{Binding SelectSectionCommand}"
@@ -3642,6 +3698,460 @@
                                 <DataGridTextColumn Header="Üretici &amp; Ürün Kimliği" Binding="{Binding VendorAndProduct}" IsReadOnly="True" Width="250"/>
                                 <DataGridTextColumn Header="Donanım Seri Numarası" Binding="{Binding SerialNumber}" IsReadOnly="True" Width="220"/>
                                 <DataGridTextColumn Header="Kayıt Defteri Anahtarı" Binding="{Binding RegistrySubKeyPath}" IsReadOnly="True" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 32: PROCESS SECURITY & UNSIGNED BINARY HUNTER                        -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsProcessSecuritySection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="SÜREÇ &amp; DİJİTAL İMZA DENETÇİSİ (UNSIGNED BINARY &amp; SHA-256 HUNTER)"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Çalışan tüm işlemlerin X.509 Authenticode dijital imzalarını, SHA-256 özetlerini ve Temp/Downloads gibi şüpheli dizinleri denetler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <CheckBox Content="Yalnızca İmzasız / Şüpheli İşlemleri Göster"
+                                          IsChecked="{Binding OnlyUnsignedProcessesFilter}"
+                                          Foreground="{StaticResource AccentAmberBrush}"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,14,0"/>
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="Çalışan İşlemleri Yeniden Denetle"
+                                        Padding="14,7"
+                                        Command="{Binding ScanProcessSecurityCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding ProcessSecurityItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="65"/>
+                                <DataGridTextColumn Header="İşlem Adı" Binding="{Binding ProcessName}" Width="155"/>
+                                <DataGridTextColumn Header="Dijital İmza Durumu" Binding="{Binding SignatureStatus}" Width="205"/>
+                                <DataGridTextColumn Header="Yayıncı (Sertifika CN)" Binding="{Binding PublisherName}" Width="195"/>
+                                <DataGridTextColumn Header="RAM" Binding="{Binding MemoryFormatted}" Width="85"/>
+                                <DataGridTextColumn Header="SHA-256 (Kısa)" Binding="{Binding Sha256Short}" Width="145"/>
+                                <DataGridTextColumn Header="Tam Dosya Konumu" Binding="{Binding ExecutablePath}" Width="*"/>
+                                <DataGridTemplateColumn Header="Eylem" Width="165">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                                        Content="Konum"
+                                                        Padding="8,3"
+                                                        FontSize="11"
+                                                        Margin="0,0,6,0"
+                                                        Command="{Binding DataContext.OpenProcessSecurityFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Style="{StaticResource DangerButtonStyle}"
+                                                        Content="Sonlandır"
+                                                        Padding="8,3"
+                                                        FontSize="11"
+                                                        Command="{Binding DataContext.KillProcessSecurityItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 33: BATCH FILE RENAMER (POWERRENAME & UNDO)                          -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsBatchRenamerSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="TOPLU DOSYA YENİDEN ADLANDIRICI (POWERRENAME &amp; GERİ ALMA MERKEZİ)"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Klasördeki dosyalar için Ön Ek, Son Ek, Bul/Değiştir, Numaralandırma (001, 002...) ve Harf Biçimi kurallarını canlı önizlemeyle uygulayın."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="↩ Son Adlandırmayı Geri Al"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding UndoBatchRenameCommand}"/>
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="✨ Seçili Dosyaları Yeniden Adlandır"
+                                        Padding="14,7"
+                                        Command="{Binding ApplyBatchRenameCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Grid.Row="1"
+                                Background="{StaticResource BgPrimaryBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12,10"
+                                Margin="0,0,0,10">
+                            <StackPanel>
+                                <WrapPanel VerticalAlignment="Center" Margin="0,0,0,8">
+                                    <TextBlock Text="Hedef Klasör:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBox Text="{Binding BatchRenameFolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                             Width="360"
+                                             Padding="8,5"
+                                             Background="#0D1422"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             BorderBrush="{StaticResource BorderSubtleBrush}"
+                                             Margin="0,0,8,0"/>
+                                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                                            Content="Klasör Seç..."
+                                            Padding="10,5"
+                                            Margin="0,0,12,0"
+                                            Command="{Binding BrowseRenameFolderCommand}"/>
+                                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                                            Content="Önizlemeyi Yenile"
+                                            Padding="12,5"
+                                            Command="{Binding PreviewBatchRenameCommand}"/>
+                                </WrapPanel>
+
+                                <WrapPanel VerticalAlignment="Center">
+                                    <TextBlock Text="Bul:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBox Text="{Binding BatchRenameFindText, UpdateSourceTrigger=PropertyChanged}" Width="110" Padding="6,4" Background="#0D1422" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+
+                                    <TextBlock Text="Değiştir:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBox Text="{Binding BatchRenameReplaceText, UpdateSourceTrigger=PropertyChanged}" Width="110" Padding="6,4" Background="#0D1422" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+
+                                    <TextBlock Text="Ön Ek (Prefix):" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBox Text="{Binding BatchRenamePrefixText, UpdateSourceTrigger=PropertyChanged}" Width="95" Padding="6,4" Background="#0D1422" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+
+                                    <TextBlock Text="Son Ek (Suffix):" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBox Text="{Binding BatchRenameSuffixText, UpdateSourceTrigger=PropertyChanged}" Width="95" Padding="6,4" Background="#0D1422" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+
+                                    <ComboBox ItemsSource="{Binding AvailableRenameCaseModes}"
+                                              SelectedItem="{Binding BatchRenameCaseMode}"
+                                              Width="185"
+                                              Padding="6,4"
+                                              Margin="0,0,12,0"/>
+
+                                    <CheckBox Content="Sıra No (_001)"
+                                              IsChecked="{Binding BatchRenameAddNumbers}"
+                                              Foreground="{StaticResource TextPrimaryBrush}"
+                                              VerticalAlignment="Center"/>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding BatchRenameItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="34">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Mevcut Dosya Adı" Binding="{Binding OriginalName}" IsReadOnly="True" Width="260"/>
+                                <DataGridTextColumn Header="Yeni Dosya Adı (Önizleme)" Binding="{Binding NewName}" IsReadOnly="True" Width="280"/>
+                                <DataGridTextColumn Header="Uzantı" Binding="{Binding Extension}" IsReadOnly="True" Width="80"/>
+                                <DataGridTextColumn Header="Durum" Binding="{Binding ChangeStatus}" IsReadOnly="True" Width="175"/>
+                                <DataGridTextColumn Header="Tam Dosya Yolu" Binding="{Binding OriginalFullPath}" IsReadOnly="True" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 34: NETWORK ADAPTER, IP/MAC & TCP/IP WINSOCK DOCTOR                  -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsNetworkAdapterDoctorSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="AĞ ADAPTÖRÜ, IP/MAC ENVANTERİ &amp; TCP/IP WINSOCK ONARIM DOKTORU"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Tüm fiziksel/sanal ağ kartlarını, MAC adreslerini, Ağ Geçidi (Gateway) ve DNS sunucularını listeler; tek tıkla TCP/IP ve Winsock onarımı yapar."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    Content="Ağ Adaptörlerini Yenile"
+                                    Padding="14,7"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding RefreshNetworkAdaptersCommand}"/>
+                        </Grid>
+
+                        <Border Grid.Row="1"
+                                Background="{StaticResource BgPrimaryBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12,10"
+                                Margin="0,0,0,10">
+                            <WrapPanel VerticalAlignment="Center">
+                                <TextBlock Text="Hızlı Ağ Onarım Araçları:" FontWeight="SemiBold" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="🧹 DNS &amp; ARP Önbelleğini Sıfırla (arp -d *)"
+                                        Padding="12,6"
+                                        Margin="0,0,10,0"
+                                        Command="{Binding RunNetworkRepairActionCommand}"
+                                        CommandParameter="ARP_FLUSH"/>
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="🔄 DHCP IP Yenile (Release &amp; Renew)"
+                                        Padding="12,6"
+                                        Margin="0,0,10,0"
+                                        Command="{Binding RunNetworkRepairActionCommand}"
+                                        CommandParameter="DHCP_RENEW"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="🛠️ Winsock &amp; TCP/IP Yığınını Sıfırla (Admin)"
+                                        Padding="12,6"
+                                        Command="{Binding RunNetworkRepairActionCommand}"
+                                        CommandParameter="TCP_WINSOCK_RESET"/>
+                            </WrapPanel>
+                        </Border>
+
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding NetworkAdapters}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Bağlantı Durumu" Binding="{Binding StatusBadge}" Width="135"/>
+                                <DataGridTextColumn Header="Arayüz Adı" Binding="{Binding AdapterName}" Width="165"/>
+                                <DataGridTextColumn Header="Donanım / Sanal Adaptör" Binding="{Binding Description}" Width="245"/>
+                                <DataGridTextColumn Header="Fiziksel Adres (MAC)" Binding="{Binding MacAddress}" Width="150"/>
+                                <DataGridTextColumn Header="IPv4 &amp; Ağ Geçidi (Gateway)" Binding="{Binding IpAndGateway}" Width="240"/>
+                                <DataGridTextColumn Header="Hız &amp; DNS Sunucuları" Binding="{Binding DnsAndSpeed}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 35: SYSTEM & USER FONT MANAGER WITH LIVE PREVIEW                     -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsFontManagerSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="SİSTEM &amp; KULLANICI FONT (YAZI TİPİ) YÖNETİCİSİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Windows Sistem Fontlarını ve Kullanıcı Fontlarını listeler; seçilen kullanıcı fontlarını Masaüstüne yedekleyerek güvenle kaldırır."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBox Text="{Binding FontSearchFilter, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="175"
+                                         Padding="8,6"
+                                         Background="#0D1422"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderSubtleBrush}"
+                                         Margin="0,0,8,0"/>
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="Fontları Tara"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanInstalledFontsCommand}"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Fonts Klasörü"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding OpenWindowsFontsFolderCommand}"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="Seçili Kullanıcı Fontlarını Yedekle &amp; Sil"
+                                        Padding="12,7"
+                                        Command="{Binding RemoveSelectedUserFontsCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding InstalledFonts}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Kategori" Binding="{Binding SourceCategory}" IsReadOnly="True" Width="210"/>
+                                <DataGridTextColumn Header="Yazı Tipi Ailesi" Binding="{Binding FontFamilyGuess}" IsReadOnly="True" Width="195"/>
+                                <DataGridTextColumn Header="Dosya Adı" Binding="{Binding FontFileName}" IsReadOnly="True" Width="185"/>
+                                <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="95"/>
+                                <DataGridTextColumn Header="Örnek Türkçe Karakter Metni" Binding="{Binding SamplePreviewText}" IsReadOnly="True" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 36: SMART CLIPBOARD SHIELD & URL TRACKING STRIPPER                   -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsClipboardShieldSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="AKILLI PANO (CLIPBOARD) KALKANI &amp; REKLAM TAKİP URL TEMİZLEYİCİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Panodaki bağlantılardan izleme parametrelerini (utm_source, fbclid, gclid, si) temizler ve açık API Anahtarı / IBAN verilerini denetler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="🔍 Panoyu Şimdi Denetle &amp; Analiz Et"
+                                        Padding="14,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding InspectClipboardNowCommand}"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="🧹 Panoyu Tamamen Sıfırla"
+                                        Padding="14,7"
+                                        Command="{Binding ClearClipboardNowCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding ClipboardAuditItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Saat" Binding="{Binding CapturedAt}" Width="85"/>
+                                <DataGridTextColumn Header="Veri Türü &amp; Risk" Binding="{Binding CategoryBadge}" Width="230"/>
+                                <DataGridTextColumn Header="Pano İçeriği (Önizleme)" Binding="{Binding OriginalPreview}" Width="240"/>
+                                <DataGridTextColumn Header="Arındırılmış / Temiz İçerik" Binding="{Binding SanitizedContent}" Width="240"/>
+                                <DataGridTextColumn Header="Güvenlik Analizi" Binding="{Binding SecurityAdvice}" Width="*"/>
+                                <DataGridTemplateColumn Header="Eylem" Width="150">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource CleanButtonStyle}"
+                                                    Content="Temizini Kopyala"
+                                                    Padding="8,3"
+                                                    FontSize="11"
+                                                    Command="{Binding DataContext.ApplySanitizedClipboardCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>

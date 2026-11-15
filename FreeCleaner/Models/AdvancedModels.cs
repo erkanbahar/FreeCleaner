@@ -760,3 +760,97 @@ public class BenchmarkDriveOption
     public required string DisplayTitle { get; init; }
     public override string ToString() => DisplayTitle;
 }
+
+
+// ==================== 7TH GENERATION SYSTEM, SECURITY & POWER UTILITIES MODELS ====================
+
+public class ProcessSecurityAuditItem
+{
+    public required int ProcessId { get; init; }
+    public required string ProcessName { get; init; }
+    public required string ExecutablePath { get; init; }
+    public required string SignatureStatus { get; init; }
+    public required string PublisherName { get; init; }
+    public required string MemoryFormatted { get; init; }
+    public required string Sha256Short { get; init; }
+    public required bool IsUnsignedOrSuspicious { get; init; }
+}
+
+public class BatchRenamePreviewItem : INotifyPropertyChanged
+{
+    private bool _isSelected = true;
+
+    public required string OriginalName { get; init; }
+    public required string NewName { get; init; }
+    public required string Extension { get; init; }
+    public required string OriginalFullPath { get; init; }
+    public required string NewFullPath { get; init; }
+    public required string ChangeStatus { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class NetworkAdapterDetailItem
+{
+    public required string AdapterName { get; init; }
+    public required string Description { get; init; }
+    public required string StatusBadge { get; init; }
+    public required string MacAddress { get; init; }
+    public required string IpAndGateway { get; init; }
+    public required string DnsAndSpeed { get; init; }
+}
+
+public class SystemFontItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+
+    public required string FontFileName { get; init; }
+    public required string FontFamilyGuess { get; init; }
+    public required string SourceCategory { get; init; }
+    public required string FullFilePath { get; init; }
+    public required long SizeBytes { get; init; }
+    public required bool IsUserFont { get; init; }
+    public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
+    public string SamplePreviewText => "Pijamalı hasta yağız şoföre çabucak güvendi • 0123456789";
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class ClipboardAuditEntryItem
+{
+    public required string CapturedAt { get; init; }
+    public required string CategoryBadge { get; init; }
+    public required string OriginalPreview { get; init; }
+    public required string SanitizedContent { get; init; }
+    public required string SecurityAdvice { get; init; }
+}
