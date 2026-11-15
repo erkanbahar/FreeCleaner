@@ -14,7 +14,9 @@
         <SolidColorBrush x:Key="AccentEmeraldBrush" Color="#10B981"/>
         <SolidColorBrush x:Key="AccentEmeraldHoverBrush" Color="#059669"/>
         <SolidColorBrush x:Key="DangerRedBrush" Color="#F43F5E"/>
+        <SolidColorBrush x:Key="AccentRedBrush" Color="#F43F5E"/>
         <SolidColorBrush x:Key="WarningAmberBrush" Color="#F59E0B"/>
+        <SolidColorBrush x:Key="AccentAmberBrush" Color="#F59E0B"/>
         <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F8FAFC"/>
         <SolidColorBrush x:Key="TextSecondaryBrush" Color="#94A3B8"/>
         <SolidColorBrush x:Key="TextMutedBrush" Color="#64748B"/>
