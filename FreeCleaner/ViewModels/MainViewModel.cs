@@ -126,6 +126,11 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<NetworkAdapterDetailItem> NetworkAdapters { get; } = [];
     public ObservableCollection<SystemFontItem> InstalledFonts { get; } = [];
     public ObservableCollection<ClipboardAuditEntryItem> ClipboardAuditItems { get; } = [];
+    public ObservableCollection<AiModelCacheItem> AiModelCaches { get; } = [];
+    public ObservableCollection<FirewallBlockRuleItem> FirewallBlockRules { get; } = [];
+    public ObservableCollection<FileHashAndVaultResultItem> CryptoVaultResults { get; } = [];
+    public ObservableCollection<WindowsTweakItem> WindowsTweaks { get; } = [];
+    public ObservableCollection<VolumeSecurityAndMountItem> VolumeSecurityItems { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -289,6 +294,26 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand InspectClipboardNowCommand { get; }
     public ICommand ApplySanitizedClipboardCommand { get; }
     public ICommand ClearClipboardNowCommand { get; }
+
+    // 8th Gen AI Model Cleaner, Firewall Blocker, AES-256 Vault, Win11 Tweaker & BitLocker/VHD Commands
+    public ICommand BrowseAiScanFolderCommand { get; }
+    public ICommand ScanAiModelCachesCommand { get; }
+    public ICommand CleanSelectedAiCachesCommand { get; }
+    public ICommand OpenAiCacheLocationCommand { get; }
+    public ICommand RefreshFirewallRulesCommand { get; }
+    public ICommand BrowseAndBlockExeFirewallCommand { get; }
+    public ICommand RemoveSelectedFirewallRulesCommand { get; }
+    public ICommand BrowseVaultTargetFileCommand { get; }
+    public ICommand ComputeMultiHashesCommand { get; }
+    public ICommand EncryptVaultFileCommand { get; }
+    public ICommand DecryptVaultFileCommand { get; }
+    public ICommand CopyHashValueCommand { get; }
+    public ICommand RefreshWindowsTweaksCommand { get; }
+    public ICommand ToggleWindowsTweakCommand { get; }
+    public ICommand RestartExplorerNowCommand { get; }
+    public ICommand RefreshVolumesAndBitLockerCommand { get; }
+    public ICommand BrowseAndMountDiskImageCommand { get; }
+    public ICommand DismountVolumeItemCommand { get; }
 
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
@@ -569,6 +594,45 @@ public class MainViewModel : INotifyPropertyChanged
         });
         ClearClipboardNowCommand = new RelayCommand(_ => ExecuteClearClipboardNow());
 
+        // 8th Gen Commands initialization
+        BrowseAiScanFolderCommand = new RelayCommand(_ => BrowseAiScanFolder(), _ => !IsBusy);
+        ScanAiModelCachesCommand = new RelayCommand(async _ => await LoadAiModelCachesAsync(), _ => !IsBusy);
+        CleanSelectedAiCachesCommand = new RelayCommand(async _ => await ExecuteCleanAiCachesAsync(), _ => !IsBusy && AiModelCaches.Any(x => x.IsSelected));
+        OpenAiCacheLocationCommand = new RelayCommand(param =>
+        {
+            if (param is AiModelCacheItem item)
+                OpenExplorerPath(item.FullPath);
+        });
+        RefreshFirewallRulesCommand = new RelayCommand(async _ => await LoadFirewallBlockRulesAsync(), _ => !IsBusy);
+        BrowseAndBlockExeFirewallCommand = new RelayCommand(async _ => await BrowseAndBlockExecutableInFirewallAsync(), _ => !IsBusy);
+        RemoveSelectedFirewallRulesCommand = new RelayCommand(async _ => await ExecuteRemoveSelectedFirewallRulesAsync(), _ => !IsBusy && FirewallBlockRules.Any(x => x.IsSelected));
+        BrowseVaultTargetFileCommand = new RelayCommand(_ => BrowseVaultTargetFile(), _ => !IsBusy);
+        ComputeMultiHashesCommand = new RelayCommand(async _ => await ExecuteComputeMultiHashesAsync(), _ => !IsBusy);
+        EncryptVaultFileCommand = new RelayCommand(async _ => await ExecuteEncryptVaultFileAsync(), _ => !IsBusy);
+        DecryptVaultFileCommand = new RelayCommand(async _ => await ExecuteDecryptVaultFileAsync(), _ => !IsBusy);
+        CopyHashValueCommand = new RelayCommand(param =>
+        {
+            if (param is FileHashAndVaultResultItem row && !string.IsNullOrEmpty(row.HashOrOutputValue))
+            {
+                Clipboard.SetText(row.HashOrOutputValue);
+                StatusMessage = $"{row.AlgorithmOrOperation} değeri panoya kopyalandı!";
+            }
+        });
+        RefreshWindowsTweaksCommand = new RelayCommand(_ => LoadWindowsTweaks(), _ => !IsBusy);
+        ToggleWindowsTweakCommand = new RelayCommand(param =>
+        {
+            if (param is WindowsTweakItem tweak)
+                ExecuteToggleWindowsTweak(tweak);
+        }, _ => !IsBusy);
+        RestartExplorerNowCommand = new RelayCommand(_ => ExecuteRestartExplorerNow(), _ => !IsBusy);
+        RefreshVolumesAndBitLockerCommand = new RelayCommand(async _ => await LoadVolumeSecurityAndMountsAsync(), _ => !IsBusy);
+        BrowseAndMountDiskImageCommand = new RelayCommand(async _ => await BrowseAndMountIsoOrVhdAsync(), _ => !IsBusy);
+        DismountVolumeItemCommand = new RelayCommand(async param =>
+        {
+            if (param is VolumeSecurityAndMountItem vol)
+                await ExecuteDismountVolumeAsync(vol);
+        }, _ => !IsBusy);
+
         // Background Auto-Monitor Timer (checks every 5 minutes if enabled)
         _autoMonitorTimer = new DispatcherTimer
         {
@@ -578,7 +642,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();
 
-        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 36 uzman modül kullanıma hazır.");
+        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 41 uzman modül kullanıma hazır.");
     }
 
     public SystemMetricsSnapshot SystemMetrics
@@ -639,6 +703,11 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsNetworkAdapterDoctorSection));
                 OnPropertyChanged(nameof(IsFontManagerSection));
                 OnPropertyChanged(nameof(IsClipboardShieldSection));
+                OnPropertyChanged(nameof(IsAiModelCleanerSection));
+                OnPropertyChanged(nameof(IsFirewallBlockerSection));
+                OnPropertyChanged(nameof(IsCryptoVaultSection));
+                OnPropertyChanged(nameof(IsWin11TweakerSection));
+                OnPropertyChanged(nameof(IsBitLockerSection));
                 OnPropertyChanged(nameof(IsSettingsSection));
                 OnPropertyChanged(nameof(SectionTitle));
 
@@ -708,6 +777,14 @@ public class MainViewModel : INotifyPropertyChanged
                     _ = LoadInstalledFontsAsync();
                 else if (_activeSection == "ClipboardShield" && ClipboardAuditItems.Count == 0)
                     ExecuteInspectClipboardNow();
+                else if (_activeSection == "AiModelCleaner" && AiModelCaches.Count == 0)
+                    _ = LoadAiModelCachesAsync();
+                else if (_activeSection == "FirewallBlocker" && FirewallBlockRules.Count == 0)
+                    _ = LoadFirewallBlockRulesAsync();
+                else if (_activeSection == "Win11Tweaker" && WindowsTweaks.Count == 0)
+                    LoadWindowsTweaks();
+                else if (_activeSection == "BitLocker" && VolumeSecurityItems.Count == 0)
+                    _ = LoadVolumeSecurityAndMountsAsync();
             }
         }
     }
@@ -752,6 +829,11 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsNetworkAdapterDoctorSection => ActiveSection == "NetworkAdapterDoctor";
     public bool IsFontManagerSection => ActiveSection == "FontManager";
     public bool IsClipboardShieldSection => ActiveSection == "ClipboardShield";
+    public bool IsAiModelCleanerSection => ActiveSection == "AiModelCleaner";
+    public bool IsFirewallBlockerSection => ActiveSection == "FirewallBlocker";
+    public bool IsCryptoVaultSection => ActiveSection == "CryptoVault";
+    public bool IsWin11TweakerSection => ActiveSection == "Win11Tweaker";
+    public bool IsBitLockerSection => ActiveSection == "BitLocker";
     public bool IsSettingsSection => ActiveSection == "Settings";
 
     public string SectionTitle => ActiveSection switch
@@ -793,6 +875,11 @@ public class MainViewModel : INotifyPropertyChanged
         "NetworkAdapterDoctor" => "Ağ Adaptörü, IP/MAC & TCP/IP Winsock Onarım Doktoru",
         "FontManager" => "Sistem & Kullanıcı Font (Yazı Tipi) Yöneticisi ve Canlı Önizleme",
         "ClipboardShield" => "Akıllı Pano (Clipboard) Kalkanı & Takip URL Temizleyici",
+        "AiModelCleaner" => "Yerel Yapay Zeka (AI / LLM) Model & Önbellek Avcısı (Ollama, HuggingFace, LM Studio)",
+        "FirewallBlocker" => "Windows Güvenlik Duvarı (Firewall) Denetçisi & Tek Tıkla Uygulama İnternet Kesici",
+        "CryptoVault" => "AES-256-GCM Dosya Şifreleme Kasası (.fcvault) & Çoklu Hash (MD5/SHA256/SHA512) Doğrulayıcı",
+        "Win11Tweaker" => "Windows 11 İnce Ayar (Ultimate Tweaker) & Explorer Hızlandırıcı",
+        "BitLocker" => "BitLocker Durum Denetçisi & Bağlı ISO / VHD Sanal Disk Yöneticisi",
         "Settings" => "Beyaz Liste (İstisnalar), Otomasyon & Raporlama",
         _ => "Akıllı Temizlik & Tüm Kategoriler"
     };
@@ -3708,6 +3795,349 @@ public class MainViewModel : INotifyPropertyChanged
             AddLog("[PANO KALKANI] Pano tamamen temizlendi.");
         }
         catch { }
+    }
+
+    // ==================== 14. 8TH GEN AI MODEL CLEANER, FIREWALL BLOCKER, AES-256 VAULT, WIN11 TWEAKER & BITLOCKER ====================
+
+    private string _aiCustomScanFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    public string AiCustomScanFolder
+    {
+        get => _aiCustomScanFolder;
+        set
+        {
+            if (_aiCustomScanFolder != value)
+            {
+                _aiCustomScanFolder = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string _vaultTargetFilePath = string.Empty;
+    public string VaultTargetFilePath
+    {
+        get => _vaultTargetFilePath;
+        set
+        {
+            if (_vaultTargetFilePath != value)
+            {
+                _vaultTargetFilePath = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string _vaultPasswordInput = string.Empty;
+    public string VaultPasswordInput
+    {
+        get => _vaultPasswordInput;
+        set
+        {
+            if (_vaultPasswordInput != value)
+            {
+                _vaultPasswordInput = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string _expectedHashInput = string.Empty;
+    public string ExpectedHashInput
+    {
+        get => _expectedHashInput;
+        set
+        {
+            if (_expectedHashInput != value)
+            {
+                _expectedHashInput = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private void BrowseAiScanFolder()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "GGUF / SafeTensors / ONNX Modelleri İçin Taranacak Klasörü Seçin"
+        };
+        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
+        {
+            AiCustomScanFolder = dlg.FolderName;
+            _ = LoadAiModelCachesAsync();
+        }
+    }
+
+    private async Task LoadAiModelCachesAsync()
+    {
+        IsBusy = true;
+        AiModelCaches.Clear();
+        StatusMessage = "Ollama, HuggingFace, LM Studio, PyTorch, Whisper önbellekleri ve büyük AI model dosyaları (.gguf/.safetensors) taranıyor...";
+        try
+        {
+            var items = await EighthGenAiAndSecuritySuiteService.ScanAiModelCachesAsync(AiCustomScanFolder);
+            foreach (var item in items)
+                AiModelCaches.Add(item);
+
+            long totalBytes = AiModelCaches.Sum(x => x.SizeBytes);
+            StatusMessage = $"Yerel AI & LLM Avcısı: {AiModelCaches.Count} yapay zeka model/önbellek öğesi bulundu (Toplam: {CleanerRule.FormatBytes(totalBytes)}).";
+            AddLog($"[AI / LLM AVCISI] {AiModelCaches.Count} öğe tespit edildi ({CleanerRule.FormatBytes(totalBytes)}).");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteCleanAiCachesAsync()
+    {
+        var selected = AiModelCaches.Where(x => x.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        IsBusy = true;
+        try
+        {
+            var (cleaned, freed) = await EighthGenAiAndSecuritySuiteService.CleanSelectedAiCachesAsync(selected);
+            LastFreedBytes += freed;
+            LastDeletedFiles += cleaned;
+            StatusMessage = $"{cleaned} AI model/önbellek öğesi temizlendi, {CleanerRule.FormatBytes(freed)} disk alanı kurtarıldı!";
+            AddLog($"[AI / LLM AVCISI] {cleaned} model önbelleği silindi ({CleanerRule.FormatBytes(freed)} kazanıldı).");
+            await LoadAiModelCachesAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadFirewallBlockRulesAsync()
+    {
+        IsBusy = true;
+        FirewallBlockRules.Clear();
+        StatusMessage = "Windows Defender Güvenlik Duvarı (Firewall) engelleme kuralları okunuyor...";
+        try
+        {
+            var rules = await EighthGenAiAndSecuritySuiteService.GetFirewallBlockRulesAsync();
+            foreach (var r in rules)
+                FirewallBlockRules.Add(r);
+            StatusMessage = $"Güvenlik Duvarı Denetçisi: {FirewallBlockRules.Count} aktif engelleme (Block) kuralı listelendi.";
+            AddLog($"[FIREWALL] {FirewallBlockRules.Count} engelleme kuralı yüklendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task BrowseAndBlockExecutableInFirewallAsync()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "İnternet Erişimi Kesilecek Uygulamayı (.exe) Seçin",
+            Filter = "Uygulama Dosyaları (*.exe)|*.exe|Tüm Dosyalar (*.*)|*.*"
+        };
+        if (dlg.ShowDialog() != true || string.IsNullOrWhiteSpace(dlg.FileName))
+            return;
+
+        IsBusy = true;
+        try
+        {
+            var (_, msg) = await EighthGenAiAndSecuritySuiteService.BlockExecutableInFirewallAsync(dlg.FileName);
+            StatusMessage = msg;
+            AddLog($"[FIREWALL BLOCKER] {msg}");
+            await LoadFirewallBlockRulesAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteRemoveSelectedFirewallRulesAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var (_, msg) = await EighthGenAiAndSecuritySuiteService.RemoveSelectedFirewallRulesAsync(FirewallBlockRules);
+            StatusMessage = msg;
+            AddLog($"[FIREWALL BLOCKER] {msg}");
+            await LoadFirewallBlockRulesAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void BrowseVaultTargetFile()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Şifrelenecek, Çözülecek (.fcvault) veya Hash Doğrulaması Yapılacak Dosyayı Seçin",
+            Filter = "Tüm Dosyalar (*.*)|*.*|FreeCleaner Şifreli Kasa (*.fcvault)|*.fcvault"
+        };
+        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FileName))
+        {
+            VaultTargetFilePath = dlg.FileName;
+            _ = ExecuteComputeMultiHashesAsync();
+        }
+    }
+
+    private async Task ExecuteComputeMultiHashesAsync()
+    {
+        if (string.IsNullOrWhiteSpace(VaultTargetFilePath) || !File.Exists(VaultTargetFilePath))
+        {
+            StatusMessage = "Lütfen önce geçerli bir dosya seçin.";
+            return;
+        }
+
+        IsBusy = true;
+        CryptoVaultResults.Clear();
+        StatusMessage = "Dosya için MD5, SHA-1, SHA-256 ve SHA-512 kriptografik özetleri hesaplanıyor...";
+        try
+        {
+            var rows = await EighthGenAiAndSecuritySuiteService.ComputeMultiHashesAsync(VaultTargetFilePath, ExpectedHashInput);
+            foreach (var r in rows)
+                CryptoVaultResults.Add(r);
+            StatusMessage = $"Çoklu Hash Doğrulayıcı: '{Path.GetFileName(VaultTargetFilePath)}' için 4 algoritma özeti hesaplandı.";
+            AddLog($"[HASH & VAULT] '{Path.GetFileName(VaultTargetFilePath)}' MD5/SHA1/SHA256/SHA512 hesaplandı.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteEncryptVaultFileAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var (ok, outPath, msg) = await EighthGenAiAndSecuritySuiteService.EncryptFileAes256GcmAsync(VaultTargetFilePath, VaultPasswordInput);
+            StatusMessage = msg;
+            AddLog($"[AES-256 KASA] {msg}");
+            if (ok && !string.IsNullOrEmpty(outPath))
+            {
+                CryptoVaultResults.Insert(0, new FileHashAndVaultResultItem
+                {
+                    AlgorithmOrOperation = "🔒 AES-256-GCM Şifreleme",
+                    FileName = Path.GetFileName(outPath),
+                    HashOrOutputValue = outPath,
+                    VerificationStatus = "✅ Şifreli Kasa Oluşturuldu"
+                });
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteDecryptVaultFileAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var (ok, outPath, msg) = await EighthGenAiAndSecuritySuiteService.DecryptFileAes256GcmAsync(VaultTargetFilePath, VaultPasswordInput);
+            StatusMessage = msg;
+            AddLog($"[AES-256 KASA] {msg}");
+            if (ok && !string.IsNullOrEmpty(outPath))
+            {
+                CryptoVaultResults.Insert(0, new FileHashAndVaultResultItem
+                {
+                    AlgorithmOrOperation = "🔓 AES-256-GCM Şifre Çözme",
+                    FileName = Path.GetFileName(outPath),
+                    HashOrOutputValue = outPath,
+                    VerificationStatus = "✅ Orijinal Dosya Kurtarıldı"
+                });
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void LoadWindowsTweaks()
+    {
+        WindowsTweaks.Clear();
+        foreach (var t in EighthGenAiAndSecuritySuiteService.GetWindowsTweaksState())
+            WindowsTweaks.Add(t);
+        StatusMessage = $"Windows 11 İnce Ayar Merkezi: {WindowsTweaks.Count} sistem ve Explorer ince ayarı yüklendi.";
+    }
+
+    private void ExecuteToggleWindowsTweak(WindowsTweakItem tweak)
+    {
+        var (_, msg) = EighthGenAiAndSecuritySuiteService.ToggleWindowsTweak(tweak);
+        StatusMessage = msg;
+        AddLog($"[WIN11 TWEAKER] {msg}");
+        LoadWindowsTweaks();
+    }
+
+    private void ExecuteRestartExplorerNow()
+    {
+        EighthGenAiAndSecuritySuiteService.RestartWindowsExplorer();
+        StatusMessage = "Windows Gezgini (explorer.exe) yeniden başlatıldı; tüm kabuk ve görev çubuğu ayarları etkinleştirildi.";
+        AddLog("[WIN11 TWEAKER] explorer.exe yeniden başlatıldı.");
+    }
+
+    private async Task LoadVolumeSecurityAndMountsAsync()
+    {
+        IsBusy = true;
+        VolumeSecurityItems.Clear();
+        StatusMessage = "Disk bölümlerinin BitLocker şifreleme durumu ve bağlı ISO/VHD sanal sürücüler taranıyor...";
+        try
+        {
+            var items = await EighthGenAiAndSecuritySuiteService.GetVolumesAndVirtualDisksAsync();
+            foreach (var item in items)
+                VolumeSecurityItems.Add(item);
+            StatusMessage = $"BitLocker & Sanal Disk Denetçisi: {VolumeSecurityItems.Count} aktif birim ve sanal imaj listelendi.";
+            AddLog($"[BITLOCKER & VHD] {VolumeSecurityItems.Count} birim denetlendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task BrowseAndMountIsoOrVhdAsync()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Sanal Sürücü Olarak Bağlanacak (Mount) ISO / VHD / VHDX İmajını Seçin",
+            Filter = "Disk İmajları (*.iso;*.vhd;*.vhdx;*.img)|*.iso;*.vhd;*.vhdx;*.img|Tüm Dosyalar (*.*)|*.*"
+        };
+        if (dlg.ShowDialog() != true || string.IsNullOrWhiteSpace(dlg.FileName))
+            return;
+
+        IsBusy = true;
+        try
+        {
+            var (_, msg) = await EighthGenAiAndSecuritySuiteService.MountDiskImageAsync(dlg.FileName);
+            StatusMessage = msg;
+            AddLog($"[ISO/VHD MOUNT] {msg}");
+            await LoadVolumeSecurityAndMountsAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteDismountVolumeAsync(VolumeSecurityAndMountItem vol)
+    {
+        IsBusy = true;
+        try
+        {
+            var (_, msg) = await EighthGenAiAndSecuritySuiteService.DismountVolumeOrImageAsync(vol);
+            StatusMessage = msg;
+            AddLog($"[ISO/VHD DISMOUNT] {msg}");
+            await LoadVolumeSecurityAndMountsAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private void OpenFileLocation(object? parameter)

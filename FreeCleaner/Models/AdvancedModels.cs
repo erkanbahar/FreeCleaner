@@ -854,3 +854,92 @@ public class ClipboardAuditEntryItem
     public required string SanitizedContent { get; init; }
     public required string SecurityAdvice { get; init; }
 }
+
+
+// ==================== 8TH GENERATION AI CACHES, FIREWALL, CRYPTO VAULT, WIN11 TWEAKER & BITLOCKER MODELS ====================
+
+public class AiModelCacheItem : INotifyPropertyChanged
+{
+    private bool _isSelected = true;
+
+    public required string AiFramework { get; init; }
+    public required string ModelOrCacheName { get; init; }
+    public required string FullPath { get; init; }
+    public required long SizeBytes { get; init; }
+    public required bool IsDirectory { get; init; }
+    public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class FirewallBlockRuleItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+
+    public required string RuleName { get; init; }
+    public required string Direction { get; init; }
+    public required string ActionBadge { get; init; }
+    public required string ProgramPath { get; init; }
+    public required string ProfileText { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class FileHashAndVaultResultItem
+{
+    public required string AlgorithmOrOperation { get; init; }
+    public required string FileName { get; init; }
+    public required string HashOrOutputValue { get; init; }
+    public required string VerificationStatus { get; init; }
+}
+
+public class WindowsTweakItem
+{
+    public required string TweakId { get; init; }
+    public required string Category { get; init; }
+    public required string Title { get; init; }
+    public required string Description { get; init; }
+    public required bool IsEnabled { get; init; }
+    public required string CurrentStateText { get; init; }
+}
+
+public class VolumeSecurityAndMountItem
+{
+    public required string DriveRoot { get; init; }
+    public required string VolumeLabel { get; init; }
+    public required string FileSystemAndType { get; init; }
+    public required string BitLockerStatus { get; init; }
+    public required string CapacitySummary { get; init; }
+    public required string BackingImagePath { get; init; }
+    public required bool CanDismount { get; init; }
+}
