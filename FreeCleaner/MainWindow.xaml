@@ -469,6 +469,62 @@
                             </StackPanel>
                         </RadioButton>
 
+                        <TextBlock Text="6. NESİL DONANIM, PORT &amp; BLOATWARE"
+                                   FontSize="10.5"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="8,14,0,6"/>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsPortHunterSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="PortHunter">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE968;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Port Avcısı (Port Killer)" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsBloatwareSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="Bloatware">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Bloatware (Appx) Kaldırıcı" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsDiskBenchSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="DiskBench">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xEC4A;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="SSD / NVMe Disk Hız Testi" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsHardwareSpecsSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="HardwareSpecs">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE950;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Donanım, BIOS &amp; Lisans" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsUsbForensicsSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="UsbForensics">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE88E;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="USB Depolama Geçmişi" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                      IsChecked="{Binding IsSettingsSection, Mode=OneWay}"
                                      Command="{Binding SelectSectionCommand}"
@@ -3188,6 +3244,404 @@
                                 <DataGridTextColumn Header="Atanmış ProgId" Binding="{Binding CurrentProgId}" IsReadOnly="True" Width="230"/>
                                 <DataGridTextColumn Header="Durum" Binding="{Binding StatusText}" IsReadOnly="True" Width="210"/>
                                 <DataGridTextColumn Header="Uygulama / İşleyici Açıklaması" Binding="{Binding HandlerDescription}" IsReadOnly="True" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 27: DEVELOPER PORT HUNTER & KILLER (NETSTAT LISTENING PORTS)         -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsPortHunterSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock Text="GELİŞTİRİCİ PORT AVCISI (PORT KILLER — HANGİ PORTU KİM KULLANIYOR?)"
+                                       FontSize="13"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="'Address already in use' hatası veren portları (3000, 5000, 5173, 8080, 5432 vb.) filtreleyin ve o portu tutan işlemi tek tıkla sonlandırın."
+                                       FontSize="11.5"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,3,0,0"/>
+                        </StackPanel>
+
+                        <Grid Grid.Row="1" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="260"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="Port veya İşlem Ara (ör. 5000, node):"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       Margin="0,0,10,0"/>
+
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding PortFilterText, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{StaticResource BgCardBrush}"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderBrush="{StaticResource BorderSubtleBrush}"
+                                     BorderThickness="1"
+                                     Padding="10,7"
+                                     VerticalContentAlignment="Center"
+                                     Margin="0,0,8,0"/>
+
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Content="Portları Filtrele / Yenile"
+                                    Padding="14,7"
+                                    Command="{Binding ScanListeningPortsCommand}"/>
+                        </Grid>
+
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding ListeningPorts}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Port No" Binding="{Binding PortNumber}" Width="95"/>
+                                <DataGridTextColumn Header="Protokol" Binding="{Binding Protocol}" Width="80"/>
+                                <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="85"/>
+                                <DataGridTextColumn Header="İşlem Adı" Binding="{Binding ProcessName}" Width="195"/>
+                                <DataGridTextColumn Header="Yerel IP Adresi" Binding="{Binding LocalAddress}" Width="155"/>
+                                <DataGridTextColumn Header="Port Türü / Etiket" Binding="{Binding PortBadge}" Width="*"/>
+                                <DataGridTemplateColumn Header="Portu Boşalt" Width="155">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource DangerButtonStyle}"
+                                                    Content="Portu Kapat (Kill)"
+                                                    Padding="8,4"
+                                                    Command="{Binding DataContext.KillPortProcessCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 28: WINDOWS 10/11 APPX BLOATWARE DEBLOATER                           -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsBloatwareSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="WINDOWS 10 / 11 ÖNYÜKLÜ BLOATWARE (UWP / APPX) KALDIRICI"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Standart Program Ekle/Kaldır'da görünmeyen Windows mağaza uygulamalarını (Clipchamp, BingNews, Xbox, Solitaire vb.) listeler ve kaldırır."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="Mağaza Paketlerini Yeniden Tara"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanAppxBloatwareCommand}"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="Seçili Bloatware Paketlerini Kaldır"
+                                        Padding="12,7"
+                                        Command="{Binding RemoveSelectedAppxCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding AppxBloatwareItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="35">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Öneri / Kategori" Binding="{Binding CategoryBadge}" IsReadOnly="True" Width="195"/>
+                                <DataGridTextColumn Header="Uygulama Adı" Binding="{Binding Name}" IsReadOnly="True" Width="260"/>
+                                <DataGridTextColumn Header="Sürüm" Binding="{Binding Version}" IsReadOnly="True" Width="115"/>
+                                <DataGridTextColumn Header="Tam Paket Kimliği (PackageFullName)" Binding="{Binding PackageFullName}" IsReadOnly="True" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 29: LIVE SSD / NVME SEQUENTIAL READ & WRITE BENCHMARK                -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsDiskBenchSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock Text="CANLI SSD / NVME DİSK OKUMA &amp; YAZMA HIZ TESTİ (DISK BENCHMARK)"
+                                       FontSize="13"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <TextBlock Text="Listeden test etmek istediğiniz SSD / NVMe sürücüyü ve veri bloğu boyutunu seçin; önbelleksiz (WriteThrough) gerçek okuma ve yazma hızını ölçün."
+                                       FontSize="11.5"
+                                       Foreground="{StaticResource TextMutedBrush}"
+                                       Margin="0,3,0,0"/>
+                        </StackPanel>
+
+                        <Border Grid.Row="1"
+                                Background="{StaticResource CardSurfaceGradientBrush}"
+                                BorderBrush="#263859"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="14,10"
+                                Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="105"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"
+                                           Text="SSD / Sürücü Seçin:"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           Margin="0,0,10,0"/>
+
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding AvailableBenchmarkDrives}"
+                                          SelectedItem="{Binding SelectedBenchmarkDrive, Mode=TwoWay}"
+                                          DisplayMemberPath="DisplayTitle"
+                                          Height="34"
+                                          VerticalContentAlignment="Center"
+                                          Padding="10,4"
+                                          Margin="0,0,14,0"/>
+
+                                <TextBlock Grid.Column="2"
+                                           Text="Test Bloğu (MB):"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Margin="0,0,8,0"/>
+
+                                <ComboBox Grid.Column="3"
+                                          ItemsSource="{Binding AvailableBenchmarkBlockSizesMb}"
+                                          SelectedItem="{Binding BenchmarkBlockSizeMb, Mode=TwoWay}"
+                                          Height="34"
+                                          VerticalContentAlignment="Center"
+                                          Padding="8,4"
+                                          Margin="0,0,10,0"/>
+
+                                <Button Grid.Column="4"
+                                        Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="🔄 Diskleri Yenile"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding RefreshBenchmarkDrivesCommand}"/>
+
+                                <Button Grid.Column="5"
+                                        Style="{StaticResource CleanButtonStyle}"
+                                        Content="🚀 Seçili SSD Hız Testini Başlat"
+                                        Padding="16,7"
+                                        Command="{Binding RunDiskBenchmarkCommand}"/>
+                            </Grid>
+                        </Border>
+
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding DiskBenchmarkResults}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Test Zamanı" Binding="{Binding TestedAt}" Width="145"/>
+                                <DataGridTextColumn Header="Sürücü" Binding="{Binding DriveName}" Width="85"/>
+                                <DataGridTextColumn Header="Test Bloğu (MB)" Binding="{Binding TestBlockSizeMb}" Width="115"/>
+                                <DataGridTextColumn Header="Yazma Hızı (Sequential Write)" Binding="{Binding WriteFormatted}" Width="195"/>
+                                <DataGridTextColumn Header="Okuma Hızı (Sequential Read)" Binding="{Binding ReadFormatted}" Width="195"/>
+                                <DataGridTextColumn Header="Performans Sınıfı" Binding="{Binding PerformanceGrade}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 30: DEEP HARDWARE INVENTORY, BIOS & OEM PRODUCT KEY                  -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsHardwareSpecsSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="DERİN DONANIM ENVANTERİ, BIOS &amp; OEM WINDOWS ÜRÜN ANAHTARI (PRODUCT KEY)"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="İşlemci (CPU), Anakart, BIOS sürümü, RAM modül frekansları (MHz), Ekran Kartı (GPU) ve Anakart gömülü OEM Windows anahtarını listeler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    Content="Donanım &amp; Lisans Bilgilerini Yenile"
+                                    Padding="14,7"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding RefreshHardwareInventoryCommand}"/>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding HardwareSpecs}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Bileşen Kategorisi" Binding="{Binding ComponentCategory}" Width="210"/>
+                                <DataGridTextColumn Header="Donanım / Model Adı" Binding="{Binding ComponentName}" Width="290"/>
+                                <DataGridTextColumn Header="Birincil Değer / Ürün Anahtarı" Binding="{Binding PrimaryValue}" Width="260"/>
+                                <DataGridTextColumn Header="Teknik Ayrıntılar" Binding="{Binding SecondaryDetails}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 31: USB STORAGE FORENSICS (USBSTOR) & TRACE CLEANER                  -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsUsbForensicsSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="USB DEPOLAMA GEÇMİŞİ (USBSTOR ADLİ ANALİZ) &amp; İZ TEMİZLEYİCİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Bilgisayara bugüne kadar takılmış tüm USB bellek ve harici disklerin marka, model ve seri numaralarını (HKLM\...\USBSTOR) listeler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="USB Geçmişini Tara"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanUsbHistoryCommand}"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="Seçili USB İzlerini Sil (Admin)"
+                                        Padding="12,7"
+                                        Command="{Binding CleanUsbHistoryCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding UsbHistoryItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="34">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Cihaz Adı (FriendlyName)" Binding="{Binding FriendlyName}" IsReadOnly="True" Width="240"/>
+                                <DataGridTextColumn Header="Üretici &amp; Ürün Kimliği" Binding="{Binding VendorAndProduct}" IsReadOnly="True" Width="250"/>
+                                <DataGridTextColumn Header="Donanım Seri Numarası" Binding="{Binding SerialNumber}" IsReadOnly="True" Width="220"/>
+                                <DataGridTextColumn Header="Kayıt Defteri Anahtarı" Binding="{Binding RegistrySubKeyPath}" IsReadOnly="True" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Grid>

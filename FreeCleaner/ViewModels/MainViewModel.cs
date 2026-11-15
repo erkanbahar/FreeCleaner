@@ -79,6 +79,12 @@ public class MainViewModel : INotifyPropertyChanged
     // 5th Generation Forensics & Rescue state
     private string _restorePointDescription = $"FreeCleaner Güvenlik Noktası ({DateTime.Now:dd.MM.yyyy})";
 
+    // 6th Generation Hardware, Port Hunter, Bloatware & Benchmark state
+    private string _portFilterText = string.Empty;
+    private string _benchmarkDriveRoot = @"C:\";
+    private BenchmarkDriveOption? _selectedBenchmarkDrive;
+    private int _benchmarkBlockSizeMb = 128;
+
     // Collections
     public ObservableCollection<CleanerRule> AllRules { get; } = [];
     public ObservableCollection<ScannedFileItem> DiscoveredFiles { get; } = [];
@@ -109,6 +115,12 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<GlobalPackageCacheItem> GlobalPackageCaches { get; } = [];
     public ObservableCollection<RestorePointItem> RestorePoints { get; } = [];
     public ObservableCollection<FileAssociationItem> FileAssociations { get; } = [];
+    public ObservableCollection<ListeningPortItem> ListeningPorts { get; } = [];
+    public ObservableCollection<AppxBloatwareItem> AppxBloatwareItems { get; } = [];
+    public ObservableCollection<BenchmarkDriveOption> AvailableBenchmarkDrives { get; } = [];
+    public ObservableCollection<DiskBenchmarkResultItem> DiskBenchmarkResults { get; } = [];
+    public ObservableCollection<HardwareSpecItem> HardwareSpecs { get; } = [];
+    public ObservableCollection<UsbHistoryItem> UsbHistoryItems { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -119,6 +131,7 @@ public class MainViewModel : INotifyPropertyChanged
     public int[] AvailableSizeThresholdsMb { get; } = [10, 25, 50, 100, 250, 500, 1024];
     public int[] AvailableShredPasses { get; } = [1, 3, 7];
     public int[] AvailableInstallerAgeDays { get; } = [0, 7, 14, 30, 60, 90];
+    public int[] AvailableBenchmarkBlockSizesMb { get; } = [64, 128, 256, 512, 1024];
 
     // Cleaner Commands
     public ICommand AnalyzeCommand { get; }
@@ -242,6 +255,17 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand LaunchSystemToolCommand { get; }
     public ICommand ScanFileAssocCommand { get; }
     public ICommand ResetFileAssocCommand { get; }
+
+    // 6th Gen Port Hunter, Bloatware, Disk Benchmark, Hardware & USB History Commands
+    public ICommand ScanListeningPortsCommand { get; }
+    public ICommand KillPortProcessCommand { get; }
+    public ICommand ScanAppxBloatwareCommand { get; }
+    public ICommand RemoveSelectedAppxCommand { get; }
+    public ICommand RefreshBenchmarkDrivesCommand { get; }
+    public ICommand RunDiskBenchmarkCommand { get; }
+    public ICommand RefreshHardwareInventoryCommand { get; }
+    public ICommand ScanUsbHistoryCommand { get; }
+    public ICommand CleanUsbHistoryCommand { get; }
 
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
@@ -470,6 +494,21 @@ public class MainViewModel : INotifyPropertyChanged
         ScanFileAssocCommand = new RelayCommand(async _ => await LoadFileAssociationsAsync(), _ => !IsBusy);
         ResetFileAssocCommand = new RelayCommand(_ => ExecuteResetFileAssociations(), _ => !IsBusy && FileAssociations.Any(x => x.IsSelected));
 
+        // 6th Gen Port Hunter, Bloatware, Disk Benchmark, Hardware & USB History Commands
+        ScanListeningPortsCommand = new RelayCommand(async _ => await LoadListeningPortsAsync(), _ => !IsBusy);
+        KillPortProcessCommand = new RelayCommand(async param =>
+        {
+            if (param is ListeningPortItem item)
+                await KillPortAndRefreshAsync(item);
+        }, _ => !IsBusy);
+        ScanAppxBloatwareCommand = new RelayCommand(async _ => await LoadAppxBloatwareAsync(), _ => !IsBusy);
+        RemoveSelectedAppxCommand = new RelayCommand(async _ => await RunRemoveSelectedAppxAsync(), _ => !IsBusy && AppxBloatwareItems.Any(x => x.IsSelected));
+        RefreshBenchmarkDrivesCommand = new RelayCommand(async _ => await LoadBenchmarkDrivesAsync(), _ => !IsBusy);
+        RunDiskBenchmarkCommand = new RelayCommand(async _ => await ExecuteDiskBenchmarkAsync(), _ => !IsBusy);
+        RefreshHardwareInventoryCommand = new RelayCommand(async _ => await LoadHardwareSpecsAsync(), _ => !IsBusy);
+        ScanUsbHistoryCommand = new RelayCommand(async _ => await LoadUsbHistoryAsync(), _ => !IsBusy);
+        CleanUsbHistoryCommand = new RelayCommand(_ => ExecuteCleanUsbHistory(), _ => !IsBusy && UsbHistoryItems.Any(x => x.IsSelected));
+
         // Background Auto-Monitor Timer (checks every 5 minutes if enabled)
         _autoMonitorTimer = new DispatcherTimer
         {
@@ -479,7 +518,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();
 
-        AddLog("FreeCleaner Pro Ultra (.NET 10) başlatıldı: Tüm 26 uzman modül kullanıma hazır.");
+        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 31 uzman modül kullanıma hazır.");
     }
 
     public SystemMetricsSnapshot SystemMetrics
@@ -530,6 +569,11 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsPackageCachesSection));
                 OnPropertyChanged(nameof(IsRestoreGodModeSection));
                 OnPropertyChanged(nameof(IsFileAssocSection));
+                OnPropertyChanged(nameof(IsPortHunterSection));
+                OnPropertyChanged(nameof(IsBloatwareSection));
+                OnPropertyChanged(nameof(IsDiskBenchSection));
+                OnPropertyChanged(nameof(IsHardwareSpecsSection));
+                OnPropertyChanged(nameof(IsUsbForensicsSection));
                 OnPropertyChanged(nameof(IsSettingsSection));
                 OnPropertyChanged(nameof(SectionTitle));
 
@@ -579,6 +623,16 @@ public class MainViewModel : INotifyPropertyChanged
                     _ = LoadRestorePointsAsync();
                 else if (_activeSection == "FileAssoc" && FileAssociations.Count == 0)
                     _ = LoadFileAssociationsAsync();
+                else if (_activeSection == "PortHunter" && ListeningPorts.Count == 0)
+                    _ = LoadListeningPortsAsync();
+                else if (_activeSection == "Bloatware" && AppxBloatwareItems.Count == 0)
+                    _ = LoadAppxBloatwareAsync();
+                else if (_activeSection == "DiskBench" && AvailableBenchmarkDrives.Count == 0)
+                    _ = LoadBenchmarkDrivesAsync();
+                else if (_activeSection == "HardwareSpecs" && HardwareSpecs.Count == 0)
+                    _ = LoadHardwareSpecsAsync();
+                else if (_activeSection == "UsbForensics" && UsbHistoryItems.Count == 0)
+                    _ = LoadUsbHistoryAsync();
             }
         }
     }
@@ -613,6 +667,11 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsPackageCachesSection => ActiveSection == "PackageCaches";
     public bool IsRestoreGodModeSection => ActiveSection == "RestoreGodMode";
     public bool IsFileAssocSection => ActiveSection == "FileAssoc";
+    public bool IsPortHunterSection => ActiveSection == "PortHunter";
+    public bool IsBloatwareSection => ActiveSection == "Bloatware";
+    public bool IsDiskBenchSection => ActiveSection == "DiskBench";
+    public bool IsHardwareSpecsSection => ActiveSection == "HardwareSpecs";
+    public bool IsUsbForensicsSection => ActiveSection == "UsbForensics";
     public bool IsSettingsSection => ActiveSection == "Settings";
 
     public string SectionTitle => ActiveSection switch
@@ -644,6 +703,11 @@ public class MainViewModel : INotifyPropertyChanged
         "PackageCaches" => "WSL2 / Docker VHDX & Küresel Paket Önbelleği (NuGet, NPM, Pip, Gradle) Kurtarıcısı",
         "RestoreGodMode" => "Sistem Geri Yükleme Noktası (Restore Point) & Windows God Mode Merkezi",
         "FileAssoc" => "Dosya Uzantısı & Varsayılan Program (UserChoice) Doktoru",
+        "PortHunter" => "Geliştirici Port Avcısı (Port Killer - Hangi Portu Kim Kullanıyor?)",
+        "Bloatware" => "Windows 10/11 Önyüklü Bloatware (UWP Appx) Kaldırıcı",
+        "DiskBench" => "Canlı SSD / NVMe Disk Okuma & Yazma Hız Testi (Benchmark)",
+        "HardwareSpecs" => "Derin Donanım Envanteri, BIOS & OEM Windows Lisans Anahtarı",
+        "UsbForensics" => "USB Depolama Geçmişi (USBSTOR Adli Analiz) & İz Temizleyici",
         "Settings" => "Beyaz Liste (İstisnalar), Otomasyon & Raporlama",
         _ => "Akıllı Temizlik & Tüm Kategoriler"
     };
@@ -3013,6 +3077,242 @@ public class MainViewModel : INotifyPropertyChanged
         _ = LoadFileAssociationsAsync();
         StatusMessage = $"{count} dosya uzantısının OpenWith / UserChoice kaydı sıfırlandı.";
         AddLog($"[DOSYA UZANTILARI] {count} uzantı sıfırlandı.");
+    }
+
+    // ==================== 24. 6TH GEN PORT HUNTER, BLOATWARE, BENCHMARK, HARDWARE & USB ====================
+
+    public string PortFilterText
+    {
+        get => _portFilterText;
+        set
+        {
+            if (_portFilterText != value)
+            {
+                _portFilterText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string BenchmarkDriveRoot
+    {
+        get => _benchmarkDriveRoot;
+        set
+        {
+            if (_benchmarkDriveRoot != value)
+            {
+                _benchmarkDriveRoot = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public BenchmarkDriveOption? SelectedBenchmarkDrive
+    {
+        get => _selectedBenchmarkDrive;
+        set
+        {
+            if (_selectedBenchmarkDrive != value)
+            {
+                _selectedBenchmarkDrive = value;
+                OnPropertyChanged();
+                if (value is not null)
+                {
+                    BenchmarkDriveRoot = value.DriveRoot;
+                }
+            }
+        }
+    }
+
+    public int BenchmarkBlockSizeMb
+    {
+        get => _benchmarkBlockSizeMb;
+        set
+        {
+            if (_benchmarkBlockSizeMb != value)
+            {
+                _benchmarkBlockSizeMb = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private async Task LoadBenchmarkDrivesAsync()
+    {
+        IsBusy = true;
+        AvailableBenchmarkDrives.Clear();
+        StatusMessage = "Sistemdeki tüm SSD / NVMe / sabit sürücüler ve fiziksel disk modelleri taranıyor...";
+        try
+        {
+            var drives = await SixthGenHardwareAndDevSuiteService.GetAvailableBenchmarkDrivesAsync();
+            foreach (var d in drives)
+                AvailableBenchmarkDrives.Add(d);
+
+            SelectedBenchmarkDrive = AvailableBenchmarkDrives.FirstOrDefault();
+            StatusMessage = $"Disk Hız Testi için {AvailableBenchmarkDrives.Count} aktif sürücü listelendi.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadListeningPortsAsync()
+    {
+        IsBusy = true;
+        ListeningPorts.Clear();
+        StatusMessage = "Dinlenen (LISTENING) TCP/UDP portları ve bunları tutan işlemler (PID) sorgulanıyor...";
+        try
+        {
+            var ports = await SixthGenHardwareAndDevSuiteService.GetListeningPortsAsync(PortFilterText);
+            foreach (var p in ports)
+                ListeningPorts.Add(p);
+
+            StatusMessage = $"Port Avcısı: {ListeningPorts.Count} aktif dinlenen port ve işlem listelendi.";
+            AddLog($"[PORT AVCISI] {ListeningPorts.Count} dinlenen port listelendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task KillPortAndRefreshAsync(ListeningPortItem item)
+    {
+        var confirm = MessageBox.Show(
+            $"Port {item.PortNumber} ({item.Protocol}) şu anda '{item.ProcessName}' (PID: {item.ProcessId}) tarafından kullanılıyor.\n\nBu işlemi sonlandırıp portu serbest bırakmak istiyor musunuz?",
+            "Portu Boşalt (Kill Process)",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        if (SixthGenHardwareAndDevSuiteService.KillProcessByPortPid(item.ProcessId, item.PortNumber, out string msg))
+        {
+            StatusMessage = msg;
+            AddLog($"[PORT AVCISI] {msg}");
+            await LoadListeningPortsAsync();
+        }
+        else
+        {
+            MessageBox.Show(msg, "Port Avcısı Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private async Task LoadAppxBloatwareAsync()
+    {
+        IsBusy = true;
+        AppxBloatwareItems.Clear();
+        StatusMessage = "Windows 10/11 önyüklü mağaza uygulamaları (Get-AppxPackage) taranıyor...";
+        try
+        {
+            var pkgs = await SixthGenHardwareAndDevSuiteService.ScanAppxBloatwareAsync();
+            foreach (var pkg in pkgs)
+                AppxBloatwareItems.Add(pkg);
+
+            int bloatCount = pkgs.Count(x => x.IsSelected);
+            StatusMessage = $"Bloatware Tarayıcı: {pkgs.Count} UWP paketi listelendi ({bloatCount} adet önerilen bloatware işaretlendi).";
+            AddLog($"[BLOATWARE] {pkgs.Count} Appx paketi bulundu.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task RunRemoveSelectedAppxAsync()
+    {
+        var selected = AppxBloatwareItems.Where(x => x.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        var confirm = MessageBox.Show(
+            $"Seçili {selected.Count} Windows mağaza uygulaması (Appx) kaldırılacak.\n\nDevam edilsin mi?",
+            "Bloatware Kaldırıcı",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        IsBusy = true;
+        StatusMessage = $"Seçili {selected.Count} Appx paketi kaldırılıyor (Remove-AppxPackage)...";
+        try
+        {
+            int removed = await SixthGenHardwareAndDevSuiteService.RemoveSelectedAppxPackagesAsync(selected);
+            await LoadAppxBloatwareAsync();
+            StatusMessage = $"{removed} adet Windows mağaza uygulaması (Bloatware) başarıyla kaldırıldı.";
+            AddLog($"[BLOATWARE] {removed} Appx paketi sistemden kaldırıldı.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteDiskBenchmarkAsync()
+    {
+        IsBusy = true;
+        StatusMessage = $"'{BenchmarkDriveRoot}' sürücüsünde {BenchmarkBlockSizeMb} MB sıralı Yazma ve Okuma hız testi (Benchmark) yapılıyor...";
+        AddLog($"[DİSK HIZ TESTİ] {BenchmarkDriveRoot} üzerinde {BenchmarkBlockSizeMb} MB okuma/yazma testi başlatıldı...");
+        try
+        {
+            var res = await SixthGenHardwareAndDevSuiteService.RunDiskBenchmarkAsync(BenchmarkDriveRoot, BenchmarkBlockSizeMb);
+            DiskBenchmarkResults.Insert(0, res);
+            StatusMessage = $"Disk Hız Testi Tamamlandı! Yazma: {res.WriteFormatted} • Okuma: {res.ReadFormatted} ({res.PerformanceGrade})";
+            AddLog($"[DİSK HIZ TESTİ] {res.DriveName} -> Yazma: {res.WriteFormatted}, Okuma: {res.ReadFormatted} ({res.PerformanceGrade})");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadHardwareSpecsAsync()
+    {
+        IsBusy = true;
+        HardwareSpecs.Clear();
+        StatusMessage = "İşlemci, Anakart, BIOS, RAM MHz, GPU ve OEM Windows Ürün Anahtarı bilgileri okunuyor...";
+        try
+        {
+            var specs = await SixthGenHardwareAndDevSuiteService.GetHardwareAndLicenseInventoryAsync();
+            foreach (var s in specs)
+                HardwareSpecs.Add(s);
+            StatusMessage = $"Donanım & Lisans Envanteri: {HardwareSpecs.Count} donanım bileşeni ve lisans kaydı okundu.";
+            AddLog($"[DONANIM & BIOS] {HardwareSpecs.Count} donanım bileşeni listelendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadUsbHistoryAsync()
+    {
+        IsBusy = true;
+        UsbHistoryItems.Clear();
+        StatusMessage = "Bilgisayara bugüne kadar takılmış USB depolama aygıtları (HKLM\\...\\USBSTOR) taranıyor...";
+        try
+        {
+            var items = await SixthGenHardwareAndDevSuiteService.ScanUsbStorageHistoryAsync();
+            foreach (var item in items)
+                UsbHistoryItems.Add(item);
+            StatusMessage = $"USB Adli Analiz: Geçmişte takılmış {UsbHistoryItems.Count} USB depolama cihazı tespit edildi.";
+            AddLog($"[USB GEÇMİŞİ] {UsbHistoryItems.Count} USBSTOR cihaz kaydı bulundu.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ExecuteCleanUsbHistory()
+    {
+        var selected = UsbHistoryItems.Where(x => x.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        int cleaned = SixthGenHardwareAndDevSuiteService.CleanSelectedUsbHistory(selected);
+        _ = LoadUsbHistoryAsync();
+        StatusMessage = $"{cleaned} USB cihaz geçmiş kaydı temizlendi (Yönetici izni gerektirebilir).";
+        AddLog($"[USB GEÇMİŞİ] {cleaned} USBSTOR kaydı silindi.");
     }
 
     private void OpenFileLocation(object? parameter)

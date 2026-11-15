@@ -289,8 +289,8 @@ public static class NextGenForensicsAndRescueService
         {
             var psi = new ProcessStartInfo
             {
-                FileName = "netsh.exe",
-                Arguments = args,
+                FileName = "cmd.exe",
+                Arguments = $"/c \"chcp 65001 >nul && netsh.exe {args}\"",
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 CreateNoWindow = true,
@@ -448,10 +448,11 @@ public static class NextGenForensicsAndRescueService
                 var psi = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = "-NoProfile -Command \"Get-ComputerRestorePoint | ForEach-Object { \\\"$($_.SequenceNumber)|$($_.Description)|$($_.CreationTime)|$($_.RestorePointType)\\\" }\"",
+                    Arguments = "-NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ComputerRestorePoint | ForEach-Object { \\\"$($_.SequenceNumber)|$($_.Description)|$($_.CreationTime)|$($_.RestorePointType)\\\" }\"",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    StandardOutputEncoding = Encoding.UTF8
                 };
                 using var proc = Process.Start(psi);
                 if (proc is not null)

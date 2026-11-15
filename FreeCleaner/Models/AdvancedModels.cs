@@ -667,3 +667,96 @@ public class FileAssociationItem : INotifyPropertyChanged
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
+
+public class ListeningPortItem
+{
+    public required string Protocol { get; init; }
+    public required string LocalAddress { get; init; }
+    public required int PortNumber { get; init; }
+    public required int ProcessId { get; init; }
+    public required string ProcessName { get; init; }
+    public required string PortBadge { get; init; }
+}
+
+public class AppxBloatwareItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+
+    public required string Name { get; init; }
+    public required string PackageFullName { get; init; }
+    public required string Version { get; init; }
+    public required string CategoryBadge { get; init; }
+    public required string InstallLocation { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class DiskBenchmarkResultItem
+{
+    public required string DriveName { get; init; }
+    public required int TestBlockSizeMb { get; init; }
+    public required double WriteSpeedMbps { get; init; }
+    public required double ReadSpeedMbps { get; init; }
+    public required string PerformanceGrade { get; init; }
+    public required string TestedAt { get; init; }
+
+    public string WriteFormatted => $"{WriteSpeedMbps:F1} MB/sn";
+    public string ReadFormatted => $"{ReadSpeedMbps:F1} MB/sn";
+}
+
+public class HardwareSpecItem
+{
+    public required string ComponentCategory { get; init; }
+    public required string ComponentName { get; init; }
+    public required string PrimaryValue { get; init; }
+    public required string SecondaryDetails { get; init; }
+}
+
+public class UsbHistoryItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+
+    public required string FriendlyName { get; init; }
+    public required string VendorAndProduct { get; init; }
+    public required string SerialNumber { get; init; }
+    public required string RegistrySubKeyPath { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class BenchmarkDriveOption
+{
+    public required string DriveRoot { get; init; }
+    public required string DisplayTitle { get; init; }
+    public override string ToString() => DisplayTitle;
+}

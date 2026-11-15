@@ -460,11 +460,12 @@ public static class PrivacyAndNetworkShieldService
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = "schtasks.exe",
-                    Arguments = "/Query /FO CSV /NH",
+                    FileName = "cmd.exe",
+                    Arguments = "/c \"chcp 65001 >nul && schtasks.exe /Query /FO CSV /NH\"",
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    RedirectStandardOutput = true
+                    RedirectStandardOutput = true,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8
                 };
 
                 using var proc = Process.Start(psi);

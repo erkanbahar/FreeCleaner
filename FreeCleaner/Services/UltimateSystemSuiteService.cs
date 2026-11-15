@@ -355,10 +355,11 @@ public static class UltimateSystemSuiteService
                 var psi = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = "-NoProfile -Command \"Get-PhysicalDisk | Select-Object FriendlyName,MediaType,HealthStatus,OperationalStatus,Size,BusType | ConvertTo-Json -Compress\"",
+                    Arguments = "-NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-PhysicalDisk | Select-Object FriendlyName,MediaType,HealthStatus,OperationalStatus,Size,BusType | ConvertTo-Json -Compress\"",
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    RedirectStandardOutput = true
+                    RedirectStandardOutput = true,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8
                 };
 
                 using var proc = Process.Start(psi);
@@ -434,11 +435,12 @@ public static class UltimateSystemSuiteService
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = "powercfg.exe",
-                    Arguments = "/list",
+                    FileName = "cmd.exe",
+                    Arguments = "/c \"chcp 65001 >nul && powercfg.exe /list\"",
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    RedirectStandardOutput = true
+                    RedirectStandardOutput = true,
+                    StandardOutputEncoding = System.Text.Encoding.UTF8
                 };
                 using var proc = Process.Start(psi);
                 if (proc is not null)

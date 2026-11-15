@@ -291,10 +291,11 @@ public static class EnterprisePowerToolsService
                 var psi = new ProcessStartInfo
                 {
                     FileName = "powershell.exe",
-                    Arguments = "-NoProfile -Command \"Get-HotFix | Select-Object HotFixID,Description,InstalledBy,InstalledOn | ConvertTo-Json -Compress\"",
+                    Arguments = "-NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-HotFix | Select-Object HotFixID,Description,InstalledBy,InstalledOn | ConvertTo-Json -Compress\"",
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    RedirectStandardOutput = true
+                    RedirectStandardOutput = true,
+                    StandardOutputEncoding = Encoding.UTF8
                 };
                 using var proc = Process.Start(psi);
                 if (proc is not null)
@@ -323,11 +324,12 @@ public static class EnterprisePowerToolsService
             {
                 var psi = new ProcessStartInfo
                 {
-                    FileName = "pnputil.exe",
-                    Arguments = "/enum-drivers",
+                    FileName = "cmd.exe",
+                    Arguments = "/c \"chcp 65001 >nul && pnputil.exe /enum-drivers\"",
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    RedirectStandardOutput = true
+                    RedirectStandardOutput = true,
+                    StandardOutputEncoding = Encoding.UTF8
                 };
                 using var proc = Process.Start(psi);
                 if (proc is not null)
