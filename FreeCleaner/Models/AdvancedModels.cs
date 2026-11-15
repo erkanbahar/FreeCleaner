@@ -943,3 +943,113 @@ public class VolumeSecurityAndMountItem
     public required string BackingImagePath { get; init; }
     public required bool CanDismount { get; init; }
 }
+
+
+// ==================== 9TH GENERATION WINGET UPDATER, LAN RADAR, SQLITE OPTIMIZER, CREDENTIAL/SSH & CPU PRIORITY MODELS ====================
+
+public class WingetUpgradeItem : INotifyPropertyChanged
+{
+    private bool _isSelected = true;
+
+    public required string PackageName { get; init; }
+    public required string PackageId { get; init; }
+    public required string InstalledVersion { get; init; }
+    public required string AvailableVersion { get; init; }
+    public required string SourceName { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class LanDeviceItem
+{
+    public required string IpAddress { get; init; }
+    public required string MacAddress { get; init; }
+    public required string Hostname { get; init; }
+    public required string VendorName { get; init; }
+    public required string PingStatus { get; init; }
+    public required string DeviceRoleBadge { get; init; }
+}
+
+public class SqliteDatabaseItem : INotifyPropertyChanged
+{
+    private bool _isSelected = true;
+
+    public required string AppName { get; init; }
+    public required string DatabaseName { get; init; }
+    public required string FullFilePath { get; init; }
+    public required long TotalSizeBytes { get; init; }
+    public required long ReclaimableBytes { get; init; }
+    public required string HealthDetails { get; init; }
+    public string FormattedTotalSize => CleanerRule.FormatBytes(TotalSizeBytes);
+    public string FormattedReclaimable => CleanerRule.FormatBytes(ReclaimableBytes);
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class CredentialOrSshItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+
+    public required string Category { get; init; }
+    public required string TargetOrKeyName { get; init; }
+    public required string UserOrType { get; init; }
+    public required string DetailsOrPublicKey { get; init; }
+    public required bool CanDeleteFromVault { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class ProcessPriorityItem
+{
+    public required int ProcessId { get; init; }
+    public required string ProcessName { get; init; }
+    public required string PriorityBadge { get; init; }
+    public required int ThreadCount { get; init; }
+    public required string RamFormatted { get; init; }
+    public required string CpuTimeFormatted { get; init; }
+}

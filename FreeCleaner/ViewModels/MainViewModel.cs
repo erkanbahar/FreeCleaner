@@ -131,6 +131,11 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<FileHashAndVaultResultItem> CryptoVaultResults { get; } = [];
     public ObservableCollection<WindowsTweakItem> WindowsTweaks { get; } = [];
     public ObservableCollection<VolumeSecurityAndMountItem> VolumeSecurityItems { get; } = [];
+    public ObservableCollection<WingetUpgradeItem> WingetUpgrades { get; } = [];
+    public ObservableCollection<LanDeviceItem> LanDevices { get; } = [];
+    public ObservableCollection<SqliteDatabaseItem> SqliteDatabases { get; } = [];
+    public ObservableCollection<CredentialOrSshItem> CredentialsAndSshItems { get; } = [];
+    public ObservableCollection<ProcessPriorityItem> ProcessPriorityItems { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -314,6 +319,21 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand RefreshVolumesAndBitLockerCommand { get; }
     public ICommand BrowseAndMountDiskImageCommand { get; }
     public ICommand DismountVolumeItemCommand { get; }
+
+    // 9th Gen Winget Updater, LAN Device Radar, SQLite Optimizer, Credential/SSH & CPU Priority Commands
+    public ICommand ScanWingetUpgradesCommand { get; }
+    public ICommand UpgradeSelectedWingetCommand { get; }
+    public ICommand UpgradeAllWingetCommand { get; }
+    public ICommand ScanLanDevicesCommand { get; }
+    public ICommand ScanSqliteDatabasesCommand { get; }
+    public ICommand OptimizeSqliteDatabasesCommand { get; }
+    public ICommand ScanCredentialsAndSshCommand { get; }
+    public ICommand DeleteSelectedCredentialsCommand { get; }
+    public ICommand CopyCredentialOrSshValueCommand { get; }
+    public ICommand RefreshProcessPriorityListCommand { get; }
+    public ICommand SetProcessHighPriorityCommand { get; }
+    public ICommand SetProcessNormalPriorityCommand { get; }
+    public ICommand SetProcessEcoPriorityCommand { get; }
 
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
@@ -633,6 +653,40 @@ public class MainViewModel : INotifyPropertyChanged
                 await ExecuteDismountVolumeAsync(vol);
         }, _ => !IsBusy);
 
+        // 9th Gen Commands initialization
+        ScanWingetUpgradesCommand = new RelayCommand(async _ => await LoadWingetUpgradesAsync(), _ => !IsBusy);
+        UpgradeSelectedWingetCommand = new RelayCommand(async _ => await ExecuteWingetUpgradeAsync(upgradeAll: false), _ => !IsBusy && WingetUpgrades.Any(x => x.IsSelected));
+        UpgradeAllWingetCommand = new RelayCommand(async _ => await ExecuteWingetUpgradeAsync(upgradeAll: true), _ => !IsBusy);
+        ScanLanDevicesCommand = new RelayCommand(async _ => await LoadLanDevicesAsync(), _ => !IsBusy);
+        ScanSqliteDatabasesCommand = new RelayCommand(async _ => await LoadSqliteDatabasesAsync(), _ => !IsBusy);
+        OptimizeSqliteDatabasesCommand = new RelayCommand(async _ => await ExecuteOptimizeSqliteDatabasesAsync(), _ => !IsBusy && SqliteDatabases.Any(x => x.IsSelected));
+        ScanCredentialsAndSshCommand = new RelayCommand(async _ => await LoadCredentialsAndSshAsync(), _ => !IsBusy);
+        DeleteSelectedCredentialsCommand = new RelayCommand(_ => ExecuteDeleteSelectedCredentials(), _ => !IsBusy && CredentialsAndSshItems.Any(x => x.IsSelected && x.CanDeleteFromVault));
+        CopyCredentialOrSshValueCommand = new RelayCommand(param =>
+        {
+            if (param is CredentialOrSshItem item && !string.IsNullOrWhiteSpace(item.DetailsOrPublicKey))
+            {
+                Clipboard.SetText(item.DetailsOrPublicKey);
+                StatusMessage = $"'{item.TargetOrKeyName}' detayı / açık anahtarı panoya kopyalandı!";
+            }
+        });
+        RefreshProcessPriorityListCommand = new RelayCommand(async _ => await LoadProcessPriorityItemsAsync(), _ => !IsBusy);
+        SetProcessHighPriorityCommand = new RelayCommand(async param =>
+        {
+            if (param is ProcessPriorityItem item)
+                await ChangeProcessPriorityAndRefreshAsync(item, ProcessPriorityClass.High);
+        }, _ => !IsBusy);
+        SetProcessNormalPriorityCommand = new RelayCommand(async param =>
+        {
+            if (param is ProcessPriorityItem item)
+                await ChangeProcessPriorityAndRefreshAsync(item, ProcessPriorityClass.Normal);
+        }, _ => !IsBusy);
+        SetProcessEcoPriorityCommand = new RelayCommand(async param =>
+        {
+            if (param is ProcessPriorityItem item)
+                await ChangeProcessPriorityAndRefreshAsync(item, ProcessPriorityClass.Idle);
+        }, _ => !IsBusy);
+
         // Background Auto-Monitor Timer (checks every 5 minutes if enabled)
         _autoMonitorTimer = new DispatcherTimer
         {
@@ -642,7 +696,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();
 
-        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 41 uzman modül kullanıma hazır.");
+        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 46 uzman modül kullanıma hazır.");
     }
 
     public SystemMetricsSnapshot SystemMetrics
@@ -708,6 +762,11 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsCryptoVaultSection));
                 OnPropertyChanged(nameof(IsWin11TweakerSection));
                 OnPropertyChanged(nameof(IsBitLockerSection));
+                OnPropertyChanged(nameof(IsWingetUpdaterSection));
+                OnPropertyChanged(nameof(IsLanScannerSection));
+                OnPropertyChanged(nameof(IsSqliteOptimizerSection));
+                OnPropertyChanged(nameof(IsCredentialSshSection));
+                OnPropertyChanged(nameof(IsProcessPrioritySection));
                 OnPropertyChanged(nameof(IsSettingsSection));
                 OnPropertyChanged(nameof(SectionTitle));
 
@@ -785,6 +844,16 @@ public class MainViewModel : INotifyPropertyChanged
                     LoadWindowsTweaks();
                 else if (_activeSection == "BitLocker" && VolumeSecurityItems.Count == 0)
                     _ = LoadVolumeSecurityAndMountsAsync();
+                else if (_activeSection == "WingetUpdater" && WingetUpgrades.Count == 0)
+                    _ = LoadWingetUpgradesAsync();
+                else if (_activeSection == "LanScanner" && LanDevices.Count == 0)
+                    _ = LoadLanDevicesAsync();
+                else if (_activeSection == "SqliteOptimizer" && SqliteDatabases.Count == 0)
+                    _ = LoadSqliteDatabasesAsync();
+                else if (_activeSection == "CredentialSsh" && CredentialsAndSshItems.Count == 0)
+                    _ = LoadCredentialsAndSshAsync();
+                else if (_activeSection == "ProcessPriority" && ProcessPriorityItems.Count == 0)
+                    _ = LoadProcessPriorityItemsAsync();
             }
         }
     }
@@ -834,6 +903,11 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsCryptoVaultSection => ActiveSection == "CryptoVault";
     public bool IsWin11TweakerSection => ActiveSection == "Win11Tweaker";
     public bool IsBitLockerSection => ActiveSection == "BitLocker";
+    public bool IsWingetUpdaterSection => ActiveSection == "WingetUpdater";
+    public bool IsLanScannerSection => ActiveSection == "LanScanner";
+    public bool IsSqliteOptimizerSection => ActiveSection == "SqliteOptimizer";
+    public bool IsCredentialSshSection => ActiveSection == "CredentialSsh";
+    public bool IsProcessPrioritySection => ActiveSection == "ProcessPriority";
     public bool IsSettingsSection => ActiveSection == "Settings";
 
     public string SectionTitle => ActiveSection switch
@@ -880,6 +954,11 @@ public class MainViewModel : INotifyPropertyChanged
         "CryptoVault" => "AES-256-GCM Dosya Şifreleme Kasası (.fcvault) & Çoklu Hash (MD5/SHA256/SHA512) Doğrulayıcı",
         "Win11Tweaker" => "Windows 11 İnce Ayar (Ultimate Tweaker) & Explorer Hızlandırıcı",
         "BitLocker" => "BitLocker Durum Denetçisi & Bağlı ISO / VHD Sanal Disk Yöneticisi",
+        "WingetUpdater" => "Winget Toplu Program Güncelleyici (One-Click Software Updater)",
+        "LanScanner" => "Yerel Ağ (LAN / Wi-Fi) Cihaz Radarı & ARP/Ping Tarayıcı",
+        "SqliteOptimizer" => "Tarayıcı & IDE SQLite Veritabanı Sıkıştırıcı (Zero-Data-Loss Optimizer)",
+        "CredentialSsh" => "Windows Kimlik Kasası (cmdkey) & SSH / Git Anahtar Denetçisi",
+        "ProcessPriority" => "Canlı CPU Önceliği (Process Priority) & Verimlilik Modu (EcoQoS) Yöneticisi",
         "Settings" => "Beyaz Liste (İstisnalar), Otomasyon & Raporlama",
         _ => "Akıllı Temizlik & Tüm Kategoriler"
     };
@@ -4138,6 +4217,156 @@ public class MainViewModel : INotifyPropertyChanged
         {
             IsBusy = false;
         }
+    }
+
+    // ==================== 15. 9TH GEN WINGET UPDATER, LAN RADAR, SQLITE OPTIMIZER, CREDENTIAL/SSH & CPU PRIORITY ====================
+
+    private async Task LoadWingetUpgradesAsync()
+    {
+        IsBusy = true;
+        WingetUpgrades.Clear();
+        StatusMessage = "Windows Paket Yöneticisi (winget upgrade) üzerinden güncellenebilir programlar taranıyor...";
+        try
+        {
+            var items = await NinthGenWingetAndNetworkSuiteService.ScanWingetUpgradesAsync();
+            foreach (var item in items)
+                WingetUpgrades.Add(item);
+            StatusMessage = $"Winget Güncelleyici: Yeni sürümü çıkmış {WingetUpgrades.Count} program tespit edildi.";
+            AddLog($"[WINGET UPDATER] {WingetUpgrades.Count} güncellenebilir paket bulundu.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteWingetUpgradeAsync(bool upgradeAll)
+    {
+        IsBusy = true;
+        StatusMessage = upgradeAll
+            ? "Sistemdeki tüm programlar Winget ile en son sürüme güncelleniyor..."
+            : "Seçili programlar Winget ile sessizce (--silent) güncelleniyor...";
+        try
+        {
+            var (_, msg) = await NinthGenWingetAndNetworkSuiteService.UpgradeSelectedWingetPackagesAsync(WingetUpgrades, upgradeAll);
+            StatusMessage = msg;
+            AddLog($"[WINGET UPDATER] {msg}");
+            await LoadWingetUpgradesAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadLanDevicesAsync()
+    {
+        IsBusy = true;
+        LanDevices.Clear();
+        StatusMessage = "Yerel ağ (LAN / Wi-Fi) /24 alt ağına paralel Ping ve ARP taraması yapılıyor...";
+        try
+        {
+            var items = await NinthGenWingetAndNetworkSuiteService.ScanLocalNetworkDevicesAsync();
+            foreach (var item in items)
+                LanDevices.Add(item);
+            StatusMessage = $"Yerel Ağ Cihaz Radarı: Ağınızda {LanDevices.Count} aktif cihaz ve ARP kaydı tespit edildi.";
+            AddLog($"[LAN RADAR] {LanDevices.Count} yerel ağ cihazı listelendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadSqliteDatabasesAsync()
+    {
+        IsBusy = true;
+        SqliteDatabases.Clear();
+        StatusMessage = "Chrome, Edge, Brave, Firefox, VS Code ve Cursor SQLite3 veritabanları analiz ediliyor...";
+        try
+        {
+            var items = await NinthGenWingetAndNetworkSuiteService.ScanSqliteDatabasesAsync();
+            foreach (var item in items)
+                SqliteDatabases.Add(item);
+            long totalReclaim = SqliteDatabases.Sum(x => x.ReclaimableBytes);
+            StatusMessage = $"SQLite Sıkıştırıcı: {SqliteDatabases.Count} veritabanı incelendi ({CleanerRule.FormatBytes(totalReclaim)} boş sayfa / WAL şişkinliği).";
+            AddLog($"[SQLITE OPTIMIZER] {SqliteDatabases.Count} veritabanı bulundu ({CleanerRule.FormatBytes(totalReclaim)} kazanılabilir).");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteOptimizeSqliteDatabasesAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var (count, freed, msg) = await NinthGenWingetAndNetworkSuiteService.OptimizeSelectedSqliteDatabasesAsync(SqliteDatabases);
+            LastFreedBytes += freed;
+            LastDeletedFiles += count;
+            StatusMessage = msg;
+            AddLog($"[SQLITE OPTIMIZER] {msg}");
+            await LoadSqliteDatabasesAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadCredentialsAndSshAsync()
+    {
+        IsBusy = true;
+        CredentialsAndSshItems.Clear();
+        StatusMessage = "Windows Kimlik Bilgisi Yöneticisi (cmdkey) ve ~/.ssh anahtarları denetleniyor...";
+        try
+        {
+            var items = await NinthGenWingetAndNetworkSuiteService.ScanCredentialsAndSshKeysAsync();
+            foreach (var item in items)
+                CredentialsAndSshItems.Add(item);
+            StatusMessage = $"Kimlik & SSH Denetçisi: {CredentialsAndSshItems.Count} kayıtlı kimlik hedefi ve SSH anahtarı listelendi.";
+            AddLog($"[KİMLİK & SSH] {CredentialsAndSshItems.Count} öğe denetlendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ExecuteDeleteSelectedCredentials()
+    {
+        int deleted = NinthGenWingetAndNetworkSuiteService.DeleteSelectedCredentials(CredentialsAndSshItems);
+        StatusMessage = $"{deleted} kayıtlı kimlik bilgisi Windows Kasası'ndan (cmdkey) silindi.";
+        AddLog($"[KİMLİK KASASI] {deleted} kimlik kaydı temizlendi.");
+        _ = LoadCredentialsAndSshAsync();
+    }
+
+    private async Task LoadProcessPriorityItemsAsync()
+    {
+        IsBusy = true;
+        ProcessPriorityItems.Clear();
+        StatusMessage = "Çalışan uygulamaların canlı CPU önceliği ve bellek kullanımları okunuyor...";
+        try
+        {
+            var items = await NinthGenWingetAndNetworkSuiteService.GetActiveProcessesForPriorityAsync();
+            foreach (var item in items)
+                ProcessPriorityItems.Add(item);
+            StatusMessage = $"Canlı CPU Önceliği & EcoQoS Yöneticisi: {ProcessPriorityItems.Count} aktif işlem listelendi.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ChangeProcessPriorityAndRefreshAsync(ProcessPriorityItem item, ProcessPriorityClass newPriority)
+    {
+        var (_, msg) = NinthGenWingetAndNetworkSuiteService.SetProcessPriorityLevel(item.ProcessId, newPriority);
+        StatusMessage = msg;
+        AddLog($"[CPU ÖNCELİĞİ] {msg}");
+        await LoadProcessPriorityItemsAsync();
     }
 
     private void OpenFileLocation(object? parameter)

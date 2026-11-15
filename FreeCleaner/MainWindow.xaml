@@ -637,6 +637,62 @@
                             </StackPanel>
                         </RadioButton>
 
+                        <TextBlock Text="OTOMASYON, AĞ RADARI &amp; DB"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="12,14,0,6"/>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsWingetUpdaterSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="WingetUpdater">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Winget Program Güncelleyici" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsLanScannerSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="LanScanner">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Yerel Ağ (LAN / Wi-Fi) Radarı" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsSqliteOptimizerSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="SqliteOptimizer">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xEE94;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="SQLite Veritabanı Sıkıştırıcı" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsCredentialSshSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="CredentialSsh">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Kimlik Kasası &amp; SSH Denetçisi" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsProcessPrioritySection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="ProcessPriority">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xEC4A;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Canlı CPU Önceliği &amp; Eco Mod" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                      IsChecked="{Binding IsSettingsSection, Mode=OneWay}"
                                      Command="{Binding SelectSectionCommand}"
@@ -4653,6 +4709,367 @@
                                                     FontSize="11"
                                                     Command="{Binding DataContext.DismountVolumeItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 42: WINGET ONE-CLICK SOFTWARE UPDATER                                -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsWingetUpdaterSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="WINGET TOPLU PROGRAM GÜNCELLEYİCİ (ONE-CLICK SOFTWARE UPDATER)"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Windows Paket Yöneticisi (winget upgrade) ile eski sürümde kalmış tüm programları listeler ve tek tıkla sessizce (--silent) günceller."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="🔍 Güncellemeleri Tara"
+                                        Padding="13,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanWingetUpgradesCommand}"/>
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="🚀 Seçili Programları Güncelle"
+                                        Padding="13,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding UpgradeSelectedWingetCommand}"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="⚡ Tümünü Güncelle (--all)"
+                                        Padding="12,7"
+                                        Command="{Binding UpgradeAllWingetCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding WingetUpgrades}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Program Adı" Binding="{Binding PackageName}" IsReadOnly="True" Width="280"/>
+                                <DataGridTextColumn Header="Winget Paket Kimliği (ID)" Binding="{Binding PackageId}" IsReadOnly="True" Width="260"/>
+                                <DataGridTextColumn Header="Yüklü Sürüm" Binding="{Binding InstalledVersion}" IsReadOnly="True" Width="150"/>
+                                <DataGridTextColumn Header="Yeni Sürüm" Binding="{Binding AvailableVersion}" IsReadOnly="True" Width="150"/>
+                                <DataGridTextColumn Header="Kaynak" Binding="{Binding SourceName}" IsReadOnly="True" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 43: LOCAL NETWORK (LAN / WI-FI) DEVICE RADAR                         -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsLanScannerSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="YEREL AĞ (LAN / WI-FI) CİHAZ RADARI &amp; İZİNSİZ CİHAZ AVCISI"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Ağınıza bağlı tüm cihazları paralel Ping taraması ve ARP tablosu ile keşfeder; IP, MAC adresi, üretici türü ve gecikme süresini listeler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    Content="📡 Yerel Ağı Şimdi Tara (Ping &amp; ARP Sweep)"
+                                    Padding="14,7"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding ScanLanDevicesCommand}"/>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding LanDevices}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Cihaz Rolü / Durum" Binding="{Binding DeviceRoleBadge}" Width="210"/>
+                                <DataGridTextColumn Header="IPv4 Adresi" Binding="{Binding IpAddress}" Width="145"/>
+                                <DataGridTextColumn Header="Fiziksel Adres (MAC)" Binding="{Binding MacAddress}" Width="165"/>
+                                <DataGridTextColumn Header="Cihaz Adı / Host" Binding="{Binding Hostname}" Width="180"/>
+                                <DataGridTextColumn Header="Yanıt Süresi (Ping)" Binding="{Binding PingStatus}" Width="135"/>
+                                <DataGridTextColumn Header="MAC / Donanım Sınıfı" Binding="{Binding VendorName}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 44: BROWSER & IDE SQLITE DATABASE OPTIMIZER                          -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsSqliteOptimizerSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="TARAYICI &amp; IDE SQLITE VERİTABANI SIKIŞTIRICI (ZERO-DATA-LOSS OPTIMIZER)"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Chrome, Edge, Brave, Firefox, VS Code ve Cursor SQLite3 veritabanlarındaki boş sayfaları (freelist) ve WAL günlük şişkinliğini veri silmeden temizler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="🗄️ SQLite Veritabanlarını Analiz Et"
+                                        Padding="13,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanSqliteDatabasesCommand}"/>
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="⚡ Seçili Veritabanlarını Optimize Et"
+                                        Padding="13,7"
+                                        Command="{Binding OptimizeSqliteDatabasesCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding SqliteDatabases}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Uygulama / Tarayıcı" Binding="{Binding AppName}" IsReadOnly="True" Width="195"/>
+                                <DataGridTextColumn Header="Veritabanı Dosyası" Binding="{Binding DatabaseName}" IsReadOnly="True" Width="190"/>
+                                <DataGridTextColumn Header="Toplam Boyut" Binding="{Binding FormattedTotalSize}" IsReadOnly="True" Width="115"/>
+                                <DataGridTextColumn Header="Kazanılabilir" Binding="{Binding FormattedReclaimable}" IsReadOnly="True" Width="115"/>
+                                <DataGridTextColumn Header="SQLite Sayfa &amp; WAL Analizi" Binding="{Binding HealthDetails}" IsReadOnly="True" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 45: WINDOWS CREDENTIAL VAULT (CMDKEY) & SSH / GIT KEY AUDITOR        -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsCredentialSshSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="WINDOWS KİMLİK KASASI (CMDKEY) &amp; SSH / GİT ANAHTAR DENETÇİSİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Windows Credential Manager üzerinde kayıtlı sunucu/Git hedeflerini ve ~/.ssh klasöründeki açık/özel anahtarları denetler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="🔑 Kimlik Kasasını &amp; SSH Anahtarlarını Tara"
+                                        Padding="13,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanCredentialsAndSshCommand}"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="🗑️ Seçili Kimlik Kayıtlarını Sil"
+                                        Padding="13,7"
+                                        Command="{Binding DeleteSelectedCredentialsCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding CredentialsAndSshItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" IsReadOnly="True" Width="235"/>
+                                <DataGridTextColumn Header="Hedef / Anahtar Adı" Binding="{Binding TargetOrKeyName}" IsReadOnly="True" Width="260"/>
+                                <DataGridTextColumn Header="Kullanıcı / Konum" Binding="{Binding UserOrType}" IsReadOnly="True" Width="210"/>
+                                <DataGridTextColumn Header="Ayrıntılar / SSH Public Key" Binding="{Binding DetailsOrPublicKey}" IsReadOnly="True" Width="*"/>
+                                <DataGridTemplateColumn Header="Kopyala" Width="105">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                                    Content="Kopyala"
+                                                    Padding="8,3"
+                                                    FontSize="11"
+                                                    Command="{Binding DataContext.CopyCredentialOrSshValueCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 46: LIVE CPU PRIORITY & ECOQOS EFFICIENCY MANAGER                    -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsProcessPrioritySection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="CANLI CPU ÖNCELİĞİ (PROCESS PRIORITY) &amp; VERİMLİLİK MODU (ECOQOS) YÖNETİCİSİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Oyun ve IDE'lere Yüksek Öncelik (High Boost) verirken arka planda sistemi yoran işlemleri Düşük / Eco Moduna (Idle) alır."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    Content="🔄 İşlem Listesini Yenile"
+                                    Padding="14,7"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding RefreshProcessPriorityListCommand}"/>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding ProcessPriorityItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="70"/>
+                                <DataGridTextColumn Header="İşlem Adı" Binding="{Binding ProcessName}" Width="190"/>
+                                <DataGridTextColumn Header="Mevcut CPU Önceliği" Binding="{Binding PriorityBadge}" Width="240"/>
+                                <DataGridTextColumn Header="İş Parçacığı (Thread)" Binding="{Binding ThreadCount}" Width="135"/>
+                                <DataGridTextColumn Header="Bellek (RAM)" Binding="{Binding RamFormatted}" Width="115"/>
+                                <DataGridTextColumn Header="CPU Süresi" Binding="{Binding CpuTimeFormatted}" Width="105"/>
+                                <DataGridTemplateColumn Header="Hızlı Öncelik Değiştir" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                                        Content="⚡ Yüksek (Boost)"
+                                                        Padding="8,3"
+                                                        FontSize="11"
+                                                        Margin="0,0,6,0"
+                                                        Command="{Binding DataContext.SetProcessHighPriorityCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                                        Content="🟢 Normal"
+                                                        Padding="8,3"
+                                                        FontSize="11"
+                                                        Margin="0,0,6,0"
+                                                        Command="{Binding DataContext.SetProcessNormalPriorityCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                                <Button Style="{StaticResource CleanButtonStyle}"
+                                                        Content="🍃 Eco / Düşük"
+                                                        Padding="8,3"
+                                                        FontSize="11"
+                                                        Command="{Binding DataContext.SetProcessEcoPriorityCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
