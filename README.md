@@ -2,7 +2,7 @@
 
 **FreeCleaner Pro**, **.NET 10** ve **WPF (Modern Dark Fluent UI)** ile geliştirilmiş, tam kapsamlı sistem temizleme, bakım, güvenlik ve performans optimizasyon paketidir.
 
-## Öne Çıkan Modüller (21 Modül)
+## Öne Çıkan Modüller (26 Modül)
 
 1. **Sistem, Tarayıcı & Uygulama Temizleyici:** Windows Temp, Prefetch, Windows Update önbelleği, Chrome/Edge/Brave/Firefox önbellek ve çerezleri, Geri Dönüşüm Kutusu analizi ve güvenli temizliği (Simülasyon + Geri Dönüşüm Kutusuna Taşıma seçeneği).
 2. **Başlangıç (Startup) Yöneticisi:** Kayıt Defteri (`HKCU`/`HKLM Run`) ve Başlangıç klasörü uygulamalarını yönetme.
@@ -26,7 +26,12 @@
 18. **Tarayıcı Eklentileri (Extensions) Denetçisi:** Chrome, Edge, Brave ve Vivaldi uzantılarını denetleme ve kaldırma.
 19. **Windows Güncellemeleri (HotFix KB) & Sürücü Deposu (DriverStore):** Yüklü `KB` yamalarını ve `pnputil` OEM sürücü paketlerini listeleme.
 20. **Ortam Değişkeni (`PATH`) Doktoru & Kırık Kısayol (`.lnk`) Temizleyici:** Silinmiş/tekrarlanan `PATH` dizinlerini ve kırık kısayolları onarma.
-21. **Beyaz Liste (Exclusions) & HTML/JSON Raporlama:** Korunan klasörler ve detaylı sistem temizlik raporu çıktısı.
+21. **Mavi Ekran (BSOD), Uygulama Çökme & Olay Günlüğü (`EventLog`) Analizcisi:** `AppCrash 1000`, `Kernel-Power 41`, `BugCheck` olay kayıtlarını okuma ve `.dmp` çökme dökümlerini temizleme.
+22. **Kayıtlı Wi-Fi Şifre Görüntüleyici & Canlı DNS Ping Kıyaslayıcı:** Kayıtlı Wi-Fi ağ şifrelerini çözme ve küresel DNS sunucularına canlı Ping testi.
+23. **Küresel Paket Önbellekleri (NuGet / NPM / Pip / Gradle) & WSL2/Docker `VHDX` Analizcisi:** Küresel geliştirici önbelleklerini temizleme ve sanal disk boyutlarını görme.
+24. **Sistem Geri Yükleme Noktası (`Restore Point`) & Windows "God Mode" Merkezi:** Geri yükleme noktası oluşturma ve Masaüstünde Windows God Mode açma.
+25. **Dosya Uzantısı & Varsayılan Program (`UserChoice`) Doktoru:** Kayıt Defteri dosya uzantısı birlikteliklerini denetleme ve sıfırlama.
+26. **Beyaz Liste (Exclusions) & HTML/JSON Raporlama:** Korunan klasörler ve detaylı sistem temizlik raporu çıktısı.
 
 ## Gereksinimler ve Derleme
 

@@ -580,3 +580,90 @@ public class PathOrShortcutIssueItem : INotifyPropertyChanged
 
 
 
+
+public class CrashOrEventLogItem
+{
+    public required string Timestamp { get; init; }
+    public required string EventType { get; init; } // Uygulama Çökmesi, Sistem Hatası, Mavi Ekran (BSOD), Çökme Dökümü (.dmp)
+    public required string SourceOrApp { get; init; }
+    public required string EventIdOrSize { get; init; }
+    public required string MessageSummary { get; init; }
+    public string DumpFilePath { get; init; } = string.Empty;
+    public long DumpSizeBytes { get; init; }
+}
+
+public class WifiProfileAndDnsItem
+{
+    public required string ItemCategory { get; init; } // Kayıtlı Wi-Fi Ağı veya DNS Ping Kıyaslaması
+    public required string NameOrSsid { get; init; }
+    public required string SecurityOrIp { get; init; }
+    public required string PasswordOrLatency { get; init; }
+    public required string StatusBadge { get; init; }
+}
+
+public class GlobalPackageCacheItem : INotifyPropertyChanged
+{
+    private bool _isSelected = true;
+
+    public required string Ecosystem { get; init; } // NuGet, NPM, Pip, Yarn/PNPM, Gradle/Maven, WSL2 / Docker VHDX
+    public required string CacheName { get; init; }
+    public required string FolderPath { get; init; }
+    public required long SizeBytes { get; init; }
+    public required bool CanSafeDelete { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
+    public string SafetyLabel => CanSafeDelete ? "Güvenle Temizlenebilir Önbellek" : "Sanal Disk (Salt Okunur Bilgi)";
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class RestorePointItem
+{
+    public required string SequenceNumber { get; init; }
+    public required string Description { get; init; }
+    public required string CreationTime { get; init; }
+    public required string RestorePointType { get; init; }
+}
+
+public class FileAssociationItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+
+    public required string Extension { get; init; }
+    public required string CurrentProgId { get; init; }
+    public required string HandlerDescription { get; init; }
+    public required string StatusText { get; init; }
+    public required string RegistryKeyPath { get; init; }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}

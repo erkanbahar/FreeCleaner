@@ -5,75 +5,159 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:FreeCleaner.ViewModels"
         mc:Ignorable="d"
-        Title="FreeCleaner Pro (.NET 10) - Tam Kapsamlı Sistem Bakım &amp; Optimizasyon Paketi"
-        Height="820"
-        Width="1320"
-        MinHeight="680"
-        MinWidth="1080"
+        Title="FreeCleaner Pro (.NET 10) - Ultra Sistem Bakım &amp; Optimizasyon Paketi"
+        Height="860"
+        Width="1380"
+        MinHeight="700"
+        MinWidth="1120"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource BgPrimaryBrush}"
         Foreground="{StaticResource TextPrimaryBrush}"
         FontFamily="Segoe UI Variable Display, Segoe UI">
 
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0"
+                      CornerRadius="12"
+                      GlassFrameThickness="1"
+                      ResizeBorderThickness="6"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
     <Window.DataContext>
         <vm:MainViewModel/>
     </Window.DataContext>
 
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <!-- Left Navigation Sidebar -->
-            <ColumnDefinition Width="265"/>
-            <!-- Main Workspace -->
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+    <Border BorderBrush="#263654" BorderThickness="1" Background="{StaticResource BgPrimaryBrush}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <!-- Custom Modern Fluent Title / Command Bar -->
+                <RowDefinition Height="52"/>
+                <!-- Main Body -->
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <!-- ==================== LEFT SIDEBAR ==================== -->
-        <Border Grid.Column="0"
-                Background="{StaticResource BgSecondaryBrush}"
-                BorderBrush="{StaticResource BorderSubtleBrush}"
-                BorderThickness="0,0,1,0"
-                Padding="16,18">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+            <!-- ==================== TOP FLUENT COMMAND & TITLE BAR ==================== -->
+            <Border Grid.Row="0"
+                    Background="#0B111E"
+                    BorderBrush="#1E2B45"
+                    BorderThickness="0,0,0,1"
+                    MouseLeftButtonDown="HeaderBar_MouseLeftButtonDown"
+                    Padding="16,0,10,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- App Brand Header -->
-                <StackPanel Grid.Row="0" Margin="4,0,4,16">
-                    <StackPanel Orientation="Horizontal">
-                        <Border Width="38" Height="38" CornerRadius="10" Background="#1D4ED8" Margin="0,0,12,0">
+                    <!-- Brand Pill + Active Section Breadcrumb -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="30" Height="30" CornerRadius="8" Background="{StaticResource PrimaryGradientBrush}" Margin="0,0,10,0">
                             <TextBlock Text="&#xE945;"
                                        FontFamily="Segoe MDL2 Assets"
-                                       FontSize="20"
+                                       FontSize="15"
                                        Foreground="White"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>
                         </Border>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="FreeCleaner Pro" FontSize="19" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/>
-                            <TextBlock Text="{Binding AdminStatusBadge, Mode=OneWay}" FontSize="11.5" Foreground="{StaticResource AccentEmeraldBrush}"/>
-                        </StackPanel>
+                        <TextBlock Text="FREECLEANER" FontSize="13.5" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                        <Border Background="#17253E" BorderBrush="#2D4673" BorderThickness="1" CornerRadius="5" Padding="6,1" Margin="8,0,12,0" VerticalAlignment="Center">
+                            <TextBlock Text="PRO v4.0 • .NET 10" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentBlueBrush}"/>
+                        </Border>
+                        <TextBlock Text="›" FontSize="15" Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="{Binding SectionTitle}" FontSize="12.5" FontWeight="SemiBold" Foreground="#CBD5E1" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Yönetici Olarak Yeniden Başlat"
-                            FontSize="11"
-                            Padding="8,5"
-                            Margin="0,8,0,0"
-                            Command="{Binding RestartAsAdminCommand}"
-                            Visibility="{Binding IsNotAdmin, Mode=OneWay, Converter={StaticResource BoolToVis}}"/>
-                </StackPanel>
 
-                <!-- Navigation Menu (Scrollable) -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="TEMİZLEYİCİ MODÜLLERİ"
-                                   FontSize="10.5"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   Margin="8,0,0,6"/>
+                    <!-- Quick Action Bar in Header -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Border Background="#112233" BorderBrush="#1E3A5F" BorderThickness="1" CornerRadius="6" Padding="9,4" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="7" Height="7" Fill="{StaticResource AccentEmeraldBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding AdminStatusBadge, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" Foreground="#A7F3D0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Button Style="{StaticResource SubtleButtonStyle}"
+                                Content="🛡️ Yönetici Başlat"
+                                Padding="10,5"
+                                FontSize="11"
+                                Margin="0,0,6,0"
+                                Command="{Binding RestartAsAdminCommand}"
+                                Visibility="{Binding IsNotAdmin, Mode=OneWay, Converter={StaticResource BoolToVis}}"/>
+
+                        <Button Style="{StaticResource CleanButtonStyle}"
+                                Content="⚡ Oyun &amp; Performans Modu"
+                                Padding="11,5"
+                                FontSize="11.5"
+                                Margin="0,0,6,0"
+                                Command="{Binding ActivateGameBoosterCommand}"/>
+
+                        <Button Style="{StaticResource SubtleButtonStyle}"
+                                Content="🧠 RAM Boşalt"
+                                Padding="10,5"
+                                FontSize="11.5"
+                                Margin="0,0,6,0"
+                                Command="{Binding OptimizeRamCommand}"/>
+
+                        <Button Style="{StaticResource SubtleButtonStyle}"
+                                Content="📊 Rapor"
+                                Padding="10,5"
+                                FontSize="11.5"
+                                Command="{Binding ExportReportsCommand}"/>
+                    </StackPanel>
+
+                    <!-- Custom Window Caption Buttons -->
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource WindowCaptionButtonStyle}"
+                                Click="MinimizeButton_Click"
+                                ToolTip="Simge Durumuna Küçült">
+                            <TextBlock Text="&#xE921;" FontFamily="Segoe MDL2 Assets" FontSize="10.5"/>
+                        </Button>
+                        <Button Style="{StaticResource WindowCaptionButtonStyle}"
+                                Click="MaximizeRestoreButton_Click"
+                                ToolTip="Ekranı Kapla / Geri Yükle">
+                            <TextBlock Text="&#xE922;" FontFamily="Segoe MDL2 Assets" FontSize="10.5"/>
+                        </Button>
+                        <Button Style="{StaticResource WindowCloseButtonStyle}"
+                                Click="CloseButton_Click"
+                                ToolTip="Kapat">
+                            <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10.5"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ==================== MAIN WORKSPACE GRID ==================== -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <!-- Left Navigation Sidebar -->
+                    <ColumnDefinition Width="272"/>
+                    <!-- Main Content Area -->
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ==================== LEFT SIDEBAR ==================== -->
+                <Border Grid.Column="0"
+                        Background="{StaticResource SidebarBgGradientBrush}"
+                        BorderBrush="#1E2B45"
+                        BorderThickness="0,0,1,0"
+                        Padding="14,12,14,14">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Navigation Menu (Scrollable) -->
+                        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                            <StackPanel>
+                                <TextBlock Text="TEMİZLEYİCİ MODÜLLERİ"
+                                           FontSize="10"
+                                           FontWeight="Bold"
+                                           Foreground="#475569"
+                                           Margin="10,2,0,5"/>
 
                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                      IsChecked="{Binding IsAllSection, Mode=OneWay}"
@@ -329,6 +413,62 @@
                             </StackPanel>
                         </RadioButton>
 
+                        <TextBlock Text="5. NESİL ADLİ ANALİZ &amp; KURTARMA"
+                                   FontSize="10.5"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="8,14,0,6"/>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsCrashLogsSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="CrashLogs">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Mavi Ekran &amp; Çökme Logları" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsWifiDnsSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="WifiDns">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Wi-Fi Şifre &amp; DNS Ping" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsPackageCachesSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="PackageCaches">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7B8;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="NuGet / NPM &amp; WSL2 VHDX" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsRestoreGodModeSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="RestoreGodMode">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Geri Yükleme &amp; God Mode" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsFileAssocSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="FileAssoc">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Dosya Uzantısı Doktoru" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                      IsChecked="{Binding IsSettingsSection, Mode=OneWay}"
                                      Command="{Binding SelectSectionCommand}"
@@ -342,33 +482,33 @@
                 </ScrollViewer>
 
                 <!-- Safety Option Box -->
-                <Border Grid.Row="2"
-                        Background="{StaticResource BgCardBrush}"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                <Border Grid.Row="1"
+                        Background="{StaticResource CardSurfaceGradientBrush}"
+                        BorderBrush="#263859"
                         BorderThickness="1"
                         CornerRadius="10"
-                        Padding="11"
-                        Margin="0,10,0,10">
+                        Padding="11,9"
+                        Margin="0,10,0,8">
                     <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                            <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource AccentEmeraldBrush}" FontSize="13.5" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                            <TextBlock Text="Güvenli Silme Modu" FontWeight="SemiBold" FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                            <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" Foreground="{StaticResource AccentEmeraldBrush}" FontSize="13" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                            <TextBlock Text="Güvenli Silme Kalkanı" FontWeight="SemiBold" FontSize="11.5" Foreground="{StaticResource TextPrimaryBrush}"/>
                         </StackPanel>
                         <CheckBox IsChecked="{Binding UseRecycleBinSafety}"
                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                  FontSize="11.5"
+                                  FontSize="11"
                                   Cursor="Hand"
-                                  Content="Kalıcı silmek yerine Geri Dönüşüm'e taşı"/>
+                                  Content="Geri Dönüşüm Kutusuna taşı"/>
                     </StackPanel>
                 </Border>
 
-                <!-- System Info Card at Bottom -->
-                <Border Grid.Row="3"
-                        Background="#111722"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                <!-- System Telemetry Card at Bottom -->
+                <Border Grid.Row="2"
+                        Background="#0D1424"
+                        BorderBrush="#223250"
                         BorderThickness="1"
                         CornerRadius="10"
-                        Padding="11">
+                        Padding="12,10">
                     <StackPanel>
                         <TextBlock Text="{Binding SystemMetrics.OsName}"
                                    FontSize="11"
@@ -376,33 +516,39 @@
                                    Foreground="{StaticResource TextPrimaryBrush}"
                                    TextTrimming="CharacterEllipsis"/>
                         <TextBlock Text="{Binding SystemMetrics.DotNetVersion}"
-                                   FontSize="10.5"
+                                   FontSize="10"
                                    Foreground="{StaticResource AccentBlueBrush}"
-                                   Margin="0,1,0,6"/>
+                                   Margin="0,1,0,8"/>
 
-                        <TextBlock Text="Sistem Diski" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}"/>
+                        <Grid>
+                            <TextBlock Text="SİSTEM DİSKİ" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding SystemMetrics.DriveUsedPercent, Mode=OneWay, StringFormat={}{0:F0}%}" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentBlueBrush}" HorizontalAlignment="Right"/>
+                        </Grid>
                         <ProgressBar Value="{Binding SystemMetrics.DriveUsedPercent, Mode=OneWay}"
                                      Maximum="100"
-                                     Height="5"
-                                     Margin="0,3,0,2"
-                                     Background="#263248"
-                                     Foreground="{StaticResource AccentBlueBrush}"
+                                     Height="6"
+                                     Margin="0,4,0,3"
+                                     Background="#1B263B"
+                                     Foreground="{StaticResource PrimaryGradientBrush}"
                                      BorderThickness="0"/>
                         <TextBlock Text="{Binding SystemMetrics.DriveSummaryText}"
-                                   FontSize="10"
+                                   FontSize="9.5"
                                    Foreground="{StaticResource TextMutedBrush}"
                                    TextWrapping="Wrap"/>
 
-                        <TextBlock Text="Bellek (RAM)" FontSize="10.5" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,6,0,0"/>
+                        <Grid Margin="0,7,0,0">
+                            <TextBlock Text="BELLEK (RAM)" FontSize="9.5" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding SystemMetrics.RamUsedPercent, Mode=OneWay, StringFormat={}{0:F0}%}" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentEmeraldBrush}" HorizontalAlignment="Right"/>
+                        </Grid>
                         <ProgressBar Value="{Binding SystemMetrics.RamUsedPercent, Mode=OneWay}"
                                      Maximum="100"
-                                     Height="5"
-                                     Margin="0,3,0,2"
-                                     Background="#263248"
-                                     Foreground="{StaticResource AccentEmeraldBrush}"
+                                     Height="6"
+                                     Margin="0,4,0,3"
+                                     Background="#1B263B"
+                                     Foreground="{StaticResource CleanGradientBrush}"
                                      BorderThickness="0"/>
                         <TextBlock Text="{Binding SystemMetrics.RamSummaryText}"
-                                   FontSize="10"
+                                   FontSize="9.5"
                                    Foreground="{StaticResource TextMutedBrush}"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
@@ -411,106 +557,113 @@
         </Border>
 
         <!-- ==================== MAIN CONTENT AREA ==================== -->
-        <Grid Grid.Column="1" Margin="20,16,20,16">
+        <Grid Grid.Column="1" Margin="18,14,18,14">
             <Grid.RowDefinitions>
                 <!-- Row 0: Top Summary Cards -->
                 <RowDefinition Height="Auto"/>
                 <!-- Row 1: Active Module Workspace -->
                 <RowDefinition Height="*"/>
                 <!-- Row 2: Live Activity Log Footer -->
-                <RowDefinition Height="110"/>
+                <RowDefinition Height="108"/>
             </Grid.RowDefinitions>
 
             <!-- ROW 0: Top Dashboard Summary Cards -->
             <Grid Grid.Row="0" Margin="0,0,0,14">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="14"/>
+                    <ColumnDefinition Width="12"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="14"/>
-                    <ColumnDefinition Width="1.3*"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="1.45*"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Card 1: Detected Junk Size -->
                 <Border Grid.Column="0"
-                        Background="{StaticResource BgCardBrush}"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        Background="{StaticResource CardSurfaceGradientBrush}"
+                        BorderBrush="#283B5E"
                         BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="16,12">
+                        CornerRadius="14"
+                        Padding="16,13">
                     <Grid>
                         <StackPanel>
                             <TextBlock Text="TESPİT EDİLEN GEREKSİZ VERİ"
-                                       FontSize="10.5"
+                                       FontSize="10"
                                        FontWeight="Bold"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                       Foreground="#94A3B8"/>
                             <TextBlock Text="{Binding TotalDetectedFormatted}"
-                                       FontSize="24"
+                                       FontSize="25"
                                        FontWeight="Bold"
                                        Foreground="{StaticResource AccentBlueBrush}"
-                                       Margin="0,3,0,2"/>
+                                       Margin="0,4,0,3"/>
                             <TextBlock FontSize="11.5" Foreground="{StaticResource TextMutedBrush}">
-                                <Run Text="{Binding TotalDetectedFiles, Mode=OneWay, StringFormat={}{0:N0}}"/>
+                                <Run Text="{Binding TotalDetectedFiles, Mode=OneWay, StringFormat={}{0:N0}}" Foreground="#E2E8F0" FontWeight="SemiBold"/>
                                 <Run Text="seçili dosya temizliğe hazır"/>
                             </TextBlock>
                         </StackPanel>
-                        <TextBlock Text="&#xE74D;"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="26"
-                                   Foreground="#2B3B55"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Top"/>
+                        <Border Width="40" Height="40" CornerRadius="10" Background="#172A4A" BorderBrush="#2563EB" BorderThickness="1" HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <TextBlock Text="&#xE74D;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="18"
+                                       Foreground="{StaticResource AccentBlueBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
                     </Grid>
                 </Border>
 
                 <!-- Card 2: Freed Space in Session -->
                 <Border Grid.Column="2"
-                        Background="{StaticResource BgCardBrush}"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        Background="{StaticResource CardSurfaceGradientBrush}"
+                        BorderBrush="#1F473E"
                         BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="16,12">
+                        CornerRadius="14"
+                        Padding="16,13">
                     <Grid>
                         <StackPanel>
                             <TextBlock Text="BU OTURUMDA KAZANILAN ALAN"
-                                       FontSize="10.5"
+                                       FontSize="10"
                                        FontWeight="Bold"
-                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                       Foreground="#94A3B8"/>
                             <TextBlock Text="{Binding LastFreedFormatted}"
-                                       FontSize="24"
+                                       FontSize="25"
                                        FontWeight="Bold"
                                        Foreground="{StaticResource AccentEmeraldBrush}"
-                                       Margin="0,3,0,2"/>
+                                       Margin="0,4,0,3"/>
                             <TextBlock FontSize="11.5" Foreground="{StaticResource TextMutedBrush}">
-                                <Run Text="{Binding LastDeletedFiles, Mode=OneWay, StringFormat={}{0:N0}}"/>
+                                <Run Text="{Binding LastDeletedFiles, Mode=OneWay, StringFormat={}{0:N0}}" Foreground="#E2E8F0" FontWeight="SemiBold"/>
                                 <Run Text="öğe başarıyla temizlendi"/>
                             </TextBlock>
                         </StackPanel>
-                        <TextBlock Text="&#xE73E;"
-                                   FontFamily="Segoe MDL2 Assets"
-                                   FontSize="26"
-                                   Foreground="#23423B"
-                                   HorizontalAlignment="Right"
-                                   VerticalAlignment="Top"/>
+                        <Border Width="40" Height="40" CornerRadius="10" Background="#112E28" BorderBrush="#10B981" BorderThickness="1" HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <TextBlock Text="&#xE73E;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="18"
+                                       Foreground="{StaticResource AccentEmeraldBrush}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
                     </Grid>
                 </Border>
 
                 <!-- Card 3: Active Operation Status -->
                 <Border Grid.Column="4"
-                        Background="{StaticResource BgCardBrush}"
-                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        Background="{StaticResource CardSurfaceGradientBrush}"
+                        BorderBrush="#283B5E"
                         BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="16,12">
+                        CornerRadius="14"
+                        Padding="16,13">
                     <StackPanel>
                         <Grid>
-                            <TextBlock Text="{Binding SectionTitle}"
-                                       FontSize="11.5"
-                                       FontWeight="Bold"
-                                       Foreground="{StaticResource AccentBlueBrush}"/>
-                            <Button Style="{StaticResource SubtleButtonStyle}"
-                                    Content="Durdur"
-                                    Padding="8,2"
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="8" Height="8" Fill="{StaticResource AccentBlueBrush}" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                                <TextBlock Text="{Binding SectionTitle}"
+                                           FontSize="11.5"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource AccentBlueBrush}"/>
+                            </StackPanel>
+                            <Button Style="{StaticResource DangerButtonStyle}"
+                                    Content="⏹ İşlemi Durdur"
+                                    Padding="10,3"
                                     FontSize="11"
                                     HorizontalAlignment="Right"
                                     Command="{Binding CancelCommand}"
@@ -522,7 +675,7 @@
                                    Foreground="{StaticResource TextPrimaryBrush}"
                                    TextWrapping="Wrap"
                                    MaxHeight="36"
-                                   Margin="0,4,0,3"/>
+                                   Margin="0,5,0,3"/>
                         <TextBlock Text="{Binding CurrentOperationDetail}"
                                    FontSize="11"
                                    Foreground="{StaticResource TextMutedBrush}"
@@ -2671,52 +2824,423 @@
                         </DataGrid>
                     </Grid>
                 </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 22: CRASH, BSOD & WINDOWS EVENTLOG ANALYZER                          -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsCrashLogsSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="MAVİ EKRAN (BSOD), UYGULAMA ÇÖKMELERİ &amp; OLAY GÜNLÜĞÜ (EVENTLOG) ANALİZCİSİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Windows Olay Günlüğü'ndeki son çökme/kritik hata kayıtlarını (AppCrash 1000, Kernel-Power 41, BugCheck) ve Minidump (.dmp) dosyalarını listeler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="Olay Günlüğü &amp; Çökmeleri Tara"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanCrashLogsCommand}"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="Çökme Dökümlerini (.dmp) Temizle"
+                                        Padding="12,7"
+                                        Command="{Binding CleanCrashDumpsCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding CrashAndEventLogs}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="34">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Tarih / Saat" Binding="{Binding Timestamp}" Width="145"/>
+                                <DataGridTextColumn Header="Hata / Çökme Türü" Binding="{Binding EventType}" Width="230"/>
+                                <DataGridTextColumn Header="Kaynak / Uygulama" Binding="{Binding SourceOrApp}" Width="170"/>
+                                <DataGridTextColumn Header="Event ID / Boyut" Binding="{Binding EventIdOrSize}" Width="115"/>
+                                <DataGridTextColumn Header="Hata Özeti / Ayrıntı" Binding="{Binding MessageSummary}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 23: SAVED WI-FI PASSWORDS & LIVE DNS PING BENCHMARK                  -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsWifiDnsSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="KAYITLI WI-FI ŞİFRELERİ &amp; CANLI DNS PİNG KIYASLAYICI"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Bilgisayarda kayıtlı tüm Wi-Fi ağlarının açık şifrelerini (netsh wlan key=clear) çözer ve küresel DNS sunucularına canlı Ping (ms) testi yapar."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    Content="Wi-Fi Şifrelerini &amp; DNS Hızlarını Yenile"
+                                    Padding="14,7"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding ScanWifiAndDnsCommand}"/>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding WifiAndDnsItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="35">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Kategori" Binding="{Binding ItemCategory}" Width="180"/>
+                                <DataGridTextColumn Header="Wi-Fi Ağı (SSID) / DNS Adı" Binding="{Binding NameOrSsid}" Width="240"/>
+                                <DataGridTextColumn Header="Güvenlik / IP Adresi" Binding="{Binding SecurityOrIp}" Width="165"/>
+                                <DataGridTextColumn Header="Kayıtlı Şifre / Ping (ms)" Binding="{Binding PasswordOrLatency}" Width="240"/>
+                                <DataGridTextColumn Header="Durum / Öneri" Binding="{Binding StatusBadge}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 24: WSL2 / DOCKER VHDX & GLOBAL PACKAGE CACHES                       -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsPackageCachesSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="KÜRESEL PAKET ÖNBELLEKLERİ (NUGET / NPM / PIP / GRADLE) &amp; WSL2/DOCKER VHDX"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Kullanıcı dizininde gigabaytlarca yer kaplayan küresel paket önbelleklerini ve WSL2/Docker sanal disk (ext4.vhdx) boyutlarını analiz eder."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="Önbellekleri &amp; VHDX Diskleri Tara"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanPackageCachesCommand}"/>
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="Seçili Paket Önbelleklerini Temizle"
+                                        Padding="12,7"
+                                        Command="{Binding CleanPackageCachesCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding GlobalPackageCaches}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Ekosistem" Binding="{Binding Ecosystem}" IsReadOnly="True" Width="150"/>
+                                <DataGridTextColumn Header="Önbellek / Sanal Disk Adı" Binding="{Binding CacheName}" IsReadOnly="True" Width="250"/>
+                                <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="105"/>
+                                <DataGridTextColumn Header="Güvenlik Türü" Binding="{Binding SafetyLabel}" IsReadOnly="True" Width="210"/>
+                                <DataGridTextColumn Header="Tam Klasör / Dosya Yolu" Binding="{Binding FolderPath}" IsReadOnly="True" Width="*"/>
+                                <DataGridTemplateColumn Header="Konum" Width="105">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                                    Content="Klasörü Aç"
+                                                    Padding="8,4"
+                                                    Command="{Binding DataContext.OpenPackageCacheFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 25: SYSTEM RESTORE POINT & WINDOWS GOD MODE CENTER                   -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsRestoreGodModeSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="SİSTEM GERİ YÜKLEME NOKTASI (RESTORE POINT) &amp; WINDOWS GOD MODE MERKEZİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Kritik temizlik/optimizasyon işlemlerinden önce tek tıkla Geri Yükleme Noktası oluşturun ve Windows Tanrı Modu (200+ gizli ayar) araçlarına erişin."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="⚡ Masaüstünde Windows God Mode Aç"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding OpenGodModeCommand}"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Kaynak İzleyicisi (resmon)"
+                                        Padding="10,7"
+                                        Margin="0,0,6,0"
+                                        Command="{Binding LaunchSystemToolCommand}"
+                                        CommandParameter="resmon.exe"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Olay Görüntüleyicisi"
+                                        Padding="10,7"
+                                        Command="{Binding LaunchSystemToolCommand}"
+                                        CommandParameter="eventvwr.msc"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid Grid.Row="1" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding RestorePointDescription, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="{StaticResource BgCardBrush}"
+                                     Foreground="{StaticResource TextPrimaryBrush}"
+                                     BorderBrush="{StaticResource BorderSubtleBrush}"
+                                     BorderThickness="1"
+                                     Padding="10,7"
+                                     VerticalContentAlignment="Center"
+                                     Margin="0,0,8,0"/>
+
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Content="+ Yeni Geri Yükleme Noktası Oluştur"
+                                    Padding="14,7"
+                                    Margin="0,0,8,0"
+                                    Command="{Binding CreateRestorePointCommand}"/>
+
+                            <Button Grid.Column="2"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Content="Listeyi Yenile"
+                                    Padding="12,7"
+                                    Command="{Binding RefreshRestorePointsCommand}"/>
+                        </Grid>
+
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding RestorePoints}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="35">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Sıra No" Binding="{Binding SequenceNumber}" Width="95"/>
+                                <DataGridTextColumn Header="Oluşturulma Tarihi" Binding="{Binding CreationTime}" Width="180"/>
+                                <DataGridTextColumn Header="Tür" Binding="{Binding RestorePointType}" Width="165"/>
+                                <DataGridTextColumn Header="Geri Yükleme Noktası Açıklaması" Binding="{Binding Description}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 26: FILE EXTENSION & DEFAULT PROGRAM (USERCHOICE) DOCTOR             -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsFileAssocSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="DOSYA UZANTISI &amp; VARSAYILAN PROGRAM (USERCHOICE) DOKTORU"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Popüler dosya uzantılarının (.pdf, .zip, .mp4, .jpg, .json, .cs vb.) bağlı olduğu ProgId kayıtlarını denetler ve bozuk uzantı ilişkilerini sıfırlar."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="Uzantıları Yeniden Tara"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanFileAssocCommand}"/>
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="Seçili Uzantı İlişkilerini Sıfırla"
+                                        Padding="12,7"
+                                        Command="{Binding ResetFileAssocCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding FileAssociations}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="34">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Uzantı" Binding="{Binding Extension}" IsReadOnly="True" Width="95"/>
+                                <DataGridTextColumn Header="Atanmış ProgId" Binding="{Binding CurrentProgId}" IsReadOnly="True" Width="230"/>
+                                <DataGridTextColumn Header="Durum" Binding="{Binding StatusText}" IsReadOnly="True" Width="210"/>
+                                <DataGridTextColumn Header="Uygulama / İşleyici Açıklaması" Binding="{Binding HandlerDescription}" IsReadOnly="True" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
             </Grid>
 
-            <!-- ==================== ROW 2: GLOBAL PROGRESS & LIVE LOG FOOTER ==================== -->
-            <Border Grid.Row="2"
-                    Background="{StaticResource BgSecondaryBrush}"
-                    BorderBrush="{StaticResource BorderSubtleBrush}"
-                    BorderThickness="1"
-                    CornerRadius="10"
-                    Padding="12,8"
-                    Margin="0,12,0,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
+                    <!-- ==================== ROW 2: GLOBAL PROGRESS & LIVE LOG FOOTER ==================== -->
+                    <Border Grid.Row="2"
+                            Background="#0C1322"
+                            BorderBrush="#223250"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="14,9"
+                            Margin="0,12,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
 
-                    <Grid Grid.Row="0" Margin="0,0,0,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0"
-                                   Text="CANLI İŞLEM GÜNLÜĞÜ (LOG)"
-                                   FontSize="10.5"
-                                   FontWeight="Bold"
-                                   Foreground="{StaticResource TextMutedBrush}"
-                                   VerticalAlignment="Center"
-                                   Margin="0,0,14,0"/>
-                        <ProgressBar Grid.Column="1"
-                                     Value="{Binding ProgressPercent, Mode=OneWay}"
-                                     Maximum="100"
-                                     Height="4"
-                                     Background="#222D40"
-                                     Foreground="{StaticResource AccentBlueBrush}"
-                                     BorderThickness="0"/>
-                    </Grid>
+                            <Grid Grid.Row="0" Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,14,0">
+                                    <Ellipse Width="7" Height="7" Fill="{StaticResource AccentEmeraldBrush}" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                                    <TextBlock Text="CANLI TELEMETRİ &amp; İŞLEM KONSOLU"
+                                               FontSize="10"
+                                               FontWeight="Bold"
+                                               Foreground="#94A3B8"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <ProgressBar Grid.Column="1"
+                                             Value="{Binding ProgressPercent, Mode=OneWay}"
+                                             Maximum="100"
+                                             Height="5"
+                                             Background="#1A253A"
+                                             Foreground="{StaticResource PrimaryGradientBrush}"
+                                             BorderThickness="0"/>
+                            </Grid>
 
-                    <ListBox Grid.Row="1"
-                             ItemsSource="{Binding ActivityLogs}"
-                             Background="Transparent"
-                             BorderThickness="0"
-                             Foreground="{StaticResource TextSecondaryBrush}"
-                             FontFamily="Cascadia Code, Consolas"
-                             FontSize="11.5"/>
+                            <ListBox Grid.Row="1"
+                                     ItemsSource="{Binding ActivityLogs}"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Foreground="#93C5FD"
+                                     FontFamily="Cascadia Code, Consolas"
+                                     FontSize="11.5"/>
+                        </Grid>
+                    </Border>
                 </Grid>
-            </Border>
+            </Grid>
         </Grid>
-    </Grid>
+    </Border>
 </Window>

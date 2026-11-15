@@ -76,6 +76,9 @@ public class MainViewModel : INotifyPropertyChanged
     // 4th Generation Enterprise & Power-User state
     private string _unlockerTargetPath = string.Empty;
 
+    // 5th Generation Forensics & Rescue state
+    private string _restorePointDescription = $"FreeCleaner Güvenlik Noktası ({DateTime.Now:dd.MM.yyyy})";
+
     // Collections
     public ObservableCollection<CleanerRule> AllRules { get; } = [];
     public ObservableCollection<ScannedFileItem> DiscoveredFiles { get; } = [];
@@ -101,6 +104,11 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<BrowserExtensionItem> BrowserExtensions { get; } = [];
     public ObservableCollection<DriverOrHotfixItem> DriversAndHotfixes { get; } = [];
     public ObservableCollection<PathOrShortcutIssueItem> PathAndShortcutIssues { get; } = [];
+    public ObservableCollection<CrashOrEventLogItem> CrashAndEventLogs { get; } = [];
+    public ObservableCollection<WifiProfileAndDnsItem> WifiAndDnsItems { get; } = [];
+    public ObservableCollection<GlobalPackageCacheItem> GlobalPackageCaches { get; } = [];
+    public ObservableCollection<RestorePointItem> RestorePoints { get; } = [];
+    public ObservableCollection<FileAssociationItem> FileAssociations { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -219,6 +227,21 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand FixPathAndShortcutsCommand { get; }
     public ICommand ActivateGameBoosterCommand { get; }
     public ICommand GenerateBatteryReportCommand { get; }
+
+    // 5th Gen Forensics, Wi-Fi, Package Caches, Restore Point & FileAssoc Commands
+    public ICommand ExportReportsCommand => ExportReportCommand;
+    public ICommand ScanCrashLogsCommand { get; }
+    public ICommand CleanCrashDumpsCommand { get; }
+    public ICommand ScanWifiAndDnsCommand { get; }
+    public ICommand ScanPackageCachesCommand { get; }
+    public ICommand CleanPackageCachesCommand { get; }
+    public ICommand OpenPackageCacheFolderCommand { get; }
+    public ICommand RefreshRestorePointsCommand { get; }
+    public ICommand CreateRestorePointCommand { get; }
+    public ICommand OpenGodModeCommand { get; }
+    public ICommand LaunchSystemToolCommand { get; }
+    public ICommand ScanFileAssocCommand { get; }
+    public ICommand ResetFileAssocCommand { get; }
 
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
@@ -425,6 +448,28 @@ public class MainViewModel : INotifyPropertyChanged
         ActivateGameBoosterCommand = new RelayCommand(async _ => await RunGameBoosterAsync(), _ => !IsBusy);
         GenerateBatteryReportCommand = new RelayCommand(async _ => await RunGenerateBatteryReportAsync(), _ => !IsBusy);
 
+        // 5th Gen Forensics, Wi-Fi, Package Caches, Restore Point & FileAssoc Commands
+        ScanCrashLogsCommand = new RelayCommand(async _ => await LoadCrashAndEventLogsAsync(), _ => !IsBusy);
+        CleanCrashDumpsCommand = new RelayCommand(async _ => await RunCleanCrashDumpsAsync(), _ => !IsBusy && CrashAndEventLogs.Any(x => !string.IsNullOrWhiteSpace(x.DumpFilePath)));
+        ScanWifiAndDnsCommand = new RelayCommand(async _ => await LoadWifiAndDnsAsync(), _ => !IsBusy);
+        ScanPackageCachesCommand = new RelayCommand(async _ => await LoadGlobalPackageCachesAsync(), _ => !IsBusy);
+        CleanPackageCachesCommand = new RelayCommand(async _ => await RunCleanPackageCachesAsync(), _ => !IsBusy && GlobalPackageCaches.Any(x => x.IsSelected && x.CanSafeDelete));
+        OpenPackageCacheFolderCommand = new RelayCommand(param =>
+        {
+            if (param is GlobalPackageCacheItem item)
+                OpenExplorerPath(item.FolderPath);
+        });
+        RefreshRestorePointsCommand = new RelayCommand(async _ => await LoadRestorePointsAsync(), _ => !IsBusy);
+        CreateRestorePointCommand = new RelayCommand(async _ => await RunCreateRestorePointAsync(), _ => !IsBusy);
+        OpenGodModeCommand = new RelayCommand(_ => ExecuteOpenGodMode());
+        LaunchSystemToolCommand = new RelayCommand(param =>
+        {
+            if (param is string tool && !string.IsNullOrWhiteSpace(tool))
+                NextGenForensicsAndRescueService.LaunchSystemUtility(tool);
+        });
+        ScanFileAssocCommand = new RelayCommand(async _ => await LoadFileAssociationsAsync(), _ => !IsBusy);
+        ResetFileAssocCommand = new RelayCommand(_ => ExecuteResetFileAssociations(), _ => !IsBusy && FileAssociations.Any(x => x.IsSelected));
+
         // Background Auto-Monitor Timer (checks every 5 minutes if enabled)
         _autoMonitorTimer = new DispatcherTimer
         {
@@ -434,7 +479,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();
 
-        AddLog("FreeCleaner Enterprise (.NET 10) başlatıldı: Tüm 20 modül kullanıma hazır.");
+        AddLog("FreeCleaner Pro Ultra (.NET 10) başlatıldı: Tüm 26 uzman modül kullanıma hazır.");
     }
 
     public SystemMetricsSnapshot SystemMetrics
@@ -480,6 +525,11 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsBrowserExtensionsSection));
                 OnPropertyChanged(nameof(IsDriversUpdatesSection));
                 OnPropertyChanged(nameof(IsPathDoctorSection));
+                OnPropertyChanged(nameof(IsCrashLogsSection));
+                OnPropertyChanged(nameof(IsWifiDnsSection));
+                OnPropertyChanged(nameof(IsPackageCachesSection));
+                OnPropertyChanged(nameof(IsRestoreGodModeSection));
+                OnPropertyChanged(nameof(IsFileAssocSection));
                 OnPropertyChanged(nameof(IsSettingsSection));
                 OnPropertyChanged(nameof(SectionTitle));
 
@@ -519,6 +569,16 @@ public class MainViewModel : INotifyPropertyChanged
                     _ = LoadDriversAndHotfixesAsync();
                 else if (_activeSection == "PathDoctor" && PathAndShortcutIssues.Count == 0)
                     _ = LoadPathAndShortcutIssuesAsync();
+                else if (_activeSection == "CrashLogs" && CrashAndEventLogs.Count == 0)
+                    _ = LoadCrashAndEventLogsAsync();
+                else if (_activeSection == "WifiDns" && WifiAndDnsItems.Count == 0)
+                    _ = LoadWifiAndDnsAsync();
+                else if (_activeSection == "PackageCaches" && GlobalPackageCaches.Count == 0)
+                    _ = LoadGlobalPackageCachesAsync();
+                else if (_activeSection == "RestoreGodMode" && RestorePoints.Count == 0)
+                    _ = LoadRestorePointsAsync();
+                else if (_activeSection == "FileAssoc" && FileAssociations.Count == 0)
+                    _ = LoadFileAssociationsAsync();
             }
         }
     }
@@ -548,6 +608,11 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsBrowserExtensionsSection => ActiveSection == "BrowserExtensions";
     public bool IsDriversUpdatesSection => ActiveSection == "DriversUpdates";
     public bool IsPathDoctorSection => ActiveSection == "PathDoctor";
+    public bool IsCrashLogsSection => ActiveSection == "CrashLogs";
+    public bool IsWifiDnsSection => ActiveSection == "WifiDns";
+    public bool IsPackageCachesSection => ActiveSection == "PackageCaches";
+    public bool IsRestoreGodModeSection => ActiveSection == "RestoreGodMode";
+    public bool IsFileAssocSection => ActiveSection == "FileAssoc";
     public bool IsSettingsSection => ActiveSection == "Settings";
 
     public string SectionTitle => ActiveSection switch
@@ -574,6 +639,11 @@ public class MainViewModel : INotifyPropertyChanged
         "BrowserExtensions" => "Tarayıcı Eklentileri (Extensions) Denetçisi",
         "DriversUpdates" => "Windows Güncelleme Geçmişi (KB) & Sürücü Deposu (DriverStore)",
         "PathDoctor" => "Ortam Değişkenleri (PATH) Doktoru & Kırık Kısayol (.lnk) Onarıcı",
+        "CrashLogs" => "Mavi Ekran (BSOD), Çökme Dökümleri (.dmp) & Olay Günlüğü Analizcisi",
+        "WifiDns" => "Kayıtlı Wi-Fi Şifre Görüntüleyici & Canlı DNS Ping Kıyaslayıcı",
+        "PackageCaches" => "WSL2 / Docker VHDX & Küresel Paket Önbelleği (NuGet, NPM, Pip, Gradle) Kurtarıcısı",
+        "RestoreGodMode" => "Sistem Geri Yükleme Noktası (Restore Point) & Windows God Mode Merkezi",
+        "FileAssoc" => "Dosya Uzantısı & Varsayılan Program (UserChoice) Doktoru",
         "Settings" => "Beyaz Liste (İstisnalar), Otomasyon & Raporlama",
         _ => "Akıllı Temizlik & Tüm Kategoriler"
     };
@@ -2739,6 +2809,210 @@ public class MainViewModel : INotifyPropertyChanged
         {
             IsBusy = false;
         }
+    }
+
+    // ==================== 23. 5TH GEN FORENSICS, WI-FI, PACKAGE CACHES, RESTORE POINT & FILEASSOC ====================
+
+    public string RestorePointDescription
+    {
+        get => _restorePointDescription;
+        set
+        {
+            if (_restorePointDescription != value)
+            {
+                _restorePointDescription = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private async Task LoadCrashAndEventLogsAsync()
+    {
+        IsBusy = true;
+        CrashAndEventLogs.Clear();
+        StatusMessage = "Mavi ekran dökümleri (.dmp), uygulama çökmeleri ve Windows Olay Günlüğü (EventLog) taranıyor...";
+        try
+        {
+            var items = await NextGenForensicsAndRescueService.ScanCrashAndEventLogsAsync();
+            foreach (var item in items)
+                CrashAndEventLogs.Add(item);
+
+            int dmpCount = items.Count(x => !string.IsNullOrWhiteSpace(x.DumpFilePath));
+            StatusMessage = $"Olay Günlüğü & Çökme Analizi: {items.Count} hata/çökme kaydı ({dmpCount} adet .dmp döküm dosyası) bulundu.";
+            AddLog($"[ÇÖKME ANALİZİ] {items.Count} olay kaydı ve {dmpCount} çökme dökümü tespit edildi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task RunCleanCrashDumpsAsync()
+    {
+        var dumps = CrashAndEventLogs.Where(x => !string.IsNullOrWhiteSpace(x.DumpFilePath)).ToList();
+        if (dumps.Count == 0) return;
+
+        IsBusy = true;
+        try
+        {
+            var (deleted, freed) = await NextGenForensicsAndRescueService.CleanCrashDumpsAsync(dumps);
+            LastFreedBytes += freed;
+            LastDeletedFiles += deleted;
+            RefreshSystemMetrics();
+            await LoadCrashAndEventLogsAsync();
+
+            StatusMessage = $"{deleted} çökme dökümü (.dmp) silindi, {CleanerRule.FormatBytes(freed)} yer açıldı.";
+            AddLog($"[ÇÖKME DÖKÜMÜ TEMİZLİĞİ] {deleted} adet .dmp dosyası temizlendi ({CleanerRule.FormatBytes(freed)}).");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadWifiAndDnsAsync()
+    {
+        IsBusy = true;
+        WifiAndDnsItems.Clear();
+        StatusMessage = "Kayıtlı Wi-Fi ağ şifreleri (netsh wlan) okunuyor ve DNS sunucularına canlı Ping testi yapılıyor...";
+        try
+        {
+            var items = await NextGenForensicsAndRescueService.ScanWifiPasswordsAndPingDnsAsync();
+            foreach (var item in items)
+                WifiAndDnsItems.Add(item);
+
+            StatusMessage = $"Wi-Fi & DNS Analizi tamamlandı ({items.Count} kayıt listelendi).";
+            AddLog($"[WI-FI & DNS] {items.Count} Wi-Fi profili ve DNS ping sonucu yüklendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadGlobalPackageCachesAsync()
+    {
+        IsBusy = true;
+        GlobalPackageCaches.Clear();
+        StatusMessage = "NuGet, NPM, Pip, PNPM, Yarn, Gradle, Maven önbellekleri ve WSL2/Docker sanal diskleri (.vhdx) taranıyor...";
+        try
+        {
+            var caches = await NextGenForensicsAndRescueService.ScanGlobalPackageCachesAsync();
+            foreach (var c in caches)
+                GlobalPackageCaches.Add(c);
+
+            long totalBytes = caches.Sum(x => x.SizeBytes);
+            StatusMessage = $"Küresel Paket & VHDX Analizi: {caches.Count} öğede toplam {CleanerRule.FormatBytes(totalBytes)} tespit edildi.";
+            AddLog($"[PAKET ÖNBELLEKLERİ] {caches.Count} küresel önbellek/VHDX ({CleanerRule.FormatBytes(totalBytes)}) bulundu.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task RunCleanPackageCachesAsync()
+    {
+        var selected = GlobalPackageCaches.Where(x => x.IsSelected && x.CanSafeDelete).ToList();
+        if (selected.Count == 0) return;
+
+        long totalSize = selected.Sum(x => x.SizeBytes);
+        var confirm = MessageBox.Show(
+            $"Seçili {selected.Count} küresel paket önbelleği ({CleanerRule.FormatBytes(totalSize)}) temizlenecek.\n\nDevam edilsin mi?",
+            "Küresel Paket Önbelleği Temizliği",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        IsBusy = true;
+        try
+        {
+            var (cleaned, freed) = await NextGenForensicsAndRescueService.CleanSelectedPackageCachesAsync(selected);
+            LastFreedBytes += freed;
+            LastDeletedFiles += cleaned;
+            RefreshSystemMetrics();
+            await LoadGlobalPackageCachesAsync();
+
+            StatusMessage = $"{cleaned} küresel paket önbelleği temizlendi ({CleanerRule.FormatBytes(freed)} yer açıldı).";
+            AddLog($"[PAKET ÖNBELLEKLERİ] {cleaned} önbellek temizlendi ({CleanerRule.FormatBytes(freed)}).");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadRestorePointsAsync()
+    {
+        IsBusy = true;
+        RestorePoints.Clear();
+        StatusMessage = "Windows Sistem Geri Yükleme Noktaları sorgulanıyor...";
+        try
+        {
+            var pts = await NextGenForensicsAndRescueService.GetRestorePointsAsync();
+            foreach (var p in pts)
+                RestorePoints.Add(p);
+            StatusMessage = $"{RestorePoints.Count} Sistem Geri Yükleme kaydı listelendi.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task RunCreateRestorePointAsync()
+    {
+        IsBusy = true;
+        StatusMessage = "Yeni Windows Sistem Geri Yükleme Noktası oluşturuluyor (UAC izni gerekebilir)...";
+        try
+        {
+            var (ok, msg) = await NextGenForensicsAndRescueService.CreateSystemRestorePointAsync(RestorePointDescription);
+            StatusMessage = msg;
+            AddLog($"[GERİ YÜKLEME NOKTASI] {msg}");
+            await LoadRestorePointsAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ExecuteOpenGodMode()
+    {
+        var (ok, msg) = NextGenForensicsAndRescueService.CreateAndOpenGodModeFolder();
+        StatusMessage = msg;
+        AddLog($"[GOD MODE] {msg}");
+    }
+
+    private async Task LoadFileAssociationsAsync()
+    {
+        IsBusy = true;
+        FileAssociations.Clear();
+        StatusMessage = "Dosya uzantıları ve varsayılan program (UserChoice / ProgId) birliktelikleri denetleniyor...";
+        try
+        {
+            var items = await NextGenForensicsAndRescueService.ScanFileAssociationsAsync();
+            foreach (var item in items)
+                FileAssociations.Add(item);
+            StatusMessage = $"{FileAssociations.Count} popüler dosya uzantısının kayıt defteri ilişkisi denetlendi.";
+            AddLog($"[DOSYA UZANTILARI] {FileAssociations.Count} uzantı incelendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void ExecuteResetFileAssociations()
+    {
+        var selected = FileAssociations.Where(x => x.IsSelected).ToList();
+        if (selected.Count == 0) return;
+
+        int count = NextGenForensicsAndRescueService.ResetSelectedFileAssociations(selected);
+        _ = LoadFileAssociationsAsync();
+        StatusMessage = $"{count} dosya uzantısının OpenWith / UserChoice kaydı sıfırlandı.";
+        AddLog($"[DOSYA UZANTILARI] {count} uzantı sıfırlandı.");
     }
 
     private void OpenFileLocation(object? parameter)
