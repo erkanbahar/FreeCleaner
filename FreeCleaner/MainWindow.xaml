@@ -1035,6 +1035,10 @@
                                                                        Foreground="{StaticResource TextSecondaryBrush}"
                                                                        TextWrapping="Wrap"
                                                                        Margin="0,2,0,0"/>
+                                                            <TextBlock Text="{Binding RiskLabel}"
+                                                                       FontSize="9.5"
+                                                                       Foreground="{StaticResource WarningAmberBrush}"
+                                                                       Margin="0,2,0,0"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="8,0,0,0">
                                                             <TextBlock Text="{Binding FormattedSize}"
@@ -1116,6 +1120,7 @@
                                     <DataGrid.Columns>
                                         <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
                                         <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" IsReadOnly="True" Width="135"/>
+                                        <DataGridTextColumn Header="Risk" Binding="{Binding RiskLabel}" IsReadOnly="True" Width="70"/>
                                         <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="90"/>
                                         <DataGridTextColumn Header="Durum" Binding="{Binding Status}" IsReadOnly="True" Width="110"/>
                                         <DataGridTextColumn Header="Dosya Yolu" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
