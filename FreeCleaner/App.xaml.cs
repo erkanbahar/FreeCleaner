@@ -9,5 +9,22 @@ namespace FreeCleaner;
 /// </summary>
 public partial class App : Application
 {
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        base.OnStartup(e);
+
+        var window = new MainWindow();
+        MainWindow = window;
+        window.Show();
+
+        if (e.Args.Any(arg => arg.Equals("--scheduled-maintenance", StringComparison.OrdinalIgnoreCase)))
+        {
+            window.Loaded += async (_, _) =>
+            {
+                if (window.DataContext is ViewModels.MainViewModel viewModel)
+                    await viewModel.RunScheduledMaintenanceAsync(closeWhenFinished: true);
+            };
+        }
+    }
 }
 

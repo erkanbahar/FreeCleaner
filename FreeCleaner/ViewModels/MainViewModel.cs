@@ -242,6 +242,8 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand RestoreHostsBackupCommand { get; }
     public ICommand SaveHostEntryCommand { get; }
     public ICommand DeleteHostEntryCommand { get; }
+    public ICommand InstallScheduledMaintenanceCommand { get; }
+    public ICommand RemoveScheduledMaintenanceCommand { get; }
 
     // Task Scheduler & Folder Space Tree Commands
     public ICommand RefreshScheduledTasksCommand { get; }
@@ -529,6 +531,8 @@ public class MainViewModel : INotifyPropertyChanged
         RestoreHostsBackupCommand = new RelayCommand(_ => RestoreLatestHostsBackup(), _ => !IsBusy && PrivacyAndNetworkShieldService.GetLatestHostsBackup() is not null);
         SaveHostEntryCommand = new RelayCommand(param => SaveHostEntry(param as HostsEntryItem), _ => !IsBusy);
         DeleteHostEntryCommand = new RelayCommand(param => DeleteHostEntry(param as HostsEntryItem), _ => !IsBusy);
+        InstallScheduledMaintenanceCommand = new RelayCommand(_ => InstallScheduledMaintenance(), _ => !IsBusy);
+        RemoveScheduledMaintenanceCommand = new RelayCommand(_ => RemoveScheduledMaintenance(), _ => !IsBusy);
 
         LoadBackups();
 
@@ -2210,19 +2214,17 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private async Task CheckScheduledMaintenanceAsync()
+    public async Task RunScheduledMaintenanceAsync(bool closeWhenFinished = false)
     {
-            if (IsBusy || !ScheduledMaintenanceEnabled)
-                return;
-
-            if (DateTime.UtcNow - _lastScheduledMaintenanceUtc < TimeSpan.FromHours(ScheduledMaintenanceIntervalHours))
-                return;
-
             var safeRules = AllRules
                 .Where(rule => rule.IsSelected && rule.Risk == RiskLevel.Low)
                 .ToList();
             if (safeRules.Count == 0)
+            {
+                if (closeWhenFinished)
+                    Application.Current.Shutdown();
                 return;
+            }
 
             _lastScheduledMaintenanceUtc = DateTime.UtcNow;
             try
@@ -2262,6 +2264,40 @@ public class MainViewModel : INotifyPropertyChanged
                 StatusMessage = $"Zamanlanmış bakım hatası: {ex.Message}";
                 AddLog($"[ZAMANLI BAKIM][HATA] {ex.Message}");
             }
+            finally
+            {
+                if (closeWhenFinished)
+                    Application.Current.Shutdown();
+            }
+        }
+
+    private async Task CheckScheduledMaintenanceAsync()
+    {
+        if (IsBusy || !ScheduledMaintenanceEnabled)
+            return;
+
+        if (DateTime.UtcNow - _lastScheduledMaintenanceUtc < TimeSpan.FromHours(ScheduledMaintenanceIntervalHours))
+            return;
+
+        await RunScheduledMaintenanceAsync();
+    }
+
+    private void InstallScheduledMaintenance()
+    {
+        var result = ScheduledMaintenanceService.Install(ScheduledMaintenanceIntervalHours);
+        StatusMessage = result.Message;
+        AddLog($"[ZAMANLI BAKIM] {result.Message}");
+        if (!result.Success)
+            MessageBox.Show(result.Message, "Zamanlanmış Bakım", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private void RemoveScheduledMaintenance()
+    {
+        var result = ScheduledMaintenanceService.Remove();
+        StatusMessage = result.Message;
+        AddLog($"[ZAMANLI BAKIM] {result.Message}");
+        if (!result.Success)
+            MessageBox.Show(result.Message, "Zamanlanmış Bakım", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
     // ==================== 8. DEVCLEANER & GAMER CACHES ====================
