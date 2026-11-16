@@ -35,6 +35,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     private string _activeSection = "All";
     private string _searchFilter = string.Empty;
+    private string _riskFilter = "Tümü";
     private string _statusMessage = "Sistem analizi için 'Analiz Et (Simülasyon)' butonuna tıklayın.";
     private string _currentOperationDetail = "Güvenli Mod Aktif: Analiz işlemi hiçbir dosyayı silmez.";
     private int _progressPercent;
@@ -157,6 +158,7 @@ public class MainViewModel : INotifyPropertyChanged
     public int[] AvailableInstallerAgeDays { get; } = [0, 7, 14, 30, 60, 90];
     public int[] AvailableBenchmarkBlockSizesMb { get; } = [64, 128, 256, 512, 1024];
     public string[] AvailableRenameCaseModes { get; } = ["Değiştirme (Olduğu Gibi)", "küçük harf (lowercase)", "BÜYÜK HARF (UPPERCASE)", "Baş Harfler Büyük (Title Case)"];
+    public string[] AvailableRiskFilters { get; } = ["Tümü", "Düşük", "Orta", "Yüksek"];
 
     // Cleaner Commands
     public ICommand AnalyzeCommand { get; }
@@ -375,6 +377,10 @@ public class MainViewModel : INotifyPropertyChanged
         _autoMonitorEnabled = savedConfig.AutoMonitorEnabled;
         _autoMonitorThresholdMb = savedConfig.AutoMonitorThresholdMb;
         _minimizeToTrayOnClose = savedConfig.MinimizeToTrayOnClose;
+        _useRecycleBinSafety = savedConfig.UseRecycleBinSafety;
+        _riskFilter = savedConfig.RiskFilter is "Düşük" or "Orta" or "Yüksek"
+            ? savedConfig.RiskFilter
+            : "Tümü";
         LoadActivityLogs();
 
         foreach (var rule in CleanerEngine.GetDefaultRules())
@@ -1048,6 +1054,20 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    public string RiskFilter
+    {
+        get => _riskFilter;
+        set
+        {
+            if (_riskFilter != value)
+            {
+                _riskFilter = value;
+                OnPropertyChanged();
+                FilteredFilesView.Refresh();
+            }
+        }
+    }
+
     public string AppSearchFilter
     {
         get => _appSearchFilter;
@@ -1355,10 +1375,11 @@ public class MainViewModel : INotifyPropertyChanged
                 return false;
         }
 
-        if (string.IsNullOrWhiteSpace(SearchFilter))
-            return true;
+        if (RiskFilter is not "Tümü" && item.RiskLabel != RiskFilter)
+            return false;
 
-        return item.FullPath.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase) ||
+        return string.IsNullOrWhiteSpace(SearchFilter) ||
+               item.FullPath.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase) ||
                item.RuleName.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase) ||
                item.Category.Contains(SearchFilter, StringComparison.OrdinalIgnoreCase);
     }
@@ -1551,6 +1572,8 @@ public class MainViewModel : INotifyPropertyChanged
                 : $"Süre: {summary.Elapsed.TotalSeconds:F1} sn • Tüm seçili öğeler başarıyla temizlendi.";
 
             AddLog($"[TAMAMLANDI] {CleanerRule.FormatBytes(summary.FreedBytes)} boş alan kazanıldı ({summary.DeletedFilesCount:N0} silindi, {summary.SkippedFilesCount:N0} kilitli dosya atlandı).");
+            foreach (var detail in summary.Logs.Where(log => log.StartsWith("[ATLANDI]", StringComparison.Ordinal)).Take(20))
+                AddLog(detail);
         }
         catch (OperationCanceledException)
         {
@@ -2052,7 +2075,9 @@ public class MainViewModel : INotifyPropertyChanged
             ExcludedPaths = ExcludedPaths.ToList(),
             AutoMonitorEnabled = AutoMonitorEnabled,
             AutoMonitorThresholdMb = AutoMonitorThresholdMb,
-            MinimizeToTrayOnClose = MinimizeToTrayOnClose
+            MinimizeToTrayOnClose = MinimizeToTrayOnClose,
+            UseRecycleBinSafety = UseRecycleBinSafety,
+            RiskFilter = RiskFilter
         });
     }
 

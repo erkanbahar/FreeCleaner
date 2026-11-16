@@ -603,6 +603,8 @@ public class CleanerEngine
                         {
                             deleted = RecycleBinHelper.MoveFileToRecycleBin(item.FullPath);
                             item.Status = deleted ? "Geri Dönüşüm'e Taşındı" : "Kilitli / Kullanımda";
+                            if (!deleted)
+                                summary.Logs.Add($"[ATLANDI] {item.FullPath}: Geri Dönüşüm Kutusu'na taşınamadı.");
                         }
                         else
                         {
@@ -621,11 +623,13 @@ public class CleanerEngine
                     {
                         deleted = false;
                         item.Status = "Kilitli (Kullanımda)";
+                        summary.Logs.Add($"[ATLANDI] {item.FullPath}: {ex.Message}");
                     }
-                    catch
+                    catch (Exception ex)
                     {
                         deleted = false;
                         item.Status = "Atlandı";
+                        summary.Logs.Add($"[ATLANDI] {item.FullPath}: Beklenmeyen hata: {ex.Message}");
                     }
                 }
 

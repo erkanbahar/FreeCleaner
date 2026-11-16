@@ -1134,6 +1134,7 @@
                                 <Grid Grid.Row="0" Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="110"/>
                                         <ColumnDefinition Width="240"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
@@ -1142,7 +1143,14 @@
                                                FontWeight="Bold"
                                                Foreground="{StaticResource TextSecondaryBrush}"
                                                VerticalAlignment="Center"/>
-                                    <Border Grid.Column="1"
+                                    <ComboBox Grid.Column="1"
+                                              ItemsSource="{Binding AvailableRiskFilters}"
+                                              SelectedItem="{Binding RiskFilter, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="0,0,8,0"
+                                              Padding="6,3"
+                                              FontSize="11"
+                                              ToolTip="Risk seviyesine göre filtrele"/>
+                                    <Border Grid.Column="2"
                                             Background="{StaticResource BgCardBrush}"
                                             BorderBrush="{StaticResource BorderSubtleBrush}"
                                             BorderThickness="1"
