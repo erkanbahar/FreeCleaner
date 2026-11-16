@@ -779,6 +779,12 @@
                                   FontSize="11"
                                   Cursor="Hand"
                                   Content="Geri Dönüşüm Kutusuna taşı"/>
+                        <Button Style="{StaticResource SubtleButtonStyle}"
+                                Content="Geri Dönüşüm Kutusunu Aç"
+                                Command="{Binding OpenRecycleBinCommand}"
+                                Margin="0,7,0,0"
+                                Padding="8,4"
+                                FontSize="10.5"/>
                     </StackPanel>
                 </Border>
 

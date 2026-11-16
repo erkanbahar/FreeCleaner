@@ -27,6 +27,10 @@ public class MainViewModel : INotifyPropertyChanged
 {
     private readonly CleanerEngine _engine = new();
     private readonly DispatcherTimer _autoMonitorTimer;
+    private static readonly string ActivityLogPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "FreeCleaner",
+        "activity.log");
     private CancellationTokenSource? _cts;
 
     private string _activeSection = "All";
@@ -162,6 +166,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand SelectAllRulesCommand { get; }
     public ICommand DeselectAllRulesCommand { get; }
     public ICommand OpenFileLocationCommand { get; }
+    public ICommand OpenRecycleBinCommand { get; }
     public ICommand RefreshMetricsCommand { get; }
 
     // Startup Manager Commands
@@ -370,6 +375,7 @@ public class MainViewModel : INotifyPropertyChanged
         _autoMonitorEnabled = savedConfig.AutoMonitorEnabled;
         _autoMonitorThresholdMb = savedConfig.AutoMonitorThresholdMb;
         _minimizeToTrayOnClose = savedConfig.MinimizeToTrayOnClose;
+        LoadActivityLogs();
 
         foreach (var rule in CleanerEngine.GetDefaultRules())
         {
@@ -398,6 +404,7 @@ public class MainViewModel : INotifyPropertyChanged
         SelectAllRulesCommand = new RelayCommand(_ => SetVisibleRulesSelection(true), _ => !IsBusy);
         DeselectAllRulesCommand = new RelayCommand(_ => SetVisibleRulesSelection(false), _ => !IsBusy);
         OpenFileLocationCommand = new RelayCommand(OpenFileLocation);
+        OpenRecycleBinCommand = new RelayCommand(_ => OpenRecycleBin());
         RefreshMetricsCommand = new RelayCommand(_ => RefreshSystemMetrics());
 
         // Startup Commands
@@ -4819,6 +4826,59 @@ public class MainViewModel : INotifyPropertyChanged
         else
         {
             ActivityLogs.Insert(0, timestamped);
+        }
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(ActivityLogPath)!);
+            File.AppendAllText(ActivityLogPath, timestamped + Environment.NewLine);
+        }
+        catch (IOException ex)
+        {
+            Debug.WriteLine($"FreeCleaner işlem günlüğü yazılamadı: {ex.Message}");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Debug.WriteLine($"FreeCleaner işlem günlüğü için erişim reddedildi: {ex.Message}");
+        }
+    }
+
+    private void LoadActivityLogs()
+    {
+        try
+        {
+            if (!File.Exists(ActivityLogPath))
+                return;
+
+            foreach (var line in File.ReadLines(ActivityLogPath).Reverse().Take(200))
+                ActivityLogs.Add(line);
+        }
+        catch (IOException ex)
+        {
+            Debug.WriteLine($"FreeCleaner işlem günlüğü okunamadı: {ex.Message}");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Debug.WriteLine($"FreeCleaner işlem günlüğü için erişim reddedildi: {ex.Message}");
+        }
+    }
+
+    private void OpenRecycleBin()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = "shell:RecycleBinFolder",
+                UseShellExecute = true
+            });
+            AddLog("Geri Dönüşüm Kutusu açıldı.");
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Geri Dönüşüm Kutusu açılamadı: {ex.Message}";
+            AddLog($"[HATA] Geri Dönüşüm Kutusu açılamadı: {ex.Message}");
         }
     }
 
