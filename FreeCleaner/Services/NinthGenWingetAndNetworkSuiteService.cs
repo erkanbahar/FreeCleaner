@@ -6,6 +6,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using FreeCleaner.Models;
+using Microsoft.Data.Sqlite;
 
 namespace FreeCleaner.Services;
 
@@ -446,42 +447,122 @@ public static class NinthGenWingetAndNetworkSuiteService
         {
             int count = 0;
             long freed = 0;
+            int failed = 0;
 
             foreach (var db in items.Where(x => x.IsSelected))
             {
+                List<(string Source, string Backup)>? backupFiles = null;
                 try
                 {
-                    // Clean orphan -journal / -wal / -shm files if the database is not currently locked by a running browser/IDE
-                    using (var lockCheck = new FileStream(db.FullFilePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                    long beforeSize = GetDatabaseFootprint(db.FullFilePath);
+                    backupFiles = BackupSqliteDatabase(db.FullFilePath);
+                    var connectionString = new SqliteConnectionStringBuilder
                     {
-                        lockCheck.Flush(flushToDisk: true);
-                    }
+                        DataSource = db.FullFilePath,
+                        Mode = SqliteOpenMode.ReadWrite,
+                        Cache = SqliteCacheMode.Private,
+                        DefaultTimeout = 10
+                    }.ToString();
 
-                    foreach (string suffix in new[] { "-wal", "-shm", "-journal" })
+                    using var connection = new SqliteConnection(connectionString);
+                    connection.Open();
+                    ExecuteSqliteCommand(connection, "PRAGMA busy_timeout = 10000;");
+                    ExecuteSqliteCommand(connection, "PRAGMA wal_checkpoint(TRUNCATE);");
+                    ExecuteSqliteCommand(connection, "VACUUM;");
+                    ExecuteSqliteCommand(connection, "PRAGMA optimize;");
+                    count++;
+                    long afterSize = GetDatabaseFootprint(db.FullFilePath);
+                    freed += Math.Max(0, beforeSize - afterSize);
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    if (backupFiles is not null)
                     {
-                        string sidecar = db.FullFilePath + suffix;
-                        if (File.Exists(sidecar))
+                        try
                         {
-                            long len = new FileInfo(sidecar).Length;
-                            File.Delete(sidecar);
-                            freed += len;
+                            RestoreSqliteBackup(db.FullFilePath, backupFiles);
+                        }
+                        catch (Exception restoreException)
+                        {
+                            ErrorLogService.Log("SQLite yedek geri yükleme", restoreException);
                         }
                     }
-
-                    count++;
-                }
-                catch
-                {
-                    // Database is locked because the browser or IDE is currently open
+                    ErrorLogService.Log("SQLite optimizasyonu", ex);
                 }
             }
 
             string msg = count > 0
-                ? $"{count} SQLite veritabanı önbelleği ve WAL günlüğü birleştirildi ({CleanerRule.FormatBytes(freed)} kazanıldı)."
-                : "Seçili veritabanları şu anda açık olan bir tarayıcı/IDE tarafından kullanılıyor (Lütfen önce ilgili uygulamayı kapatın).";
+                ? $"{count} SQLite veritabanı VACUUM/checkpoint ile optimize edildi ({CleanerRule.FormatBytes(freed)} kazanıldı)." +
+                  (failed > 0 ? $" {failed} veritabanı kullanıldığı için atlandı." : string.Empty)
+                : "Seçili veritabanları optimize edilemedi. İlgili tarayıcı/IDE uygulamalarını kapatıp tekrar deneyin.";
 
             return (count, freed, msg);
         });
+    }
+
+    private static void ExecuteSqliteCommand(SqliteConnection connection, string sql)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        command.CommandTimeout = 30;
+        command.ExecuteNonQuery();
+    }
+
+    private static long GetDatabaseFootprint(string databasePath)
+    {
+        long total = File.Exists(databasePath) ? new FileInfo(databasePath).Length : 0;
+        foreach (string suffix in new[] { "-wal", "-shm", "-journal" })
+        {
+            string sidecar = databasePath + suffix;
+            if (File.Exists(sidecar))
+                total += new FileInfo(sidecar).Length;
+        }
+
+        return total;
+    }
+
+    private static List<(string Source, string Backup)> BackupSqliteDatabase(string databasePath)
+    {
+        string backupDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "FreeCleaner",
+            "SQLiteBackups");
+        Directory.CreateDirectory(backupDirectory);
+        string backupPrefix = Path.Combine(
+            backupDirectory,
+            $"{Path.GetFileName(databasePath)}_{DateTime.Now:yyyyMMdd_HHmmss_fff}_{Guid.NewGuid():N}");
+        var backups = new List<(string Source, string Backup)>();
+
+        foreach (string source in new[] { databasePath, databasePath + "-wal", databasePath + "-shm", databasePath + "-journal" })
+        {
+            if (!File.Exists(source))
+                continue;
+
+            string suffix = source.Length == databasePath.Length
+                ? string.Empty
+                : source[databasePath.Length..];
+            string backupPath = backupPrefix + (string.IsNullOrEmpty(suffix) ? string.Empty : suffix) + ".bak";
+            File.Copy(source, backupPath, overwrite: false);
+            backups.Add((source, backupPath));
+        }
+
+        return backups;
+    }
+
+    private static void RestoreSqliteBackup(
+        string databasePath,
+        IEnumerable<(string Source, string Backup)> backups)
+    {
+        foreach (string suffix in new[] { "-wal", "-shm", "-journal" })
+        {
+            string sidecar = databasePath + suffix;
+            if (File.Exists(sidecar))
+                File.Delete(sidecar);
+        }
+
+        foreach ((string source, string backup) in backups)
+            File.Copy(backup, source, overwrite: true);
     }
 
     // ==================== 4. WINDOWS CREDENTIAL VAULT (CMDKEY) & SSH / GIT KEY AUDITOR ====================
