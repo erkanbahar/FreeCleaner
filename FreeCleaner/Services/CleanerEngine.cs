@@ -46,7 +46,10 @@ public class CleanerEngine
                 Description = "Silinmiş ancak diskte hâlâ yer kaplayan Geri Dönüşüm Kutusu öğeleri",
                 IconGlyph = "\uE74D",
                 Group = RuleGroup.System,
+                RiskLevel = RiskLevel.High,
                 IsRecycleBin = true,
+                RequiresWarning = true,
+                WarningMessage = "Geri Dönüşüm Kutusu boşaltılacak ve seçili öğeler geri alınamaz hale gelebilir.",
                 IsSelected = true
             },
             new CleanerRule
@@ -105,7 +108,10 @@ public class CleanerEngine
                 Description = "Hızlı erişim ve son açılan dosya kısayol geçmişi (*.lnk)",
                 IconGlyph = "\uE81C",
                 Group = RuleGroup.System,
+                RiskLevel = RiskLevel.High,
                 IsSelected = false,
+                RequiresWarning = true,
+                WarningMessage = "Son kullanılan belge kısayolları silinecek; bu işlem Windows geçmiş görünümünü etkiler.",
                 Targets =
                 [
                     new ScanTarget(
@@ -146,6 +152,7 @@ public class CleanerEngine
                 Description = "Sitelerdeki oturumlarınızı kapatabilir (İsteğe bağlı)",
                 IconGlyph = "\uE8D7",
                 Group = RuleGroup.Browsers,
+                RiskLevel = RiskLevel.High,
                 IsSelected = false,
                 RequiresWarning = true,
                 WarningMessage = "Chrome çerezlerini silmek açık web sitesi oturumlarınızdan çıkış yapılmasına neden olur.",
@@ -170,6 +177,7 @@ public class CleanerEngine
                 Description = "Edge web oturumu çerez veritabanları (İsteğe bağlı)",
                 IconGlyph = "\uE8D7",
                 Group = RuleGroup.Browsers,
+                RiskLevel = RiskLevel.High,
                 IsSelected = false,
                 RequiresWarning = true,
                 WarningMessage = "Edge çerezlerini silmek açık web sitesi oturumlarınızdan çıkış yapılmasına neden olur.",
@@ -268,6 +276,7 @@ public class CleanerEngine
                 Description = "C:\\CURSOR ve Repos içindeki Visual Studio projelerinin Debug, Retail, Release, bin ve obj klasörleri",
                 IconGlyph = "\uE943",
                 Group = RuleGroup.DeveloperAndApps,
+                RiskLevel = RiskLevel.High,
                 IsSelected = false,
                 RequiresWarning = true,
                 WarningMessage = "Seçili klasörlerdeki Visual Studio projelerinin Debug ve Retail/Release derleme çıktıları temizlenecektir.",
@@ -467,6 +476,7 @@ public class CleanerEngine
                             FileName = $"Geri Dönüşüm Kutusu ({rbCount:N0} öğe)",
                             SizeBytes = rbSize,
                             LastModified = DateTime.Now,
+                            RiskLevel = rule.RiskLevel,
                             IsRecycleBinItem = true,
                             Status = "Analiz Edildi"
                         };
@@ -514,6 +524,7 @@ public class CleanerEngine
                                 FileName = file.Name,
                                 SizeBytes = fileLen,
                                 LastModified = lastWrite,
+                                RiskLevel = rule.RiskLevel,
                                 Status = "Analiz Edildi"
                             };
 

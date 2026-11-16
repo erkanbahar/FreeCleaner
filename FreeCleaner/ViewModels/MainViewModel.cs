@@ -36,7 +36,7 @@ public class MainViewModel : INotifyPropertyChanged
     private int _progressPercent;
     private bool _isBusy;
     private bool _hasAnalyzed;
-    private bool _useRecycleBinSafety;
+    private bool _useRecycleBinSafety = true;
     private long _totalDetectedBytes;
     private int _totalDetectedFiles;
     private long _lastFreedBytes;
@@ -1221,7 +1221,9 @@ public class MainViewModel : INotifyPropertyChanged
     {
         if (e.PropertyName == nameof(CleanerRule.IsSelected) && sender is CleanerRule changedRule)
         {
-            if (changedRule.IsSelected && changedRule.RequiresWarning && !string.IsNullOrEmpty(changedRule.WarningMessage))
+            if (changedRule.IsSelected &&
+                (changedRule.RequiresWarning || changedRule.RiskLevel == RiskLevel.High) &&
+                !string.IsNullOrEmpty(changedRule.WarningMessage))
             {
                 var res = MessageBox.Show(
                     $"{changedRule.WarningMessage}\n\nYine de bu seçeneği etkinleştirmek istiyor musunuz?",
@@ -1305,7 +1307,7 @@ public class MainViewModel : INotifyPropertyChanged
     {
         foreach (CleanerRule rule in FilteredRulesView)
         {
-            if (selected && rule.RequiresWarning)
+            if (selected && (rule.RequiresWarning || rule.RiskLevel == RiskLevel.High))
                 continue;
             rule.IsSelected = selected;
         }
@@ -1400,6 +1402,29 @@ public class MainViewModel : INotifyPropertyChanged
 
         if (selectedCount == 0)
             return;
+
+        var selectedHighRiskRules = AllRules
+            .Where(rule => rule.RiskLevel == RiskLevel.High &&
+                           DiscoveredFiles.Any(file => file.IsSelected && file.RuleId == rule.Id))
+            .ToList();
+
+        if (selectedHighRiskRules.Count > 0)
+        {
+            string highRiskNames = string.Join(", ", selectedHighRiskRules.Select(rule => rule.Name));
+            var highRiskConfirmation = MessageBox.Show(
+                $"Yüksek riskli temizlik seçenekleri seçildi:\n\n{highRiskNames}\n\n" +
+                "Bu işlemler oturum verilerini, geçmişleri veya geri alınması zor sistem verilerini etkileyebilir. " +
+                "Seçili öğeleri temizlemek istediğinizi açıkça onaylıyor musunuz?",
+                "Yüksek Riskli Temizlik Onayı",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (highRiskConfirmation != MessageBoxResult.Yes)
+            {
+                AddLog("Yüksek riskli temizlik kullanıcı tarafından onaylanmadı.");
+                return;
+            }
+        }
 
         string modeDescription = UseRecycleBinSafety
             ? "Seçili dosyalar Geri Dönüşüm Kutusu'na taşınacaktır."
