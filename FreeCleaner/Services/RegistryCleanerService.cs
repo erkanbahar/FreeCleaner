@@ -196,6 +196,10 @@ public static class RegistryCleanerService
 
     public static string ExportBackupFile(IEnumerable<RegistryIssueItem> itemsToBackup)
     {
+        var items = itemsToBackup.ToList();
+        if (items.Count == 0)
+            throw new InvalidOperationException("Yedeklenecek registry kaydı bulunamadı.");
+
         string backupDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "FreeCleaner",
@@ -209,23 +213,24 @@ public static class RegistryCleanerService
         sb.AppendLine($"; FreeCleaner Registry Backup - Created {DateTime.Now:O}");
         sb.AppendLine();
 
-        foreach (var group in itemsToBackup.GroupBy(x => x.KeyPath))
+        foreach (var group in items.GroupBy(x => x.KeyPath, StringComparer.OrdinalIgnoreCase))
         {
-            string fullHiveKey = group.Key
-                .Replace("HKCU\\", "HKEY_CURRENT_USER\\")
-                .Replace("HKLM\\", "HKEY_LOCAL_MACHINE\\");
+            bool isCurrentUser = group.First().IsCurrentUser;
+            string subKeyPath = group.First().SubKeyPath;
+            RegistryKey root = isCurrentUser ? Registry.CurrentUser : Registry.LocalMachine;
+            using RegistryKey key = root.OpenSubKey(subKeyPath, writable: false)
+                ?? throw new InvalidOperationException($"Registry anahtarı okunamadı: {group.Key}");
 
+            string fullHiveKey = $"{(isCurrentUser ? "HKEY_CURRENT_USER" : "HKEY_LOCAL_MACHINE")}\\{subKeyPath}";
             sb.AppendLine($"[{fullHiveKey}]");
-            foreach (var item in group)
+            foreach (string valueName in key.GetValueNames())
             {
-                string escapedTarget = item.MissingTarget.Replace("\\", "\\\\").Replace("\"", "\\\"");
-                if (item.ValueName == "(Default)")
-                    sb.AppendLine($"@=\"{escapedTarget}\"");
-                else
-                {
-                    string escapedName = item.ValueName.Replace("\\", "\\\\").Replace("\"", "\\\"");
-                    sb.AppendLine($"\"{escapedName}\"=\"{escapedTarget}\"");
-                }
+                object? value = key.GetValue(valueName, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
+                if (value is null)
+                    continue;
+
+                RegistryValueKind kind = key.GetValueKind(valueName);
+                sb.AppendLine($"{FormatValueName(valueName)}={FormatValue(value, kind)}");
             }
             sb.AppendLine();
         }
@@ -233,6 +238,32 @@ public static class RegistryCleanerService
         File.WriteAllText(filePath, sb.ToString(), Encoding.Unicode);
         return filePath;
     }
+
+    private static string FormatValueName(string valueName)
+        => string.IsNullOrEmpty(valueName)
+            ? "@"
+            : $"\"{valueName.Replace("\"", "\\\"")}\"";
+
+    private static string FormatValue(object value, RegistryValueKind kind)
+    {
+        return kind switch
+        {
+            RegistryValueKind.String or RegistryValueKind.ExpandString =>
+                $"\"{value.ToString()?.Replace("\"", "\\\"") ?? string.Empty}\"",
+            RegistryValueKind.DWord =>
+                $"dword:{Convert.ToUInt32(value):x8}",
+            RegistryValueKind.QWord =>
+                $"hex(b):{FormatBytes(BitConverter.GetBytes(Convert.ToUInt64(value)))}",
+            RegistryValueKind.Binary =>
+                $"hex:{FormatBytes((byte[])value)}",
+            RegistryValueKind.MultiString =>
+                $"hex(7):{FormatBytes(Encoding.Unicode.GetBytes(string.Join('\0', (string[])value) + "\0\0"))}",
+            _ => $"\"{value}\""
+        };
+    }
+
+    private static string FormatBytes(byte[] bytes)
+        => string.Join(",", bytes.Select(b => b.ToString("x2")));
 
     public static string? GetLatestBackupFile()
     {
