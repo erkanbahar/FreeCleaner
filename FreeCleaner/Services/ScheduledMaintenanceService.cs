@@ -55,7 +55,10 @@ public static class ScheduledMaintenanceService
             RedirectStandardError = true
         });
         if (process is null)
+        {
+            ErrorLogService.Log("Task Scheduler", "schtasks.exe başlatılamadı.");
             return (-1, "schtasks.exe başlatılamadı.");
+        }
 
         string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
         process.WaitForExit();

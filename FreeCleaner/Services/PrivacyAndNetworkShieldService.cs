@@ -158,7 +158,10 @@ public static class PrivacyAndNetworkShieldService
                         Application.Current?.Dispatcher?.Invoke(Clipboard.Clear);
                         cleanedTotal++;
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        ErrorLogService.Log("Pano temizleme", ex);
+                    }
                     break;
             }
 
@@ -210,7 +213,10 @@ public static class PrivacyAndNetworkShieldService
                 count++;
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("Hosts okuma", ex);
+        }
         return count;
     }
 
@@ -423,7 +429,10 @@ public static class PrivacyAndNetworkShieldService
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("Hosts okuma", ex);
+        }
 
         return entries;
     }
@@ -446,6 +455,7 @@ public static class PrivacyAndNetworkShieldService
         }
         catch (Exception ex)
         {
+            ErrorLogService.Log("Hosts ekleme", ex);
             message = $"Hosts yazma hatası: {ex.Message}";
             return false;
         }
@@ -480,6 +490,7 @@ public static class PrivacyAndNetworkShieldService
         }
         catch (Exception ex)
         {
+            ErrorLogService.Log("Hosts güncelleme", ex);
             message = $"Hosts güncelleme hatası: {ex.Message}";
             return false;
         }
@@ -512,6 +523,7 @@ public static class PrivacyAndNetworkShieldService
         }
         catch (Exception ex)
         {
+            ErrorLogService.Log("Hosts silme", ex);
             message = $"Hosts silme hatası: {ex.Message}";
             return false;
         }
@@ -585,6 +597,7 @@ public static class PrivacyAndNetworkShieldService
         }
         catch (Exception ex)
         {
+            ErrorLogService.Log("Hosts geri yükleme", ex);
             return (false, $"Hosts geri yükleme hatası: {ex.Message}");
         }
     }

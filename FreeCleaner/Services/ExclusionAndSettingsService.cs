@@ -41,9 +41,9 @@ public static class ExclusionAndSettingsService
                     return data;
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Return default config on failure
+            ErrorLogService.Log("Ayar yükleme", ex);
         }
         return new CleanerConfigData();
     }
@@ -56,9 +56,9 @@ public static class ExclusionAndSettingsService
             string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(ConfigFilePath, json);
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore write errors
+            ErrorLogService.Log("Ayar kaydetme", ex);
         }
     }
 

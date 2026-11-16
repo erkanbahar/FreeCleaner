@@ -2208,9 +2208,9 @@ public class MainViewModel : INotifyPropertyChanged
                 AddLog($"[OTOMATİK UYARI] Eşik ({AutoMonitorThresholdMb} MB) aşıldı: {CleanerRule.FormatBytes(totalBytes)} çöp tespit edildi.");
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore background check error
+            ErrorLogService.Log("Otomatik izleme", ex);
         }
     }
 

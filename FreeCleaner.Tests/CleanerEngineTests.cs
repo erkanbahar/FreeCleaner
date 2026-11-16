@@ -15,6 +15,7 @@ public class CleanerEngineTests
         Assert.Equal(RiskLevel.High, rules.Single(rule => rule.Id == "sys_recycle_bin").Risk);
         Assert.Equal(RiskLevel.High, rules.Single(rule => rule.Id == "brw_chrome_cookies").Risk);
         Assert.Equal(RiskLevel.High, rules.Single(rule => rule.Id == "brw_edge_cookies").Risk);
+        Assert.Equal("Yüksek", rules.Single(rule => rule.Id == "sys_recycle_bin").RiskLabel);
     }
 
     [Fact]
@@ -60,6 +61,53 @@ public class CleanerEngineTests
             Assert.Equal(1, summary.DeletedFilesCount);
             Assert.Equal(item.SizeBytes, summary.FreedBytes);
             Assert.False(File.Exists(filePath));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDirectory))
+                Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void IsPathExcluded_MatchesConfiguredPathCaseInsensitively()
+    {
+        var exclusions = new[] { @"C:\Users\Test\Documents" };
+
+        Assert.True(ExclusionAndSettingsService.IsPathExcluded(
+            @"c:\users\test\documents\report.tmp",
+            exclusions));
+        Assert.False(ExclusionAndSettingsService.IsPathExcluded(
+            @"C:\Users\Test\Downloads\report.tmp",
+            exclusions));
+    }
+
+    [Fact]
+    public async Task AnalyzeAsync_ExcludesFilesUnderExcludedPaths()
+    {
+        string tempDirectory = Path.Combine(Path.GetTempPath(), $"FreeCleanerTests-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+        string filePath = Path.Combine(tempDirectory, "excluded.tmp");
+        await File.WriteAllTextAsync(filePath, "excluded data");
+        File.SetLastWriteTimeUtc(filePath, DateTime.UtcNow.AddMinutes(-2));
+
+        try
+        {
+            var rule = new CleanerRule
+            {
+                Id = "test_excluded",
+                Name = "Test Excluded",
+                Category = "Test",
+                Description = "Test",
+                IconGlyph = string.Empty,
+                Group = RuleGroup.System,
+                Risk = RiskLevel.Low,
+                Targets = [new ScanTarget(tempDirectory)]
+            };
+
+            var results = await new CleanerEngine().AnalyzeAsync([rule], [tempDirectory]);
+
+            Assert.Empty(results);
         }
         finally
         {
