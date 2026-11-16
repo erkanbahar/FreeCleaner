@@ -1192,6 +1192,7 @@
                                         <DataGridTextColumn Header="Dosya Yolu" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
                                     </DataGrid.Columns>
                                 </DataGrid>
+
                             </Grid>
                         </Border>
                     </Grid>
@@ -1281,7 +1282,8 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="2*"/>
+                            <RowDefinition Height="260"/>
                         </Grid.RowDefinitions>
 
                         <Grid Grid.Row="0" Margin="0,0,0,12">
@@ -1334,6 +1336,58 @@
                                 <DataGridTextColumn Header="Kayıt Defteri Anahtarı" Binding="{Binding KeyPath}" IsReadOnly="True" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
+
+                        <Border Grid.Row="2"
+                                Margin="0,12,0,0"
+                                Padding="10"
+                                Background="{StaticResource BgCardBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0" Margin="0,0,0,8">
+                                    <TextBlock Text="YEDEK YÖNETİCİSİ"
+                                               FontSize="11"
+                                               FontWeight="Bold"
+                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                        <Button Style="{StaticResource SubtleButtonStyle}"
+                                                Content="Yenile"
+                                                Command="{Binding RefreshBackupsCommand}"
+                                                Margin="0,0,8,0"/>
+                                        <Button Style="{StaticResource CleanButtonStyle}"
+                                                Content="Seçili Yedeği Geri Yükle"
+                                                Command="{Binding RestoreSelectedBackupCommand}"/>
+                                    </StackPanel>
+                                </Grid>
+                                <DataGrid Grid.Row="1"
+                                          ItemsSource="{Binding BackupFiles}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          IsReadOnly="False"
+                                          HeadersVisibility="Column"
+                                          GridLinesVisibility="None"
+                                          Background="{StaticResource BgPrimaryBrush}"
+                                          RowBackground="#141B26"
+                                          AlternatingRowBackground="#18202D"
+                                          Foreground="{StaticResource TextPrimaryBrush}"
+                                          BorderBrush="{StaticResource BorderSubtleBrush}"
+                                          BorderThickness="1"
+                                          RowHeight="28">
+                                    <DataGrid.Columns>
+                                        <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
+                                        <DataGridTextColumn Header="Tür" Binding="{Binding BackupType}" IsReadOnly="True" Width="90"/>
+                                        <DataGridTextColumn Header="Dosya" Binding="{Binding FileName}" IsReadOnly="True" Width="*"/>
+                                        <DataGridTextColumn Header="Tarih" Binding="{Binding FormattedDate}" IsReadOnly="True" Width="145"/>
+                                        <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="85"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
                     </Grid>
                 </Border>
 

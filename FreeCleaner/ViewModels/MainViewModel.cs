@@ -98,6 +98,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<ScannedFileItem> DiscoveredFiles { get; } = [];
     public ObservableCollection<StartupItemModel> StartupItems { get; } = [];
     public ObservableCollection<RegistryIssueItem> RegistryIssues { get; } = [];
+    public ObservableCollection<BackupFileItem> BackupFiles { get; } = [];
     public ObservableCollection<LargeOrDuplicateFileItem> DiskAnalyzerItems { get; } = [];
     public ObservableCollection<InstalledAppModel> InstalledApps { get; } = [];
     public ObservableCollection<OrphanAppFolderItem> OrphanFolders { get; } = [];
@@ -184,6 +185,8 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand ScanRegistryCommand { get; }
     public ICommand BackupRegistryCommand { get; }
     public ICommand RestoreRegistryBackupCommand { get; }
+    public ICommand RefreshBackupsCommand { get; }
+    public ICommand RestoreSelectedBackupCommand { get; }
     public ICommand FixRegistryCommand { get; }
 
     // Disk Analyzer Commands
@@ -443,6 +446,8 @@ public class MainViewModel : INotifyPropertyChanged
         ScanRegistryCommand = new RelayCommand(async _ => await RunRegistryScanAsync(), _ => !IsBusy);
         BackupRegistryCommand = new RelayCommand(_ => RunRegistryBackupOnly(), _ => !IsBusy && RegistryIssues.Any(x => x.IsSelected));
         RestoreRegistryBackupCommand = new RelayCommand(_ => RestoreLatestRegistryBackup(), _ => !IsBusy && RegistryCleanerService.GetLatestBackupFile() is not null);
+        RefreshBackupsCommand = new RelayCommand(_ => LoadBackups(), _ => !IsBusy);
+        RestoreSelectedBackupCommand = new RelayCommand(_ => RestoreSelectedBackup(), _ => !IsBusy && BackupFiles.Any(x => x.IsSelected));
         FixRegistryCommand = new RelayCommand(_ => RunRegistryFix(), _ => !IsBusy && RegistryIssues.Any(x => x.IsSelected));
 
         // Disk Analyzer Commands
@@ -520,6 +525,8 @@ public class MainViewModel : INotifyPropertyChanged
         RefreshHostsCommand = new RelayCommand(_ => LoadHostsEntries(), _ => !IsBusy);
         AddHostEntryCommand = new RelayCommand(_ => AddNewHostEntry(), _ => !IsBusy);
         RestoreHostsBackupCommand = new RelayCommand(_ => RestoreLatestHostsBackup(), _ => !IsBusy && PrivacyAndNetworkShieldService.GetLatestHostsBackup() is not null);
+
+        LoadBackups();
 
         // Task Scheduler & Folder Space Tree Commands
         RefreshScheduledTasksCommand = new RelayCommand(async _ => await LoadScheduledTasksAsync(), _ => !IsBusy);
@@ -1775,6 +1782,35 @@ public class MainViewModel : INotifyPropertyChanged
         AddLog($"[GERİ YÜKLEME] {result.Message}");
         if (!result.Success)
             MessageBox.Show(result.Message, "Registry Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private void LoadBackups()
+    {
+        BackupFiles.Clear();
+        foreach (var backup in BackupManagerService.ListBackups())
+            BackupFiles.Add(backup);
+        StatusMessage = $"{BackupFiles.Count} yedek dosyası listelendi.";
+    }
+
+    private void RestoreSelectedBackup()
+    {
+        BackupFileItem? backup = BackupFiles.FirstOrDefault(x => x.IsSelected);
+        if (backup is null) return;
+
+        if (MessageBox.Show(
+                $"Seçilen {backup.BackupType} yedeği geri yüklenecek:\n\n{backup.FileName}\n\nDevam edilsin mi?",
+                "Yedeği Geri Yükle",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+
+        var result = BackupManagerService.Restore(backup);
+        StatusMessage = result.Message;
+        AddLog($"[GERİ YÜKLEME] {result.Message}");
+        if (!result.Success)
+            MessageBox.Show(result.Message, "Yedek Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
+        else
+            LoadBackups();
     }
 
     // ==================== 4. DISK ANALYZER (LARGE & DUPLICATE FILES) ====================

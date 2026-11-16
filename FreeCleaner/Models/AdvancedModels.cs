@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 
 namespace FreeCleaner.Models;
@@ -76,6 +77,34 @@ public class RegistryIssueItem : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public class BackupFileItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+
+    public required string FilePath { get; init; }
+    public required string BackupType { get; init; }
+    public required DateTime CreatedAt { get; init; }
+    public required long SizeBytes { get; init; }
+    public string FileName => Path.GetFileName(FilePath);
+    public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
+    public string FormattedDate => CreatedAt.ToString("dd.MM.yyyy HH:mm:ss");
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsSelected)));
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }
 
 public class LargeOrDuplicateFileItem : INotifyPropertyChanged
