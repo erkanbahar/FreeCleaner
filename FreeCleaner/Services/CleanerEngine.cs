@@ -440,19 +440,23 @@ public class CleanerEngine
         if (activeRules.Count == 0)
             return allDiscoveredItems;
 
-        long runningTotalBytes = 0;
-        int runningTotalCount = 0;
-
         await Task.Run(() =>
         {
-            for (int i = 0; i < activeRules.Count; i++)
+            long runningTotalBytes = 0;
+            int runningTotalCount = 0;
+            int completedRules = 0;
+            object itemsLock = new();
+            object pathsLock = new();
+            var options = new ParallelOptions
+            {
+                CancellationToken = cancellationToken,
+                MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 2, 4)
+            };
+
+            Parallel.ForEach(activeRules, options, rule =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var rule = activeRules[i];
                 rule.StatusText = "Taranıyor...";
-
-                int pct = (int)((i / (double)activeRules.Count) * 100);
-                progress?.Report((pct, rule.Name, runningTotalBytes, runningTotalCount));
 
                 long ruleBytes = 0;
                 int ruleCount = 0;
@@ -475,11 +479,12 @@ public class CleanerEngine
                             Risk = rule.Risk,
                             Status = "Analiz Edildi"
                         };
-                        allDiscoveredItems.Add(rbItem);
+                        lock (itemsLock)
+                            allDiscoveredItems.Add(rbItem);
                         ruleBytes += rbSize;
                         ruleCount += Math.Max(1, rbCount);
-                        runningTotalBytes += rbSize;
-                        runningTotalCount += Math.Max(1, rbCount);
+                        Interlocked.Add(ref runningTotalBytes, rbSize);
+                        Interlocked.Add(ref runningTotalCount, Math.Max(1, rbCount));
                     }
                 }
                 else
@@ -492,7 +497,10 @@ public class CleanerEngine
 
                         foreach (var file in EnumerateFilesSafe(target.BasePath, target.SearchPattern, target.Recursive, cancellationToken))
                         {
-                            if (!visitedPaths.Add(file.FullName))
+                            bool isNewPath;
+                            lock (pathsLock)
+                                isNewPath = visitedPaths.Add(file.FullName);
+                            if (!isNewPath)
                                 continue;
 
                             if (ExclusionAndSettingsService.IsPathExcluded(file.FullName, exclusions))
@@ -523,11 +531,12 @@ public class CleanerEngine
                                 Status = "Analiz Edildi"
                             };
 
-                            allDiscoveredItems.Add(item);
+                            lock (itemsLock)
+                                allDiscoveredItems.Add(item);
                             ruleBytes += fileLen;
                             ruleCount++;
-                            runningTotalBytes += fileLen;
-                            runningTotalCount++;
+                            Interlocked.Add(ref runningTotalBytes, fileLen);
+                            Interlocked.Increment(ref runningTotalCount);
                         }
                     }
                 }
@@ -536,9 +545,13 @@ public class CleanerEngine
                 rule.DetectedFileCount = ruleCount;
                 rule.StatusText = ruleCount > 0 ? $"{ruleCount:N0} dosya ({CleanerRule.FormatBytes(ruleBytes)})" : "Temiz";
 
-                int donePct = (int)(((i + 1) / (double)activeRules.Count) * 100);
-                progress?.Report((donePct, rule.Name, runningTotalBytes, runningTotalCount));
-            }
+                int donePct = (int)(Interlocked.Increment(ref completedRules) * 100.0 / activeRules.Count);
+                progress?.Report((
+                    donePct,
+                    rule.Name,
+                    Interlocked.Read(ref runningTotalBytes),
+                    Volatile.Read(ref runningTotalCount)));
+            });
         }, cancellationToken);
 
         return allDiscoveredItems

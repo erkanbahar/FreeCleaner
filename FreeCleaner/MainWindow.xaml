@@ -1303,6 +1303,10 @@
                                         Content="Sadece .REG Yedeği Al"
                                         Command="{Binding BackupRegistryCommand}"
                                         Margin="0,0,8,0"/>
+                                <Button Style="{StaticResource SubtleButtonStyle}"
+                                        Content="Son Yedeği Geri Yükle"
+                                        Command="{Binding RestoreRegistryBackupCommand}"
+                                        Margin="0,0,8,0"/>
                                 <Button Style="{StaticResource CleanButtonStyle}"
                                         Content="Yedekle ve Seçilileri Onar"
                                         Command="{Binding FixRegistryCommand}"/>
@@ -1793,6 +1797,27 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
+                            <Border Background="{StaticResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <CheckBox IsChecked="{Binding ScheduledMaintenanceEnabled}"
+                                             Foreground="{StaticResource TextPrimaryBrush}"
+                                             FontWeight="SemiBold"
+                                             FontSize="13"
+                                             Content="Zamanlanmış güvenli bakımı etkinleştir"/>
+                                    <TextBlock Text="Yalnızca düşük riskli öğeleri tarar; temizleme öncesi mutlaka onay ister."
+                                              FontSize="11.5"
+                                              Foreground="{StaticResource TextSecondaryBrush}"
+                                              TextWrapping="Wrap"
+                                              Margin="0,6,0,10"/>
+                                    <StackPanel Orientation="Horizontal">
+                                       <TextBlock Text="Çalışma aralığı:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                       <ComboBox ItemsSource="{Binding AvailableMaintenanceIntervalsHours}"
+                                                 SelectedItem="{Binding ScheduledMaintenanceIntervalHours}"
+                                                 Width="90"/>
+                                       <TextBlock Text="saat" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
 
                             <Border Background="{StaticResource BgCardBrush}" CornerRadius="10" Padding="14">
                                 <StackPanel>
@@ -2211,7 +2236,12 @@
                                 <Button Style="{StaticResource SubtleButtonStyle}"
                                         Content="Yenile"
                                         HorizontalAlignment="Right"
-                                        Command="{Binding RefreshHostsCommand}"/>
+                                        Command="{Binding RefreshHostsCommand}"
+                                        Margin="0,0,84,0"/>
+                                <Button Style="{StaticResource SubtleButtonStyle}"
+                                        Content="Yedeği Geri Yükle"
+                                        HorizontalAlignment="Right"
+                                        Command="{Binding RestoreHostsBackupCommand}"/>
                             </Grid>
 
                             <Grid Grid.Row="1" Margin="0,0,0,10">

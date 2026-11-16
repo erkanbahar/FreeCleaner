@@ -1,5 +1,7 @@
 using System.IO;
 using System.Text;
+using System.Diagnostics;
+using System.ComponentModel;
 using FreeCleaner.Models;
 using Microsoft.Win32;
 
@@ -216,15 +218,63 @@ public static class RegistryCleanerService
             sb.AppendLine($"[{fullHiveKey}]");
             foreach (var item in group)
             {
-                string escapedName = item.ValueName.Replace("\\", "\\\\").Replace("\"", "\\\"");
                 string escapedTarget = item.MissingTarget.Replace("\\", "\\\\").Replace("\"", "\\\"");
-                sb.AppendLine($"\"{escapedName}\"=\"{escapedTarget}\"");
+                if (item.ValueName == "(Default)")
+                    sb.AppendLine($"@=\"{escapedTarget}\"");
+                else
+                {
+                    string escapedName = item.ValueName.Replace("\\", "\\\\").Replace("\"", "\\\"");
+                    sb.AppendLine($"\"{escapedName}\"=\"{escapedTarget}\"");
+                }
             }
             sb.AppendLine();
         }
 
         File.WriteAllText(filePath, sb.ToString(), Encoding.Unicode);
         return filePath;
+    }
+
+    public static string? GetLatestBackupFile()
+    {
+        string backupDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "FreeCleaner",
+            "RegistryBackups");
+        return Directory.Exists(backupDir)
+            ? Directory.EnumerateFiles(backupDir, "*.reg")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .FirstOrDefault()
+            : null;
+    }
+
+    public static (bool Success, string Message) RestoreBackupFile(string backupPath)
+    {
+        if (!File.Exists(backupPath))
+            return (false, "Registry yedek dosyası bulunamadı.");
+
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "reg.exe",
+                Arguments = $"import \"{backupPath}\"",
+                UseShellExecute = true,
+                Verb = "runas",
+                WindowStyle = ProcessWindowStyle.Hidden
+            });
+            process?.WaitForExit();
+            return process?.ExitCode == 0
+                ? (true, $"Registry yedeği geri yüklendi: {backupPath}")
+                : (false, "Registry yedeği geri yüklenemedi.");
+        }
+        catch (Win32Exception)
+        {
+            return (false, "Yönetici izni verilmedi veya registry geri yükleme iptal edildi.");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Registry geri yükleme hatası: {ex.Message}");
+        }
     }
 
     public static (int FixedCount, int SkippedCount, string BackupPath) FixRegistryIssues(IEnumerable<RegistryIssueItem> selectedIssues)

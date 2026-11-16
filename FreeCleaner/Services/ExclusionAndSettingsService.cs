@@ -16,6 +16,9 @@ public class CleanerConfigData
     public bool MinimizeToTrayOnClose { get; set; }
     public bool UseRecycleBinSafety { get; set; } = true;
     public string RiskFilter { get; set; } = "Tümü";
+    public bool ScheduledMaintenanceEnabled { get; set; }
+    public int ScheduledMaintenanceIntervalHours { get; set; } = 168;
+    public List<string> SelectedRuleIds { get; set; } = [];
 }
 
 public static class ExclusionAndSettingsService

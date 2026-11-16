@@ -432,9 +432,10 @@ public static class PrivacyAndNetworkShieldService
         string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
         try
         {
+            string backupPath = BackupHostsFile();
             string entryLine = $"\r\n{ip}\t{hostname}\t# {comment} (FreeCleaner)";
             File.AppendAllText(hostsPath, entryLine);
-            message = $"'{hostname}' -> {ip} kuralı hosts dosyasına eklendi.";
+            message = $"'{hostname}' -> {ip} kuralı hosts dosyasına eklendi. Yedek: {backupPath}";
             return true;
         }
         catch (UnauthorizedAccessException)
@@ -446,6 +447,57 @@ public static class PrivacyAndNetworkShieldService
         {
             message = $"Hosts yazma hatası: {ex.Message}";
             return false;
+        }
+    }
+
+    public static string BackupHostsFile()
+    {
+        string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
+        if (!File.Exists(hostsPath))
+            throw new FileNotFoundException("Windows hosts dosyası bulunamadı.", hostsPath);
+
+        string backupDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+            "FreeCleaner_Backups");
+        Directory.CreateDirectory(backupDirectory);
+
+        string backupPath = Path.Combine(
+            backupDirectory,
+            $"hosts_{DateTime.Now:yyyyMMdd_HHmmss_fff}_{Guid.NewGuid():N}.bak");
+        File.Copy(hostsPath, backupPath, overwrite: false);
+        return backupPath;
+    }
+
+    public static string? GetLatestHostsBackup()
+    {
+        string backupDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+            "FreeCleaner_Backups");
+        return Directory.Exists(backupDirectory)
+            ? Directory.EnumerateFiles(backupDirectory, "hosts_*.bak")
+                .OrderByDescending(File.GetLastWriteTimeUtc)
+                .FirstOrDefault()
+            : null;
+    }
+
+    public static (bool Success, string Message) RestoreHostsBackup(string backupPath)
+    {
+        string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
+        if (!File.Exists(backupPath))
+            return (false, "Hosts yedek dosyası bulunamadı.");
+
+        try
+        {
+            File.Copy(backupPath, hostsPath, overwrite: true);
+            return (true, $"Hosts yedeği geri yüklendi: {backupPath}");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return (false, "Hosts dosyasını geri yüklemek için uygulamayı Yönetici olarak çalıştırmalısınız.");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Hosts geri yükleme hatası: {ex.Message}");
         }
     }
 

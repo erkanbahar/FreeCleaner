@@ -59,6 +59,9 @@ public class MainViewModel : INotifyPropertyChanged
     private string _newExclusionInput = string.Empty;
     private bool _autoMonitorEnabled;
     private int _autoMonitorThresholdMb = 1024;
+    private bool _scheduledMaintenanceEnabled;
+    private int _scheduledMaintenanceIntervalHours = 168;
+    private DateTime _lastScheduledMaintenanceUtc;
     private bool _minimizeToTrayOnClose;
 
     // 2nd Generation Advanced Modules state
@@ -156,6 +159,7 @@ public class MainViewModel : INotifyPropertyChanged
     public int[] AvailableSizeThresholdsMb { get; } = [10, 25, 50, 100, 250, 500, 1024];
     public int[] AvailableShredPasses { get; } = [1, 3, 7];
     public int[] AvailableInstallerAgeDays { get; } = [0, 7, 14, 30, 60, 90];
+    public int[] AvailableMaintenanceIntervalsHours { get; } = [24, 48, 168];
     public int[] AvailableBenchmarkBlockSizesMb { get; } = [64, 128, 256, 512, 1024];
     public string[] AvailableRenameCaseModes { get; } = ["Değiştirme (Olduğu Gibi)", "küçük harf (lowercase)", "BÜYÜK HARF (UPPERCASE)", "Baş Harfler Büyük (Title Case)"];
     public string[] AvailableRiskFilters { get; } = ["Tümü", "Düşük", "Orta", "Yüksek"];
@@ -179,6 +183,7 @@ public class MainViewModel : INotifyPropertyChanged
     // Registry Cleaner Commands
     public ICommand ScanRegistryCommand { get; }
     public ICommand BackupRegistryCommand { get; }
+    public ICommand RestoreRegistryBackupCommand { get; }
     public ICommand FixRegistryCommand { get; }
 
     // Disk Analyzer Commands
@@ -231,6 +236,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand RefreshConnectionsCommand { get; }
     public ICommand RefreshHostsCommand { get; }
     public ICommand AddHostEntryCommand { get; }
+    public ICommand RestoreHostsBackupCommand { get; }
 
     // Task Scheduler & Folder Space Tree Commands
     public ICommand RefreshScheduledTasksCommand { get; }
@@ -376,15 +382,22 @@ public class MainViewModel : INotifyPropertyChanged
             ExcludedPaths.Add(ex);
         _autoMonitorEnabled = savedConfig.AutoMonitorEnabled;
         _autoMonitorThresholdMb = savedConfig.AutoMonitorThresholdMb;
+        _scheduledMaintenanceEnabled = savedConfig.ScheduledMaintenanceEnabled;
+        _scheduledMaintenanceIntervalHours = savedConfig.ScheduledMaintenanceIntervalHours is 24 or 48 or 168
+            ? savedConfig.ScheduledMaintenanceIntervalHours
+            : 168;
         _minimizeToTrayOnClose = savedConfig.MinimizeToTrayOnClose;
         _useRecycleBinSafety = savedConfig.UseRecycleBinSafety;
         _riskFilter = savedConfig.RiskFilter is "Düşük" or "Orta" or "Yüksek"
             ? savedConfig.RiskFilter
             : "Tümü";
+        _lastScheduledMaintenanceUtc = DateTime.UtcNow;
         LoadActivityLogs();
 
         foreach (var rule in CleanerEngine.GetDefaultRules())
         {
+            if (savedConfig.SelectedRuleIds.Count > 0)
+                rule.IsSelected = savedConfig.SelectedRuleIds.Contains(rule.Id, StringComparer.OrdinalIgnoreCase);
             rule.PropertyChanged += OnRulePropertyChanged;
             AllRules.Add(rule);
         }
@@ -429,6 +442,7 @@ public class MainViewModel : INotifyPropertyChanged
         // Registry Commands
         ScanRegistryCommand = new RelayCommand(async _ => await RunRegistryScanAsync(), _ => !IsBusy);
         BackupRegistryCommand = new RelayCommand(_ => RunRegistryBackupOnly(), _ => !IsBusy && RegistryIssues.Any(x => x.IsSelected));
+        RestoreRegistryBackupCommand = new RelayCommand(_ => RestoreLatestRegistryBackup(), _ => !IsBusy && RegistryCleanerService.GetLatestBackupFile() is not null);
         FixRegistryCommand = new RelayCommand(_ => RunRegistryFix(), _ => !IsBusy && RegistryIssues.Any(x => x.IsSelected));
 
         // Disk Analyzer Commands
@@ -505,6 +519,7 @@ public class MainViewModel : INotifyPropertyChanged
         RefreshConnectionsCommand = new RelayCommand(async _ => await LoadActiveConnectionsAsync(), _ => !IsBusy);
         RefreshHostsCommand = new RelayCommand(_ => LoadHostsEntries(), _ => !IsBusy);
         AddHostEntryCommand = new RelayCommand(_ => AddNewHostEntry(), _ => !IsBusy);
+        RestoreHostsBackupCommand = new RelayCommand(_ => RestoreLatestHostsBackup(), _ => !IsBusy && PrivacyAndNetworkShieldService.GetLatestHostsBackup() is not null);
 
         // Task Scheduler & Folder Space Tree Commands
         RefreshScheduledTasksCommand = new RelayCommand(async _ => await LoadScheduledTasksAsync(), _ => !IsBusy);
@@ -744,7 +759,11 @@ public class MainViewModel : INotifyPropertyChanged
         {
             Interval = TimeSpan.FromMinutes(5)
         };
-        _autoMonitorTimer.Tick += async (_, _) => await CheckAutoMonitorThresholdAsync();
+        _autoMonitorTimer.Tick += async (_, _) =>
+        {
+            await CheckAutoMonitorThresholdAsync();
+            await CheckScheduledMaintenanceAsync();
+        };
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();
 
@@ -1147,6 +1166,34 @@ public class MainViewModel : INotifyPropertyChanged
             if (_autoMonitorThresholdMb != value)
             {
                 _autoMonitorThresholdMb = value;
+                OnPropertyChanged();
+                SaveCurrentSettings();
+            }
+        }
+    }
+
+    public bool ScheduledMaintenanceEnabled
+    {
+        get => _scheduledMaintenanceEnabled;
+        set
+        {
+            if (_scheduledMaintenanceEnabled != value)
+            {
+                _scheduledMaintenanceEnabled = value;
+                OnPropertyChanged();
+                SaveCurrentSettings();
+            }
+        }
+    }
+
+    public int ScheduledMaintenanceIntervalHours
+    {
+        get => _scheduledMaintenanceIntervalHours;
+        set
+        {
+            if (_scheduledMaintenanceIntervalHours != value)
+            {
+                _scheduledMaintenanceIntervalHours = value;
                 OnPropertyChanged();
                 SaveCurrentSettings();
             }
@@ -1711,6 +1758,25 @@ public class MainViewModel : INotifyPropertyChanged
         AddLog($"[KAYIT DEFTERİ] {fixedCount} kayıt temizlendi. Yedek: {backupPath}");
     }
 
+    private void RestoreLatestRegistryBackup()
+    {
+        string? backupPath = RegistryCleanerService.GetLatestBackupFile();
+        if (backupPath is null) return;
+
+        if (MessageBox.Show(
+                $"Son registry yedeği geri yüklenecek:\n\n{backupPath}\n\nDevam edilsin mi?",
+                "Registry Yedeğini Geri Yükle",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+
+        var result = RegistryCleanerService.RestoreBackupFile(backupPath);
+        StatusMessage = result.Message;
+        AddLog($"[GERİ YÜKLEME] {result.Message}");
+        if (!result.Success)
+            MessageBox.Show(result.Message, "Registry Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
     // ==================== 4. DISK ANALYZER (LARGE & DUPLICATE FILES) ====================
 
     private void BrowseDiskTargetFolder()
@@ -2077,7 +2143,10 @@ public class MainViewModel : INotifyPropertyChanged
             AutoMonitorThresholdMb = AutoMonitorThresholdMb,
             MinimizeToTrayOnClose = MinimizeToTrayOnClose,
             UseRecycleBinSafety = UseRecycleBinSafety,
-            RiskFilter = RiskFilter
+            RiskFilter = RiskFilter,
+            ScheduledMaintenanceEnabled = ScheduledMaintenanceEnabled,
+            ScheduledMaintenanceIntervalHours = ScheduledMaintenanceIntervalHours,
+            SelectedRuleIds = AllRules.Where(rule => rule.IsSelected).Select(rule => rule.Id).ToList()
         });
     }
 
@@ -2100,6 +2169,60 @@ public class MainViewModel : INotifyPropertyChanged
             // Ignore background check error
         }
     }
+
+    private async Task CheckScheduledMaintenanceAsync()
+    {
+            if (IsBusy || !ScheduledMaintenanceEnabled)
+                return;
+
+            if (DateTime.UtcNow - _lastScheduledMaintenanceUtc < TimeSpan.FromHours(ScheduledMaintenanceIntervalHours))
+                return;
+
+            var safeRules = AllRules
+                .Where(rule => rule.IsSelected && rule.Risk == RiskLevel.Low)
+                .ToList();
+            if (safeRules.Count == 0)
+                return;
+
+            _lastScheduledMaintenanceUtc = DateTime.UtcNow;
+            try
+            {
+                StatusMessage = "Zamanlanmış güvenli bakım için düşük riskli öğeler taranıyor...";
+                var results = await _engine.AnalyzeAsync(safeRules, ExcludedPaths.ToList());
+                if (results.Count == 0)
+                {
+                    AddLog("[ZAMANLI BAKIM] Düşük riskli temizlenecek öğe bulunamadı.");
+                    return;
+                }
+
+                var confirm = MessageBox.Show(
+                    $"Zamanlanmış güvenli bakımda {results.Count:N0} düşük riskli öğe " +
+                    $"({CleanerRule.FormatBytes(results.Sum(item => item.SizeBytes))}) bulundu.\n\n" +
+                    "Öğeler Geri Dönüşüm Kutusu'na taşınacak. Devam edilsin mi?",
+                    "Zamanlanmış Güvenli Bakım",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (confirm != MessageBoxResult.Yes)
+                {
+                    AddLog("[ZAMANLI BAKIM] Kullanıcı temizliği onaylamadı.");
+                    return;
+                }
+
+                var summary = await _engine.CleanAsync(results, safeRules, moveToRecycleBinInsteadOfPermanentDelete: true);
+                AddLog($"[ZAMANLI BAKIM] {summary.DeletedFilesCount:N0} öğe Geri Dönüşüm Kutusu'na taşındı, " +
+                       $"{CleanerRule.FormatBytes(summary.FreedBytes)} alan işlendi.");
+            }
+            catch (OperationCanceledException)
+            {
+                AddLog("[ZAMANLI BAKIM] İşlem iptal edildi.");
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Zamanlanmış bakım hatası: {ex.Message}";
+                AddLog($"[ZAMANLI BAKIM][HATA] {ex.Message}");
+            }
+        }
 
     // ==================== 8. DEVCLEANER & GAMER CACHES ====================
 
@@ -2638,6 +2761,27 @@ public class MainViewModel : INotifyPropertyChanged
         {
             MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    private void RestoreLatestHostsBackup()
+    {
+        string? backupPath = PrivacyAndNetworkShieldService.GetLatestHostsBackup();
+        if (backupPath is null) return;
+
+        if (MessageBox.Show(
+                $"Son hosts yedeği geri yüklenecek:\n\n{backupPath}\n\nDevam edilsin mi?",
+                "Hosts Yedeğini Geri Yükle",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+
+        var result = PrivacyAndNetworkShieldService.RestoreHostsBackup(backupPath);
+        StatusMessage = result.Message;
+        AddLog($"[GERİ YÜKLEME] {result.Message}");
+        if (result.Success)
+            LoadHostsEntries();
+        else
+            MessageBox.Show(result.Message, "Hosts Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     // ==================== 12. TASK SCHEDULER & FOLDER SPACE TREE ====================
