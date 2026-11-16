@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Windows;
 using FreeCleaner.Models;
@@ -448,6 +449,92 @@ public static class PrivacyAndNetworkShieldService
             message = $"Hosts yazma hatası: {ex.Message}";
             return false;
         }
+    }
+
+    public static bool UpdateHostsEntry(HostsEntryItem item, out string message)
+    {
+        string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
+        try
+        {
+            ValidateHostsInput(item.IpAddress, item.Hostname);
+            string[] lines = File.ReadAllLines(hostsPath);
+            int index = Array.FindIndex(lines, line => IsMatchingHostsLine(line, item.OriginalIpAddress, item.OriginalHostname));
+            if (index < 0)
+            {
+                message = "Düzenlenecek hosts kaydı bulunamadı.";
+                return false;
+            }
+
+            string prefix = item.IsEnabled ? string.Empty : "# ";
+            lines[index] = $"{prefix}{item.IpAddress}\t{item.Hostname}\t# {item.Comment} (FreeCleaner)";
+            string backupPath = BackupHostsFile();
+            File.WriteAllLines(hostsPath, lines, new System.Text.UTF8Encoding(false));
+            item.MarkSaved();
+            message = $"'{item.Hostname}' hosts kaydı güncellendi. Yedek: {backupPath}";
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            message = "Windows hosts dosyasını düzenlemek için uygulamayı Yönetici (Administrator) olarak çalıştırmalısınız.";
+            return false;
+        }
+        catch (Exception ex)
+        {
+            message = $"Hosts güncelleme hatası: {ex.Message}";
+            return false;
+        }
+    }
+
+    public static bool RemoveHostsEntry(HostsEntryItem item, out string message)
+    {
+        string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
+        try
+        {
+            string[] lines = File.ReadAllLines(hostsPath);
+            var remaining = lines
+                .Where(line => !IsMatchingHostsLine(line, item.IpAddress, item.Hostname))
+                .ToArray();
+            if (remaining.Length == lines.Length)
+            {
+                message = "Silinecek hosts kaydı bulunamadı.";
+                return false;
+            }
+
+            string backupPath = BackupHostsFile();
+            File.WriteAllLines(hostsPath, remaining, new System.Text.UTF8Encoding(false));
+            message = $"'{item.Hostname}' hosts kaydı silindi. Yedek: {backupPath}";
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            message = "Windows hosts dosyasını düzenlemek için uygulamayı Yönetici (Administrator) olarak çalıştırmalısınız.";
+            return false;
+        }
+        catch (Exception ex)
+        {
+            message = $"Hosts silme hatası: {ex.Message}";
+            return false;
+        }
+    }
+
+    private static void ValidateHostsInput(string ip, string hostname)
+    {
+        if (!IPAddress.TryParse(ip, out _))
+            throw new FormatException("Geçerli bir IP adresi girilmelidir.");
+        if (string.IsNullOrWhiteSpace(hostname) ||
+            hostname.Length > 253 ||
+            hostname.Any(char.IsWhiteSpace) ||
+            hostname.Contains('#'))
+            throw new FormatException("Geçerli bir alan adı girilmelidir.");
+    }
+
+    private static bool IsMatchingHostsLine(string rawLine, string ip, string hostname)
+    {
+        string line = rawLine.TrimStart().TrimStart('#').Trim();
+        string[] parts = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2 &&
+               parts[0].Equals(ip, StringComparison.OrdinalIgnoreCase) &&
+               parts[1].Equals(hostname, StringComparison.OrdinalIgnoreCase);
     }
 
     public static string BackupHostsFile()

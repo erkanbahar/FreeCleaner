@@ -338,9 +338,11 @@ public class HostsEntryItem : INotifyPropertyChanged
 {
     private bool _isEnabled = true;
 
-    public required string IpAddress { get; init; }
-    public required string Hostname { get; init; }
-    public required string Comment { get; init; }
+    public required string IpAddress { get; set; }
+    public required string Hostname { get; set; }
+    public required string Comment { get; set; }
+    public string OriginalIpAddress { get; set; } = string.Empty;
+    public string OriginalHostname { get; set; } = string.Empty;
 
     public bool IsEnabled
     {
@@ -353,6 +355,12 @@ public class HostsEntryItem : INotifyPropertyChanged
                 OnPropertyChanged();
             }
         }
+    }
+
+    public void MarkSaved()
+    {
+        OriginalIpAddress = IpAddress;
+        OriginalHostname = Hostname;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

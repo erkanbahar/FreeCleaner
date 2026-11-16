@@ -240,6 +240,8 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand RefreshHostsCommand { get; }
     public ICommand AddHostEntryCommand { get; }
     public ICommand RestoreHostsBackupCommand { get; }
+    public ICommand SaveHostEntryCommand { get; }
+    public ICommand DeleteHostEntryCommand { get; }
 
     // Task Scheduler & Folder Space Tree Commands
     public ICommand RefreshScheduledTasksCommand { get; }
@@ -525,6 +527,8 @@ public class MainViewModel : INotifyPropertyChanged
         RefreshHostsCommand = new RelayCommand(_ => LoadHostsEntries(), _ => !IsBusy);
         AddHostEntryCommand = new RelayCommand(_ => AddNewHostEntry(), _ => !IsBusy);
         RestoreHostsBackupCommand = new RelayCommand(_ => RestoreLatestHostsBackup(), _ => !IsBusy && PrivacyAndNetworkShieldService.GetLatestHostsBackup() is not null);
+        SaveHostEntryCommand = new RelayCommand(param => SaveHostEntry(param as HostsEntryItem), _ => !IsBusy);
+        DeleteHostEntryCommand = new RelayCommand(param => DeleteHostEntry(param as HostsEntryItem), _ => !IsBusy);
 
         LoadBackups();
 
@@ -2780,7 +2784,10 @@ public class MainViewModel : INotifyPropertyChanged
     {
         HostsEntries.Clear();
         foreach (var h in PrivacyAndNetworkShieldService.LoadHostsFileEntries())
+        {
+            h.MarkSaved();
             HostsEntries.Add(h);
+        }
     }
 
     private void AddNewHostEntry()
@@ -2797,6 +2804,35 @@ public class MainViewModel : INotifyPropertyChanged
         {
             MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    private void SaveHostEntry(HostsEntryItem? item)
+    {
+        if (item is null) return;
+        if (PrivacyAndNetworkShieldService.UpdateHostsEntry(item, out string msg))
+        {
+            StatusMessage = msg;
+            AddLog($"[HOSTS] {msg}");
+        }
+        else
+            MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private void DeleteHostEntry(HostsEntryItem? item)
+    {
+        if (item is null ||
+            MessageBox.Show($"'{item.Hostname}' hosts kaydı silinecek. Devam edilsin mi?",
+                "Hosts Kaydı Sil", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
+            return;
+
+        if (PrivacyAndNetworkShieldService.RemoveHostsEntry(item, out string msg))
+        {
+            HostsEntries.Remove(item);
+            StatusMessage = msg;
+            AddLog($"[HOSTS] {msg}");
+        }
+        else
+            MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     private void RestoreLatestHostsBackup()
