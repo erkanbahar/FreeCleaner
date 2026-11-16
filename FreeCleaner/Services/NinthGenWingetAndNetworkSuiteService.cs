@@ -91,54 +91,70 @@ public static class NinthGenWingetAndNetworkSuiteService
         });
     }
 
-    public static async Task<(int UpdatedCount, string Message)> UpgradeSelectedWingetPackagesAsync(IEnumerable<WingetUpgradeItem> items, bool upgradeAll = false)
+    /// <summary>
+    /// Upgrades packages one by one so the UI can show which app is being updated and overall progress.
+    /// progress reports: (completedCount, totalCount, currentItem, isStarting)
+    /// </summary>
+    public static async Task<(int UpdatedCount, int FailedCount, string Message)> UpgradeWingetPackagesWithProgressAsync(
+        IReadOnlyList<WingetUpgradeItem> targets,
+        IProgress<(int Completed, int Total, WingetUpgradeItem Item, bool IsStarting, bool Success)>? progress,
+        CancellationToken cancellationToken = default)
     {
         return await Task.Run(() =>
         {
-            try
+            int total = targets.Count;
+            int updated = 0;
+            int failed = 0;
+
+            for (int i = 0; i < total; i++)
             {
-                if (upgradeAll)
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                var pkg = targets[i];
+                progress?.Report((i, total, pkg, true, false));
+
+                bool success = false;
+                try
                 {
-                    var psiAll = new ProcessStartInfo
+                    var psi = new ProcessStartInfo
                     {
-                        FileName = "cmd.exe",
-                        Arguments = "/c \"winget upgrade --all --silent --accept-package-agreements --accept-source-agreements\"",
-                        UseShellExecute = true,
-                        WindowStyle = ProcessWindowStyle.Normal
+                        FileName = "winget.exe",
+                        Arguments = $"upgrade --id \"{pkg.PackageId}\" --exact --silent --accept-package-agreements --accept-source-agreements --disable-interactivity",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        StandardOutputEncoding = Encoding.UTF8
                     };
-                    using var proc = Process.Start(psiAll);
-                    proc?.WaitForExit(180000);
-                    return (items.Count(), "Tüm sistem programları için Winget toplu güncelleme işlemi tamamlandı!");
-                }
-
-                var selected = items.Where(x => x.IsSelected).ToList();
-                int updated = 0;
-                foreach (var pkg in selected)
-                {
-                    try
+                    using var p = Process.Start(psi);
+                    if (p is not null)
                     {
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = "winget.exe",
-                            Arguments = $"upgrade --id \"{pkg.PackageId}\" --silent --accept-package-agreements --accept-source-agreements",
-                            UseShellExecute = false,
-                            CreateNoWindow = true
-                        };
-                        using var p = Process.Start(psi);
-                        p?.WaitForExit(90000);
-                        if (p?.ExitCode == 0)
-                            updated++;
-                    }
-                    catch { }
-                }
+                        // Drain output asynchronously to avoid pipe deadlock
+                        p.OutputDataReceived += (_, _) => { };
+                        p.ErrorDataReceived += (_, _) => { };
+                        p.BeginOutputReadLine();
+                        p.BeginErrorReadLine();
 
-                return (updated, $"{updated} / {selected.Count} seçili program başarıyla en yeni sürüme güncellendi.");
+                        if (!p.WaitForExit(600000))
+                        {
+                            try { p.Kill(entireProcessTree: true); } catch { }
+                        }
+                        else
+                        {
+                            success = p.ExitCode == 0;
+                        }
+                    }
+                }
+                catch { }
+
+                if (success) updated++; else failed++;
+                progress?.Report((i + 1, total, pkg, false, success));
             }
-            catch (Exception ex)
-            {
-                return (0, $"Winget güncelleme hatası: {ex.Message}");
-            }
-        });
+
+            string msg = $"Winget güncelleme tamamlandı: {updated} başarılı, {failed} başarısız (Toplam {total} program).";
+            return (updated, failed, msg);
+        }, cancellationToken);
     }
 
     // ==================== 2. LOCAL NETWORK (LAN / WI-FI) DEVICE RADAR ====================

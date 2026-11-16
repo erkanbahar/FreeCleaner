@@ -950,12 +950,26 @@ public class VolumeSecurityAndMountItem
 public class WingetUpgradeItem : INotifyPropertyChanged
 {
     private bool _isSelected = true;
+    private string _upgradeStatus = "⏳ Güncellemeye Hazır";
 
     public required string PackageName { get; init; }
     public required string PackageId { get; init; }
     public required string InstalledVersion { get; init; }
     public required string AvailableVersion { get; init; }
     public required string SourceName { get; init; }
+
+    public string UpgradeStatus
+    {
+        get => _upgradeStatus;
+        set
+        {
+            if (_upgradeStatus != value)
+            {
+                _upgradeStatus = value;
+                OnPropertyChanged();
+            }
+        }
+    }
 
     public bool IsSelected
     {
@@ -1052,4 +1066,70 @@ public class ProcessPriorityItem
     public required int ThreadCount { get; init; }
     public required string RamFormatted { get; init; }
     public required string CpuTimeFormatted { get; init; }
+}
+
+
+// ==================== 10TH GENERATION BOOT TIME, DOCKER/WSL2, DEFENDER AUDITOR, MONITOR/HZ & GIT GC MODELS ====================
+
+public class BootPerformanceMetricItem
+{
+    public required string MetricCategory { get; init; }
+    public required string ComponentOrAppName { get; init; }
+    public required string DurationOrValue { get; init; }
+    public required string ImpactAssessment { get; init; }
+}
+
+public class DockerOrWslItem
+{
+    public required string PlatformType { get; init; }
+    public required string NameOrTag { get; init; }
+    public required string StateOrStatus { get; init; }
+    public required string VersionOrSize { get; init; }
+    public required string Details { get; init; }
+}
+
+public class DefenderSecurityAuditItem
+{
+    public required string AuditCategory { get; init; }
+    public required string SettingOrExclusionName { get; init; }
+    public required string StatusBadge { get; init; }
+    public required string SecurityNotes { get; init; }
+}
+
+public class MonitorAndDisplayItem
+{
+    public required string DisplayName { get; init; }
+    public required string ResolutionAndDepth { get; init; }
+    public required string RefreshRateInfo { get; init; }
+    public required string EdidAndDriverInfo { get; init; }
+    public required string OptimizationBadge { get; init; }
+}
+
+public class GitRepoCompressionItem : INotifyPropertyChanged
+{
+    private bool _isSelected = true;
+
+    public required string RepoName { get; init; }
+    public required string RepoRootPath { get; init; }
+    public required string ActiveBranch { get; init; }
+    public required string WorkingTreeStatus { get; init; }
+    public required long GitDirSizeBytes { get; init; }
+    public string FormattedGitSize => CleanerRule.FormatBytes(GitDirSizeBytes);
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
