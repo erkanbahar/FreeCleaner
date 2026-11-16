@@ -488,8 +488,9 @@ public static class PrivacyAndNetworkShieldService
 
         try
         {
+            string preRestoreBackupPath = BackupHostsFile();
             File.Copy(backupPath, hostsPath, overwrite: true);
-            return (true, $"Hosts yedeği geri yüklendi: {backupPath}");
+            return (true, $"Hosts yedeği geri yüklendi: {backupPath}. Geri yükleme öncesi yedek: {preRestoreBackupPath}");
         }
         catch (UnauthorizedAccessException)
         {
