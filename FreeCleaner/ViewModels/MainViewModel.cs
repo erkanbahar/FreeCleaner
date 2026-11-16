@@ -36,7 +36,7 @@ public class MainViewModel : INotifyPropertyChanged
     private int _progressPercent;
     private bool _isBusy;
     private bool _hasAnalyzed;
-    private bool _useRecycleBinSafety;
+    private bool _useRecycleBinSafety = true;
     private long _totalDetectedBytes;
     private int _totalDetectedFiles;
     private long _lastFreedBytes;
@@ -136,6 +136,11 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<SqliteDatabaseItem> SqliteDatabases { get; } = [];
     public ObservableCollection<CredentialOrSshItem> CredentialsAndSshItems { get; } = [];
     public ObservableCollection<ProcessPriorityItem> ProcessPriorityItems { get; } = [];
+    public ObservableCollection<BootPerformanceMetricItem> BootPerformanceItems { get; } = [];
+    public ObservableCollection<DockerOrWslItem> DockerAndWslItems { get; } = [];
+    public ObservableCollection<DefenderSecurityAuditItem> DefenderAuditItems { get; } = [];
+    public ObservableCollection<MonitorAndDisplayItem> MonitorAndDisplayItems { get; } = [];
+    public ObservableCollection<GitRepoCompressionItem> GitRepoItems { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -334,6 +339,21 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand SetProcessHighPriorityCommand { get; }
     public ICommand SetProcessNormalPriorityCommand { get; }
     public ICommand SetProcessEcoPriorityCommand { get; }
+
+    // 10th Gen Boot Time, Docker/WSL2, Defender Auditor, Monitor/Hz & Git GC Commands
+    public ICommand ScanBootPerformanceCommand { get; }
+    public ICommand ScanDockerAndWslCommand { get; }
+    public ICommand ShutdownWslCommand { get; }
+    public ICommand PruneDockerSystemCommand { get; }
+    public ICommand ScanDefenderAuditCommand { get; }
+    public ICommand UpdateDefenderSignaturesCommand { get; }
+    public ICommand RunDefenderQuickScanCommand { get; }
+    public ICommand ScanMonitorsAndGpuCommand { get; }
+    public ICommand RestartGpuDriverCommand { get; }
+    public ICommand BrowseGitWorkspaceCommand { get; }
+    public ICommand ScanGitReposCommand { get; }
+    public ICommand CompressSelectedGitReposCommand { get; }
+    public ICommand OpenGitRepoFolderCommand { get; }
 
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
@@ -687,6 +707,25 @@ public class MainViewModel : INotifyPropertyChanged
                 await ChangeProcessPriorityAndRefreshAsync(item, ProcessPriorityClass.Idle);
         }, _ => !IsBusy);
 
+        // 10th Gen Commands initialization
+        ScanBootPerformanceCommand = new RelayCommand(async _ => await LoadBootPerformanceAsync(), _ => !IsBusy);
+        ScanDockerAndWslCommand = new RelayCommand(async _ => await LoadDockerAndWslItemsAsync(), _ => !IsBusy);
+        ShutdownWslCommand = new RelayCommand(async _ => await ExecuteShutdownWslAsync(), _ => !IsBusy);
+        PruneDockerSystemCommand = new RelayCommand(async _ => await ExecutePruneDockerSystemAsync(), _ => !IsBusy);
+        ScanDefenderAuditCommand = new RelayCommand(async _ => await LoadDefenderAuditAsync(), _ => !IsBusy);
+        UpdateDefenderSignaturesCommand = new RelayCommand(async _ => await ExecuteDefenderActionAsync(quickScan: false), _ => !IsBusy);
+        RunDefenderQuickScanCommand = new RelayCommand(async _ => await ExecuteDefenderActionAsync(quickScan: true), _ => !IsBusy);
+        ScanMonitorsAndGpuCommand = new RelayCommand(async _ => await LoadMonitorsAndGpuAsync(), _ => !IsBusy);
+        RestartGpuDriverCommand = new RelayCommand(async _ => await ExecuteRestartGpuDriverAsync(), _ => !IsBusy);
+        BrowseGitWorkspaceCommand = new RelayCommand(_ => BrowseGitWorkspace(), _ => !IsBusy);
+        ScanGitReposCommand = new RelayCommand(async _ => await LoadGitReposAsync(), _ => !IsBusy);
+        CompressSelectedGitReposCommand = new RelayCommand(async _ => await ExecuteCompressSelectedGitReposAsync(), _ => !IsBusy && GitRepoItems.Any(x => x.IsSelected));
+        OpenGitRepoFolderCommand = new RelayCommand(param =>
+        {
+            if (param is GitRepoCompressionItem repo)
+                OpenExplorerPath(repo.RepoRootPath);
+        });
+
         // Background Auto-Monitor Timer (checks every 5 minutes if enabled)
         _autoMonitorTimer = new DispatcherTimer
         {
@@ -696,7 +735,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();
 
-        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 46 uzman modül kullanıma hazır.");
+        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 51 uzman modül kullanıma hazır.");
     }
 
     public SystemMetricsSnapshot SystemMetrics
@@ -767,6 +806,11 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsSqliteOptimizerSection));
                 OnPropertyChanged(nameof(IsCredentialSshSection));
                 OnPropertyChanged(nameof(IsProcessPrioritySection));
+                OnPropertyChanged(nameof(IsBootPerformanceSection));
+                OnPropertyChanged(nameof(IsDockerWslSection));
+                OnPropertyChanged(nameof(IsDefenderAuditorSection));
+                OnPropertyChanged(nameof(IsMonitorGpuSection));
+                OnPropertyChanged(nameof(IsGitRepoCompressorSection));
                 OnPropertyChanged(nameof(IsSettingsSection));
                 OnPropertyChanged(nameof(SectionTitle));
 
@@ -854,6 +898,16 @@ public class MainViewModel : INotifyPropertyChanged
                     _ = LoadCredentialsAndSshAsync();
                 else if (_activeSection == "ProcessPriority" && ProcessPriorityItems.Count == 0)
                     _ = LoadProcessPriorityItemsAsync();
+                else if (_activeSection == "BootPerformance" && BootPerformanceItems.Count == 0)
+                    _ = LoadBootPerformanceAsync();
+                else if (_activeSection == "DockerWsl" && DockerAndWslItems.Count == 0)
+                    _ = LoadDockerAndWslItemsAsync();
+                else if (_activeSection == "DefenderAuditor" && DefenderAuditItems.Count == 0)
+                    _ = LoadDefenderAuditAsync();
+                else if (_activeSection == "MonitorGpu" && MonitorAndDisplayItems.Count == 0)
+                    _ = LoadMonitorsAndGpuAsync();
+                else if (_activeSection == "GitRepoCompressor" && GitRepoItems.Count == 0)
+                    _ = LoadGitReposAsync();
             }
         }
     }
@@ -908,6 +962,11 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsSqliteOptimizerSection => ActiveSection == "SqliteOptimizer";
     public bool IsCredentialSshSection => ActiveSection == "CredentialSsh";
     public bool IsProcessPrioritySection => ActiveSection == "ProcessPriority";
+    public bool IsBootPerformanceSection => ActiveSection == "BootPerformance";
+    public bool IsDockerWslSection => ActiveSection == "DockerWsl";
+    public bool IsDefenderAuditorSection => ActiveSection == "DefenderAuditor";
+    public bool IsMonitorGpuSection => ActiveSection == "MonitorGpu";
+    public bool IsGitRepoCompressorSection => ActiveSection == "GitRepoCompressor";
     public bool IsSettingsSection => ActiveSection == "Settings";
 
     public string SectionTitle => ActiveSection switch
@@ -959,6 +1018,11 @@ public class MainViewModel : INotifyPropertyChanged
         "SqliteOptimizer" => "Tarayıcı & IDE SQLite Veritabanı Sıkıştırıcı (Zero-Data-Loss Optimizer)",
         "CredentialSsh" => "Windows Kimlik Kasası (cmdkey) & SSH / Git Anahtar Denetçisi",
         "ProcessPriority" => "Canlı CPU Önceliği (Process Priority) & Verimlilik Modu (EcoQoS) Yöneticisi",
+        "BootPerformance" => "Windows Açılış Süresi (Boot Time) & Önyükleme Darboğaz Analizcisi",
+        "DockerWsl" => "WSL2 Linux Dağıtım Yöneticisi & Docker Konteyner / İmaj Temizleyici",
+        "DefenderAuditor" => "Windows Defender Güvenlik Kalkanı & Gizli İstisna (ExclusionPath) Denetçisi",
+        "MonitorGpu" => "Monitör EDID, Yenileme Hızı (Hz) & Ekran Kartı (GPU) Sıfırlama Doktoru",
+        "GitRepoCompressor" => "Git Depoları (.git) Sıkıştırıcı (git gc) & Proje Durum Radarı",
         "Settings" => "Beyaz Liste (İstisnalar), Otomasyon & Raporlama",
         _ => "Akıllı Temizlik & Tüm Kategoriler"
     };
@@ -1419,8 +1483,26 @@ public class MainViewModel : INotifyPropertyChanged
             return;
         }
 
+        if (DiscoveredFiles.Any(x => x.IsSelected && x.IsRecycleBinItem))
+        {
+            var recycleBinConfirm = MessageBox.Show(
+                "Bu işlem Geri Dönüşüm Kutusu'nu tamamen boşaltacaktır ve geri alınamaz.\n\n" +
+                "Devam etmek istediğinizden emin misiniz?",
+                "Geri Dönüşüm Kutusu - Son Onay",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (recycleBinConfirm != MessageBoxResult.Yes)
+            {
+                AddLog("Geri Dönüşüm Kutusu boşaltma işlemi kullanıcı tarafından vazgeçildi.");
+                return;
+            }
+        }
+
         IsBusy = true;
         ProgressPercent = 0;
+        LastFreedBytes = 0;
+        LastDeletedFiles = 0;
         StatusMessage = "Temizlik işlemi yürütülüyor...";
         AddLog($"Temizlik başlatıldı ({selectedCount:N0} öğe, {selectedSize})...");
 
@@ -1442,8 +1524,8 @@ public class MainViewModel : INotifyPropertyChanged
                 progress,
                 _cts.Token);
 
-            LastFreedBytes += summary.FreedBytes;
-            LastDeletedFiles += summary.DeletedFilesCount;
+            LastFreedBytes = summary.FreedBytes;
+            LastDeletedFiles = summary.DeletedFilesCount;
 
             var remaining = DiscoveredFiles
                 .Where(x => x.Status is not ("Silindi" or "Boşaltıldı" or "Zaten Silinmiş" or "Geri Dönüşüm'e Taşındı"))
@@ -4240,22 +4322,128 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    private string _wingetCurrentPackageText = "Henüz güncelleme başlatılmadı.";
+    public string WingetCurrentPackageText
+    {
+        get => _wingetCurrentPackageText;
+        set
+        {
+            if (_wingetCurrentPackageText != value)
+            {
+                _wingetCurrentPackageText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private int _wingetProgressPercent;
+    public int WingetProgressPercent
+    {
+        get => _wingetProgressPercent;
+        set
+        {
+            if (_wingetProgressPercent != value)
+            {
+                _wingetProgressPercent = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private string _wingetProgressCounterText = "0 / 0";
+    public string WingetProgressCounterText
+    {
+        get => _wingetProgressCounterText;
+        set
+        {
+            if (_wingetProgressCounterText != value)
+            {
+                _wingetProgressCounterText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private bool _isWingetUpgrading;
+    public bool IsWingetUpgrading
+    {
+        get => _isWingetUpgrading;
+        set
+        {
+            if (_isWingetUpgrading != value)
+            {
+                _isWingetUpgrading = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     private async Task ExecuteWingetUpgradeAsync(bool upgradeAll)
     {
+        var targets = (upgradeAll ? WingetUpgrades : WingetUpgrades.Where(x => x.IsSelected)).ToList();
+        if (targets.Count == 0)
+        {
+            StatusMessage = "Güncellenecek program seçilmedi.";
+            return;
+        }
+
+        foreach (var t in targets)
+            t.UpgradeStatus = "⏳ Sırada Bekliyor";
+
         IsBusy = true;
-        StatusMessage = upgradeAll
-            ? "Sistemdeki tüm programlar Winget ile en son sürüme güncelleniyor..."
-            : "Seçili programlar Winget ile sessizce (--silent) güncelleniyor...";
+        IsWingetUpgrading = true;
+        ProgressPercent = 0;
+        WingetProgressPercent = 0;
+        WingetProgressCounterText = $"0 / {targets.Count}";
+        WingetCurrentPackageText = "Winget güncellemesi hazırlanıyor...";
+        _cts = new CancellationTokenSource();
+
+        // Progress<T> marshals callbacks back to the UI thread automatically
+        var progress = new Progress<(int Completed, int Total, WingetUpgradeItem Item, bool IsStarting, bool Success)>(p =>
+        {
+            int percent = p.Total == 0 ? 0 : (int)(p.Completed * 100.0 / p.Total);
+
+            if (p.IsStarting)
+            {
+                p.Item.UpgradeStatus = "🔄 Güncelleniyor...";
+                string text = $"[{p.Completed + 1}/{p.Total}] Güncelleniyor: {p.Item.PackageName}  ({p.Item.InstalledVersion} → {p.Item.AvailableVersion})";
+                WingetCurrentPackageText = text;
+                StatusMessage = text;
+                CurrentOperationDetail = $"winget upgrade --id {p.Item.PackageId}";
+                AddLog($"[WINGET] Başladı: {p.Item.PackageName} ({p.Item.PackageId})");
+            }
+            else
+            {
+                p.Item.UpgradeStatus = p.Success ? "✅ Güncellendi" : "❌ Başarısız";
+                AddLog(p.Success
+                    ? $"[WINGET] ✅ {p.Item.PackageName} → {p.Item.AvailableVersion} sürümüne güncellendi."
+                    : $"[WINGET] ❌ {p.Item.PackageName} güncellenemedi (Yönetici izni veya kurulum hatası).");
+            }
+
+            WingetProgressPercent = percent;
+            ProgressPercent = percent;
+            WingetProgressCounterText = $"{p.Completed} / {p.Total}  (%{percent})";
+        });
+
         try
         {
-            var (_, msg) = await NinthGenWingetAndNetworkSuiteService.UpgradeSelectedWingetPackagesAsync(WingetUpgrades, upgradeAll);
+            var (updated, failed, msg) = await NinthGenWingetAndNetworkSuiteService.UpgradeWingetPackagesWithProgressAsync(targets, progress, _cts.Token);
+            WingetProgressPercent = 100;
+            ProgressPercent = 100;
+            WingetCurrentPackageText = $"✅ Tamamlandı — {updated} başarılı, {failed} başarısız.";
             StatusMessage = msg;
             AddLog($"[WINGET UPDATER] {msg}");
-            await LoadWingetUpgradesAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            WingetCurrentPackageText = "⛔ Güncelleme kullanıcı tarafından iptal edildi.";
+            StatusMessage = WingetCurrentPackageText;
         }
         finally
         {
+            IsWingetUpgrading = false;
             IsBusy = false;
+            CurrentOperationDetail = "Winget güncelleme oturumu sona erdi.";
         }
     }
 
@@ -4367,6 +4555,217 @@ public class MainViewModel : INotifyPropertyChanged
         StatusMessage = msg;
         AddLog($"[CPU ÖNCELİĞİ] {msg}");
         await LoadProcessPriorityItemsAsync();
+    }
+
+    // ==================== 16. 10TH GEN BOOT TIME, DOCKER/WSL2, DEFENDER AUDITOR, MONITOR/HZ & GIT GC ====================
+
+    private string _gitWorkspacePath = @"C:\CURSOR";
+    public string GitWorkspacePath
+    {
+        get => _gitWorkspacePath;
+        set
+        {
+            if (_gitWorkspacePath != value)
+            {
+                _gitWorkspacePath = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private async Task LoadBootPerformanceAsync()
+    {
+        IsBusy = true;
+        BootPerformanceItems.Clear();
+        StatusMessage = "Windows Diagnostics-Performance açılış günlükleri (Event ID 100/101) ve sistem çalışma süresi analiz ediliyor...";
+        try
+        {
+            var items = await TenthGenMilestoneSuiteService.AnalyzeBootPerformanceAsync();
+            foreach (var item in items)
+                BootPerformanceItems.Add(item);
+            StatusMessage = $"Açılış Süresi Analizcisi: {BootPerformanceItems.Count} önyükleme metriği ve darboğaz kaydı listelendi.";
+            AddLog($"[BOOT ANALYZER] {BootPerformanceItems.Count} açılış metriği incelendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadDockerAndWslItemsAsync()
+    {
+        IsBusy = true;
+        DockerAndWslItems.Clear();
+        StatusMessage = "WSL2 Linux dağıtımları ve Docker konteynerleri taranıyor...";
+        try
+        {
+            var items = await TenthGenMilestoneSuiteService.ScanDockerAndWslItemsAsync();
+            foreach (var item in items)
+                DockerAndWslItems.Add(item);
+            StatusMessage = $"WSL2 & Docker Yöneticisi: {DockerAndWslItems.Count} dağıtım/konteyner listelendi.";
+            AddLog($"[WSL2 & DOCKER] {DockerAndWslItems.Count} öğe yüklendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteShutdownWslAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var (_, msg) = await TenthGenMilestoneSuiteService.ShutdownWslAndFreeRamAsync();
+            StatusMessage = msg;
+            AddLog($"[WSL2 SHUTDOWN] {msg}");
+            await LoadDockerAndWslItemsAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecutePruneDockerSystemAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var (_, msg) = await TenthGenMilestoneSuiteService.PruneDockerSystemAsync();
+            StatusMessage = msg;
+            AddLog($"[DOCKER PRUNE] {msg}");
+            await LoadDockerAndWslItemsAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadDefenderAuditAsync()
+    {
+        IsBusy = true;
+        DefenderAuditItems.Clear();
+        StatusMessage = "Windows Defender gerçek zamanlı koruma kalkanları ve gizli istisna klasörleri (ExclusionPath) denetleniyor...";
+        try
+        {
+            var items = await TenthGenMilestoneSuiteService.AuditWindowsDefenderAsync();
+            foreach (var item in items)
+                DefenderAuditItems.Add(item);
+            StatusMessage = $"Defender Güvenlik Denetçisi: {DefenderAuditItems.Count} koruma kalkanı ve istisna kaydı incelendi.";
+            AddLog($"[DEFENDER DENETÇİSİ] {DefenderAuditItems.Count} kayıt kontrol edildi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteDefenderActionAsync(bool quickScan)
+    {
+        IsBusy = true;
+        StatusMessage = quickScan
+            ? "Windows Defender Hızlı Zararlı Yazılım Taraması (QuickScan) yürütülüyor..."
+            : "Windows Defender Antivirüs imza veritabanı güncelleniyor...";
+        try
+        {
+            var (_, msg) = await TenthGenMilestoneSuiteService.RunDefenderActionAsync(quickScan);
+            StatusMessage = msg;
+            AddLog($"[DEFENDER] {msg}");
+            await LoadDefenderAuditAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadMonitorsAndGpuAsync()
+    {
+        IsBusy = true;
+        MonitorAndDisplayItems.Clear();
+        StatusMessage = "Monitör EDID donanım kimlikleri, çözünürlük, yenileme hızı (Hz) ve GPU çıkışları okunuyor...";
+        try
+        {
+            var items = await TenthGenMilestoneSuiteService.ScanMonitorsAndGpuOutputsAsync();
+            foreach (var item in items)
+                MonitorAndDisplayItems.Add(item);
+            StatusMessage = $"Monitör & GPU Doktoru: {MonitorAndDisplayItems.Count} ekran paneli ve görüntü bağdaştırıcısı listelendi.";
+            AddLog($"[MONİTÖR & HZ] {MonitorAndDisplayItems.Count} görüntü birimi incelendi.");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteRestartGpuDriverAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var (_, msg) = await TenthGenMilestoneSuiteService.RestartGpuDisplayDriverAsync();
+            StatusMessage = msg;
+            AddLog($"[GPU RESET] {msg}");
+            await LoadMonitorsAndGpuAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void BrowseGitWorkspace()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Git Projelerinin (.git) Taranacağı Ana Klasörü Seçin"
+        };
+        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
+        {
+            GitWorkspacePath = dlg.FolderName;
+            _ = LoadGitReposAsync();
+        }
+    }
+
+    private async Task LoadGitReposAsync()
+    {
+        IsBusy = true;
+        GitRepoItems.Clear();
+        StatusMessage = $"'{GitWorkspacePath}' altındaki tüm Git depoları (.git), branch ve çalışma ağacı durumları taranıyor...";
+        try
+        {
+            var repos = await TenthGenMilestoneSuiteService.ScanGitRepositoriesAsync(GitWorkspacePath);
+            foreach (var r in repos)
+                GitRepoItems.Add(r);
+            long totalGitBytes = GitRepoItems.Sum(x => x.GitDirSizeBytes);
+            StatusMessage = $"Git Depo Radarı: {GitRepoItems.Count} Git projesi bulundu (Toplam .git boyutu: {CleanerRule.FormatBytes(totalGitBytes)}).";
+            AddLog($"[GIT RADAR] {GitRepoItems.Count} Git deposu listelendi ({CleanerRule.FormatBytes(totalGitBytes)}).");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ExecuteCompressSelectedGitReposAsync()
+    {
+        IsBusy = true;
+        StatusMessage = "Seçili Git depolarında 'git gc --prune=now' nesne sıkıştırması yürütülüyor...";
+        try
+        {
+            var (count, saved, msg) = await TenthGenMilestoneSuiteService.CompressSelectedGitReposAsync(GitRepoItems);
+            LastFreedBytes += saved;
+            LastDeletedFiles += count;
+            StatusMessage = msg;
+            AddLog($"[GIT GC] {msg}");
+            await LoadGitReposAsync();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private void OpenFileLocation(object? parameter)

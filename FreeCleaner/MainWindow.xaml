@@ -693,6 +693,62 @@
                             </StackPanel>
                         </RadioButton>
 
+                        <TextBlock Text="ÖNYÜKLEME, DOCKER, DEFENDER &amp; GIT"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextMutedBrush}"
+                                   Margin="12,14,0,6"/>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsBootPerformanceSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="BootPerformance">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE916;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Açılış Süresi (Boot) Analizi" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsDockerWslSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="DockerWsl">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE756;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="WSL2 &amp; Docker Yöneticisi" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsDefenderAuditorSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="DefenderAuditor">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE83D;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Defender &amp; İstisna Denetçisi" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsMonitorGpuSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="MonitorGpu">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7F4;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Monitör (Hz) &amp; GPU Doktoru" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                     IsChecked="{Binding IsGitRepoCompressorSection, Mode=OneWay}"
+                                     Command="{Binding SelectSectionCommand}"
+                                     CommandParameter="GitRepoCompressor">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <TextBlock Text="Git Depo (.git) Sıkıştırıcı" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </RadioButton>
+
                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                      IsChecked="{Binding IsSettingsSection, Mode=OneWay}"
                                      Command="{Binding SelectSectionCommand}"
@@ -1116,6 +1172,7 @@
                                     <DataGrid.Columns>
                                         <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
                                         <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" IsReadOnly="True" Width="135"/>
+                                        <DataGridTextColumn Header="Risk" Binding="{Binding RiskLabel}" IsReadOnly="True" Width="70"/>
                                         <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="90"/>
                                         <DataGridTextColumn Header="Durum" Binding="{Binding Status}" IsReadOnly="True" Width="110"/>
                                         <DataGridTextColumn Header="Dosya Yolu" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
@@ -4729,6 +4786,7 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
@@ -4758,11 +4816,47 @@
                                 <Button Style="{StaticResource SecondaryButtonStyle}"
                                         Content="⚡ Tümünü Güncelle (--all)"
                                         Padding="12,7"
+                                        Margin="0,0,8,0"
                                         Command="{Binding UpgradeAllWingetCommand}"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="⛔ İptal"
+                                        Padding="12,7"
+                                        Command="{Binding CancelCommand}"/>
                             </StackPanel>
                         </Grid>
 
-                        <DataGrid Grid.Row="1"
+                        <!-- Live Winget Progress Panel -->
+                        <Border Grid.Row="1"
+                                Background="{StaticResource BgPrimaryBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="14,10"
+                                Margin="0,0,0,10">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,6">
+                                    <TextBlock Text="{Binding WingetCurrentPackageText}"
+                                               FontWeight="SemiBold"
+                                               FontSize="12.5"
+                                               Foreground="{StaticResource AccentBlueBrush}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,0,140,0"/>
+                                    <TextBlock Text="{Binding WingetProgressCounterText}"
+                                               FontWeight="Bold"
+                                               FontSize="12.5"
+                                               Foreground="{StaticResource AccentEmeraldBrush}"
+                                               HorizontalAlignment="Right"/>
+                                </Grid>
+                                <ProgressBar Value="{Binding WingetProgressPercent, Mode=OneWay}"
+                                             Maximum="100"
+                                             Height="10"
+                                             Background="#1B263B"
+                                             Foreground="{StaticResource CleanGradientBrush}"
+                                             BorderThickness="0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <DataGrid Grid.Row="2"
                                   ItemsSource="{Binding WingetUpgrades}"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
@@ -4777,10 +4871,11 @@
                                   RowHeight="36">
                             <DataGrid.Columns>
                                 <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                                <DataGridTextColumn Header="Program Adı" Binding="{Binding PackageName}" IsReadOnly="True" Width="280"/>
-                                <DataGridTextColumn Header="Winget Paket Kimliği (ID)" Binding="{Binding PackageId}" IsReadOnly="True" Width="260"/>
-                                <DataGridTextColumn Header="Yüklü Sürüm" Binding="{Binding InstalledVersion}" IsReadOnly="True" Width="150"/>
-                                <DataGridTextColumn Header="Yeni Sürüm" Binding="{Binding AvailableVersion}" IsReadOnly="True" Width="150"/>
+                                <DataGridTextColumn Header="Güncelleme Durumu" Binding="{Binding UpgradeStatus}" IsReadOnly="True" Width="170"/>
+                                <DataGridTextColumn Header="Program Adı" Binding="{Binding PackageName}" IsReadOnly="True" Width="250"/>
+                                <DataGridTextColumn Header="Winget Paket Kimliği (ID)" Binding="{Binding PackageId}" IsReadOnly="True" Width="230"/>
+                                <DataGridTextColumn Header="Yüklü Sürüm" Binding="{Binding InstalledVersion}" IsReadOnly="True" Width="130"/>
+                                <DataGridTextColumn Header="Yeni Sürüm" Binding="{Binding AvailableVersion}" IsReadOnly="True" Width="130"/>
                                 <DataGridTextColumn Header="Kaynak" Binding="{Binding SourceName}" IsReadOnly="True" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
@@ -5070,6 +5165,376 @@
                                                         Command="{Binding DataContext.SetProcessEcoPriorityCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                         CommandParameter="{Binding}"/>
                                             </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 47: WINDOWS BOOT TIME & STARTUP BOTTLENECK ANALYZER                  -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsBootPerformanceSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="WINDOWS AÇILIŞ SÜRESİ (BOOT TIME) &amp; ÖNYÜKLEME DARBOĞAZ ANALİZCİSİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Windows Diagnostics-Performance (Event ID 100/101) verilerinden son açılış süresini, çekirdek süresini ve açılışı yavaşlatan servisleri listeler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    Content="⏱️ Açılış Performansını Yeniden Analiz Et"
+                                    Padding="14,7"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding ScanBootPerformanceCommand}"/>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding BootPerformanceItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Metrik Kategorisi" Binding="{Binding MetricCategory}" Width="245"/>
+                                <DataGridTextColumn Header="Bileşen / Uygulama / Olay" Binding="{Binding ComponentOrAppName}" Width="270"/>
+                                <DataGridTextColumn Header="Süre / Değer" Binding="{Binding DurationOrValue}" Width="240"/>
+                                <DataGridTextColumn Header="Etki &amp; Performans Değerlendirmesi" Binding="{Binding ImpactAssessment}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 48: WSL2 LINUX DISTRO & DOCKER CONTAINER / IMAGE MANAGER             -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsDockerWslSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="WSL2 LINUX DAĞITIM YÖNETİCİSİ &amp; DOCKER KONTEYNER / İMAJ TEMİZLEYİCİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Yüklü WSL2 dağıtımlarını ve Docker konteynerlerini listeler; tek tıkla VmmemWSL RAM'ini kurtarır (wsl --shutdown) veya Docker prune yapar."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="🔄 Listeyi Yenile"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanDockerAndWslCommand}"/>
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="🛑 WSL2 Motorunu Kapat &amp; RAM Kurtar"
+                                        Padding="13,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ShutdownWslCommand}"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="🐳 Docker System Prune (-f)"
+                                        Padding="13,7"
+                                        Command="{Binding PruneDockerSystemCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding DockerAndWslItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Platform" Binding="{Binding PlatformType}" Width="195"/>
+                                <DataGridTextColumn Header="Dağıtım / Konteyner Adı" Binding="{Binding NameOrTag}" Width="240"/>
+                                <DataGridTextColumn Header="Durum" Binding="{Binding StateOrStatus}" Width="190"/>
+                                <DataGridTextColumn Header="Sürüm / Boyut" Binding="{Binding VersionOrSize}" Width="160"/>
+                                <DataGridTextColumn Header="Ayrıntılar" Binding="{Binding Details}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 49: WINDOWS DEFENDER SECURITY & EXCLUSION AUDITOR                    -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsDefenderAuditorSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="WINDOWS DEFENDER GÜVENLİK KALKANI &amp; GİZLİ İSTİSNA (EXCLUSION) DENETÇİSİ"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Gerçek Zamanlı Koruma, Tamper Protection, virüs imza sürümü ve Defender'ın taramadığı gizli istisna klasörlerini (ExclusionPath) denetler."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="🔍 Defender Durumunu Denetle"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanDefenderAuditCommand}"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="🔄 Virüs İmzalarını Güncelle"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding UpdateDefenderSignaturesCommand}"/>
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="🛡️ Hızlı Tarama Başlat (QuickScan)"
+                                        Padding="13,7"
+                                        Command="{Binding RunDefenderQuickScanCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding DefenderAuditItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Denetim Kategorisi" Binding="{Binding AuditCategory}" Width="225"/>
+                                <DataGridTextColumn Header="Kalkan / İstisna Yolu" Binding="{Binding SettingOrExclusionName}" Width="310"/>
+                                <DataGridTextColumn Header="Güvenlik Durumu" Binding="{Binding StatusBadge}" Width="210"/>
+                                <DataGridTextColumn Header="Açıklama &amp; Güvenlik Notu" Binding="{Binding SecurityNotes}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 50: MONITOR EDID, REFRESH RATE (HZ) & GPU RESET DOCTOR               -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsMonitorGpuSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="MONİTÖR EDID, YENİLEME HIZI (HZ) &amp; EKRAN KARTI (GPU) SIFIRLAMA DOKTORU"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Bağlı ekranların EDID model/seri numarasını ve aktif Hz değerini denetler; tek tıkla GPU görüntü sürücüsünü yeniden başlatır."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="🖥️ Ekran &amp; Hz Bilgilerini Yenile"
+                                        Padding="13,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanMonitorsAndGpuCommand}"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="🎨 ClearType Metin Ayarı"
+                                        Padding="12,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding LaunchSystemToolCommand}"
+                                        CommandParameter="cttune.exe"/>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="⚡ GPU Sürücüsünü Yeniden Başlat (Admin)"
+                                        Padding="13,7"
+                                        Command="{Binding RestartGpuDriverCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <DataGrid Grid.Row="1"
+                                  ItemsSource="{Binding MonitorAndDisplayItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Ekran / GPU Adı" Binding="{Binding DisplayName}" Width="245"/>
+                                <DataGridTextColumn Header="Çözünürlük &amp; Bit" Binding="{Binding ResolutionAndDepth}" Width="180"/>
+                                <DataGridTextColumn Header="Yenileme Hızı (Hz) / Üretim" Binding="{Binding RefreshRateInfo}" Width="210"/>
+                                <DataGridTextColumn Header="EDID Seri No / Sürücü" Binding="{Binding EdidAndDriverInfo}" Width="245"/>
+                                <DataGridTextColumn Header="Durum &amp; Optimizasyon" Binding="{Binding OptimizationBadge}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+
+                <!-- ========================================================================= -->
+                <!-- VIEW 51: GIT REPOSITORY (.GIT) COMPRESSOR (GIT GC) & STATUS RADAR         -->
+                <!-- ========================================================================= -->
+                <Border Visibility="{Binding IsGitRepoCompressorSection, Converter={StaticResource BoolToVis}}"
+                        Background="{StaticResource BgSecondaryBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="GİT DEPOLARI (.GIT) SIKIŞTIRICI (GIT GC --PRUNE) &amp; PROJE DURUM RADARI"
+                                           FontSize="13"
+                                           FontWeight="Bold"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <TextBlock Text="Çalışma alanındaki tüm Git projelerinin aktif branch ve değişiklik durumunu listeler; 'git gc --prune=now' ile hiçbir kod silmeden .git boyutunu küçültür."
+                                           FontSize="11.5"
+                                           Foreground="{StaticResource TextMutedBrush}"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="🌿 Git Projelerini Tara"
+                                        Padding="13,7"
+                                        Margin="0,0,8,0"
+                                        Command="{Binding ScanGitReposCommand}"/>
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="🗜️ Seçili Git Depolarını Sıkıştır (git gc)"
+                                        Padding="14,7"
+                                        Command="{Binding CompressSelectedGitReposCommand}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Grid.Row="1"
+                                Background="{StaticResource BgPrimaryBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="12,9"
+                                Margin="0,0,0,10">
+                            <WrapPanel VerticalAlignment="Center">
+                                <TextBlock Text="Git Çalışma Alanı (Workspace) Klasörü:" Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBox Text="{Binding GitWorkspacePath, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="390"
+                                         Padding="8,5"
+                                         Background="#0D1422"
+                                         Foreground="{StaticResource TextPrimaryBrush}"
+                                         BorderBrush="{StaticResource BorderSubtleBrush}"
+                                         Margin="0,0,8,0"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Klasör Seç &amp; Tara..."
+                                        Padding="12,5"
+                                        Command="{Binding BrowseGitWorkspaceCommand}"/>
+                            </WrapPanel>
+                        </Border>
+
+                        <DataGrid Grid.Row="2"
+                                  ItemsSource="{Binding GitRepoItems}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  Background="{StaticResource BgPrimaryBrush}"
+                                  RowBackground="#141B26"
+                                  AlternatingRowBackground="#18202D"
+                                  Foreground="{StaticResource TextPrimaryBrush}"
+                                  BorderBrush="{StaticResource BorderSubtleBrush}"
+                                  BorderThickness="1"
+                                  RowHeight="36">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                                <DataGridTextColumn Header="Proje / Depo Adı" Binding="{Binding RepoName}" IsReadOnly="True" Width="210"/>
+                                <DataGridTextColumn Header="Aktif Branch" Binding="{Binding ActiveBranch}" IsReadOnly="True" Width="165"/>
+                                <DataGridTextColumn Header="Çalışma Ağacı (git status)" Binding="{Binding WorkingTreeStatus}" IsReadOnly="True" Width="220"/>
+                                <DataGridTextColumn Header=".git Boyutu" Binding="{Binding FormattedGitSize}" IsReadOnly="True" Width="120"/>
+                                <DataGridTextColumn Header="Tam Klasör Yolu" Binding="{Binding RepoRootPath}" IsReadOnly="True" Width="*"/>
+                                <DataGridTemplateColumn Header="Klasör" Width="95">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource SecondaryButtonStyle}"
+                                                    Content="Aç"
+                                                    Padding="10,3"
+                                                    FontSize="11"
+                                                    Command="{Binding DataContext.OpenGitRepoFolderCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

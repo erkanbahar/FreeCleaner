@@ -10,6 +10,13 @@ public enum RuleGroup
     DeveloperAndApps
 }
 
+public enum RiskLevel
+{
+    Low,
+    Medium,
+    High
+}
+
 public class CleanerRule : INotifyPropertyChanged
 {
     private bool _isSelected = true;
@@ -26,6 +33,13 @@ public class CleanerRule : INotifyPropertyChanged
     public bool IsRecycleBin { get; init; }
     public bool RequiresWarning { get; init; }
     public string? WarningMessage { get; init; }
+    public RiskLevel Risk { get; init; } = RiskLevel.Medium;
+    public string RiskLabel => Risk switch
+    {
+        RiskLevel.Low => "Düşük",
+        RiskLevel.High => "Yüksek",
+        _ => "Orta"
+    };
 
     /// <summary>
     /// Directories to scan along with optional search patterns (default "*").

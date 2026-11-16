@@ -16,6 +16,13 @@ public class ScannedFileItem : INotifyPropertyChanged
     public required long SizeBytes { get; init; }
     public required DateTime LastModified { get; init; }
     public bool IsRecycleBinItem { get; init; }
+    public RiskLevel Risk { get; init; } = RiskLevel.Medium;
+    public string RiskLabel => Risk switch
+    {
+        RiskLevel.Low => "Düşük",
+        RiskLevel.High => "Yüksek",
+        _ => "Orta"
+    };
 
     public bool IsSelected
     {

@@ -47,7 +47,8 @@ public class CleanerEngine
                 IconGlyph = "\uE74D",
                 Group = RuleGroup.System,
                 IsRecycleBin = true,
-                IsSelected = true
+                IsSelected = true,
+                Risk = RiskLevel.High
             },
             new CleanerRule
             {
@@ -148,6 +149,7 @@ public class CleanerEngine
                 Group = RuleGroup.Browsers,
                 IsSelected = false,
                 RequiresWarning = true,
+                Risk = RiskLevel.High,
                 WarningMessage = "Chrome çerezlerini silmek açık web sitesi oturumlarınızdan çıkış yapılmasına neden olur.",
                 Targets = GetChromiumCookieTargets(Path.Combine(localAppData, "Google", "Chrome", "User Data"))
             },
@@ -172,6 +174,7 @@ public class CleanerEngine
                 Group = RuleGroup.Browsers,
                 IsSelected = false,
                 RequiresWarning = true,
+                Risk = RiskLevel.High,
                 WarningMessage = "Edge çerezlerini silmek açık web sitesi oturumlarınızdan çıkış yapılmasına neden olur.",
                 Targets = GetChromiumCookieTargets(Path.Combine(localAppData, "Microsoft", "Edge", "User Data"))
             },
@@ -270,6 +273,7 @@ public class CleanerEngine
                 Group = RuleGroup.DeveloperAndApps,
                 IsSelected = false,
                 RequiresWarning = true,
+                Risk = RiskLevel.High,
                 WarningMessage = "Seçili klasörlerdeki Visual Studio projelerinin Debug ve Retail/Release derleme çıktıları temizlenecektir.",
                 Targets = GetVisualStudioBuildFolderTargets()
             },
@@ -468,6 +472,7 @@ public class CleanerEngine
                             SizeBytes = rbSize,
                             LastModified = DateTime.Now,
                             IsRecycleBinItem = true,
+                            Risk = rule.Risk,
                             Status = "Analiz Edildi"
                         };
                         allDiscoveredItems.Add(rbItem);
@@ -514,6 +519,7 @@ public class CleanerEngine
                                 FileName = file.Name,
                                 SizeBytes = fileLen,
                                 LastModified = lastWrite,
+                                Risk = rule.Risk,
                                 Status = "Analiz Edildi"
                             };
 
