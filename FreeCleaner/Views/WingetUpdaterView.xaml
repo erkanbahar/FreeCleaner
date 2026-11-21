@@ -1,0 +1,110 @@
+<UserControl x:Class="FreeCleaner.Views.WingetUpdaterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Border Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="WINGET TOPLU PROGRAM GÜNCELLEYİCİ (ONE-CLICK SOFTWARE UPDATER)"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Windows Paket Yöneticisi (winget upgrade) ile eski sürümde kalmış tüm programları listeler ve tek tıkla sessizce (--silent) günceller."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="🔍 Güncellemeleri Tara"
+                            Padding="13,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanWingetUpgradesCommand}"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="🚀 Seçili Programları Güncelle"
+                            Padding="13,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding UpgradeSelectedWingetCommand}"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="⚡ Tümünü Güncelle (--all)"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding UpgradeAllWingetCommand}"/>
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Content="⛔ İptal"
+                            Padding="12,7"
+                            Command="{Binding CancelCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Live Winget Progress Panel -->
+            <Border Grid.Row="1"
+                    Background="{DynamicResource BgPrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="14,10"
+                    Margin="0,0,0,10">
+                <StackPanel>
+                    <Grid Margin="0,0,0,6">
+                        <TextBlock Text="{Binding WingetCurrentPackageText}"
+                                   FontWeight="SemiBold"
+                                   FontSize="12.5"
+                                   Foreground="{DynamicResource AccentBlueBrush}"
+                                   TextTrimming="CharacterEllipsis"
+                                   Margin="0,0,140,0"/>
+                        <TextBlock Text="{Binding WingetProgressCounterText}"
+                                   FontWeight="Bold"
+                                   FontSize="12.5"
+                                   Foreground="{DynamicResource AccentEmeraldBrush}"
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+                    <ProgressBar Value="{Binding WingetProgressPercent, Mode=OneWay}"
+                                 Maximum="100"
+                                 Height="10"
+                                 Background="{DynamicResource BgCardBrush}"
+                                 Foreground="{DynamicResource CleanGradientBrush}"
+                                 BorderThickness="0"/>
+                </StackPanel>
+            </Border>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding WingetUpgrades}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="Güncelleme Durumu" Binding="{Binding UpgradeStatus}" IsReadOnly="True" Width="170"/>
+                    <DataGridTextColumn Header="Program Adı" Binding="{Binding PackageName}" IsReadOnly="True" Width="250"/>
+                    <DataGridTextColumn Header="Winget Paket Kimliği (ID)" Binding="{Binding PackageId}" IsReadOnly="True" Width="230"/>
+                    <DataGridTextColumn Header="Yüklü Sürüm" Binding="{Binding InstalledVersion}" IsReadOnly="True" Width="130"/>
+                    <DataGridTextColumn Header="Yeni Sürüm" Binding="{Binding AvailableVersion}" IsReadOnly="True" Width="130"/>
+                    <DataGridTextColumn Header="Kaynak" Binding="{Binding SourceName}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

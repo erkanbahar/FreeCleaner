@@ -1220,13 +1220,18 @@ public class TreemapNodeItem
     public required double Height { get; init; }
     public required string FillHex { get; init; }
     public required double SharePercent { get; init; }
+    public string AdvisorBadge { get; init; } = string.Empty;
+    public string AdvisorSummary { get; init; } = string.Empty;
+    public bool CanSafeDelete { get; init; } = true;
 
     public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
     public string PercentText => $"{SharePercent:F1}%";
     public string TypeBadge => IsDirectory ? "📁 Klasör" : "📄 Dosya";
     public bool ShowDetailedLabel => Width >= 88 && Height >= 40;
     public bool ShowCompactLabel => Width >= 48 && Height >= 22;
-    public string ToolTipText => $"{TypeBadge}: {Name}\nBoyut: {FormattedSize} ({PercentText})\nYol: {FullPath}";
+    public string ToolTipText => string.IsNullOrWhiteSpace(AdvisorSummary)
+        ? $"{TypeBadge}: {Name}\nBoyut: {FormattedSize} ({PercentText})\nYol: {FullPath}"
+        : $"{TypeBadge}: {Name}\nBoyut: {FormattedSize} ({PercentText})\nDanışman: {AdvisorBadge}\n{AdvisorSummary}\nYol: {FullPath}";
 }
 
 public class PhotoMetadataItem : INotifyPropertyChanged
@@ -1250,6 +1255,105 @@ public class PhotoMetadataItem : INotifyPropertyChanged
         : TagCount > 0
             ? $"📷 EXIF Var ({TagCount})"
             : "✅ Temiz";
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string StatusText
+    {
+        get => _statusText;
+        set
+        {
+            if (_statusText != value)
+            {
+                _statusText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+
+// ==================== 12TH GENERATION SMART DISK ADVISOR, LIFETIME HISTORY, DEEP SPACE RECOVERY & DHASH PHOTO FINDER ====================
+
+public class DeepSpaceItem : INotifyPropertyChanged
+{
+    private string _statusBadge = string.Empty;
+
+    public required string ItemId { get; init; }
+    public required string Category { get; init; }
+    public required string Title { get; init; }
+    public required long SizeBytes { get; init; }
+    public required string ActionLabel { get; init; }
+    public required string Description { get; init; }
+    public required string TargetPath { get; init; }
+    public required bool CanExecuteAction { get; init; }
+
+    public string FormattedSize => SizeBytes > 0 ? CleanerRule.FormatBytes(SizeBytes) : "-";
+
+    public string StatusBadge
+    {
+        get => _statusBadge;
+        set
+        {
+            if (_statusBadge != value)
+            {
+                _statusBadge = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}
+
+public sealed record CleanupHistoryEntry(
+    DateTime TimestampUtc,
+    string ModuleName,
+    long FreedBytes,
+    int ItemsProcessed);
+
+public sealed record CleanupHistoryBarItem(
+    string DayLabel,
+    long FreedBytes,
+    double BarHeight,
+    string FormattedSize,
+    string ToolTipText);
+
+public class SimilarPhotoItem : INotifyPropertyChanged
+{
+    private bool _isSelected;
+    private string _statusText = "Hazır";
+
+    public required int GroupId { get; init; }
+    public required string GroupLabel { get; init; }
+    public required string FileName { get; init; }
+    public required string FullPath { get; init; }
+    public required long SizeBytes { get; init; }
+    public required int Width { get; init; }
+    public required int Height { get; init; }
+    public required string SimilarityText { get; init; }
+    public required string RoleBadge { get; init; }
+    public required int HammingDistance { get; init; }
+
+    public string ResolutionText => $"{Width}x{Height}";
+    public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
 
     public bool IsSelected
     {

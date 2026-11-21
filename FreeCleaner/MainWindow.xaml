@@ -308,6 +308,24 @@
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsDeepSpaceRecoverySection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="DeepSpaceRecovery">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xEDA2;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="Dev Sistem Alanı Kurtarıcısı" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsSimilarPhotosSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="SimilarPhotos">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="Benzer Fotoğraf Bulucu (dHash)" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                                      IsChecked="{Binding IsAllSection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="All">
@@ -1843,238 +1861,7 @@
                     </Border>
                 </Grid>
 
-                <!-- ========================================================================= -->
-                <!-- VIEW 7: EXCLUSIONS (WHITELIST), AUTOMATION & REPORTING                    -->
-                <!-- ========================================================================= -->
-                <Grid Visibility="{Binding IsSettingsSection, Converter={StaticResource BoolToVis}}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="14"/>
-                        <ColumnDefinition Width="420"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Whitelist / Exclusions Manager -->
-                    <Border Grid.Column="0"
-                            Background="{DynamicResource BgSecondaryBrush}"
-                            BorderBrush="{DynamicResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="16">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                                <TextBlock Text="{DynamicResource Loc_SettingsWhitelistTitle}"
-                                           FontSize="12.5"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                <TextBlock Text="{DynamicResource Loc_SettingsWhitelistDesc}"
-                                           FontSize="11.5"
-                                           Foreground="{DynamicResource TextMutedBrush}"/>
-                            </StackPanel>
-
-                            <Grid Grid.Row="1" Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0"
-                                         Text="{Binding NewExclusionInput, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="{DynamicResource BgCardBrush}"
-                                         Foreground="{DynamicResource TextPrimaryBrush}"
-                                         CaretBrush="{DynamicResource AccentBlueBrush}"
-                                         BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                         Padding="8,6"
-                                         Margin="0,0,8,0"/>
-                                <Button Grid.Column="1"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="{DynamicResource Loc_SettingsAddBtn}"
-                                        Padding="14,6"
-                                        Command="{Binding AddExclusionCommand}"
-                                        Margin="0,0,6,0"/>
-                                <Button Grid.Column="2"
-                                        Style="{StaticResource SubtleButtonStyle}"
-                                        Content="{DynamicResource Loc_SettingsBrowseBtn}"
-                                        Command="{Binding BrowseExclusionFolderCommand}"/>
-                            </Grid>
-
-                            <ListBox Grid.Row="2"
-                                     ItemsSource="{Binding ExcludedPaths}"
-                                     Background="{DynamicResource BgPrimaryBrush}"
-                                     BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                     Foreground="{DynamicResource TextPrimaryBrush}">
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="4,3">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="{Binding}" VerticalAlignment="Center" FontSize="12.5"/>
-                                            <Button Grid.Column="1"
-                                                    Style="{StaticResource SubtleButtonStyle}"
-                                                    Content="{DynamicResource Loc_SettingsRemoveBtn}"
-                                                    Padding="8,2"
-                                                    Margin="12,0,0,0"
-                                                    Command="{Binding DataContext.RemoveExclusionCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                        </Grid>
-                    </Border>
-
-                    <!-- Automation & Reports Panel -->
-                    <Border Grid.Column="2"
-                            Background="{DynamicResource BgSecondaryBrush}"
-                            BorderBrush="{DynamicResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="16">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource Loc_SettingsRightHeader}"
-                                           FontSize="12.5"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           Margin="0,0,0,12"/>
-
-                                <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">
-                                    <StackPanel>
-                                        <TextBlock Text="{DynamicResource Loc_SettingsThemeLangTitle}" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                        <TextBlock Text="{DynamicResource Loc_SettingsThemeLangDesc}"
-                                                   FontSize="11.5"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,4,0,10"/>
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                            <TextBlock Text="{DynamicResource Loc_SettingsThemeLabel}" Width="95" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
-                                            <ComboBox ItemsSource="{Binding AvailableThemes}"
-                                                      SelectedItem="{Binding SelectedTheme}"
-                                                      Width="210"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{DynamicResource Loc_SettingsLangLabel}" Width="95" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
-                                            <ComboBox ItemsSource="{Binding AvailableLanguages}"
-                                                      DisplayMemberPath="DisplayName"
-                                                      SelectedValuePath="Code"
-                                                      SelectedValue="{Binding SelectedLanguage}"
-                                                      Width="210"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-
-                                <!-- App Version & GitHub Releases Update Checker -->
-                                <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">
-                                    <StackPanel>
-                                        <Grid>
-                                            <TextBlock Text="{DynamicResource Loc_SettingsUpdateTitle}" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                            <Border Background="{DynamicResource BgPrimaryBrush}" BorderBrush="{DynamicResource AccentBlueBrush}" BorderThickness="1" CornerRadius="5" Padding="6,1" HorizontalAlignment="Right">
-                                                <TextBlock Text="{Binding AppVersionDisplay}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBlueBrush}"/>
-                                            </Border>
-                                        </Grid>
-                                        <TextBlock Text="{DynamicResource Loc_SettingsUpdateDesc}"
-                                                   FontSize="11.5"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,4,0,8"/>
-                                        <TextBlock Text="{Binding UpdateStatusText}"
-                                                   FontSize="11.5"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource AccentEmeraldBrush}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,0,0,10"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Button Style="{StaticResource PrimaryButtonStyle}"
-                                                    Content="{DynamicResource Loc_SettingsCheckUpdateBtn}"
-                                                    Command="{Binding CheckForUpdatesCommand}"
-                                                    Margin="0,0,8,0"/>
-                                            <Button Style="{StaticResource SubtleButtonStyle}"
-                                                    Content="{DynamicResource Loc_SettingsOpenReleasesBtn}"
-                                                    Command="{Binding OpenLatestReleasePageCommand}"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">
-                                    <StackPanel>
-                                        <CheckBox IsChecked="{Binding AutoMonitorEnabled}"
-                                                  Foreground="{DynamicResource TextPrimaryBrush}"
-                                                  FontWeight="SemiBold"
-                                                  FontSize="13"
-                                                  Content="{DynamicResource Loc_SettingsAutoMonCheck}"/>
-                                        <TextBlock Text="{DynamicResource Loc_SettingsAutoMonDesc}"
-                                                   FontSize="11.5"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,6,0,10"/>
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                            <TextBlock Text="{DynamicResource Loc_SettingsThresholdLabel}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                            <ComboBox ItemsSource="{Binding AvailableSizeThresholdsMb}"
-                                                      SelectedItem="{Binding AutoMonitorThresholdMb}"
-                                                      Width="90"/>
-                                        </StackPanel>
-                                        <CheckBox IsChecked="{Binding MinimizeToTrayOnClose}"
-                                                  Foreground="{DynamicResource TextPrimaryBrush}"
-                                                  FontWeight="SemiBold"
-                                                  FontSize="12.5"
-                                                  Content="{DynamicResource Loc_SettingsTrayCheck}"/>
-                                    </StackPanel>
-                                </Border>
-                                <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">
-                                    <StackPanel>
-                                        <CheckBox IsChecked="{Binding ScheduledMaintenanceEnabled}"
-                                                  Foreground="{DynamicResource TextPrimaryBrush}"
-                                                  FontWeight="SemiBold"
-                                                  FontSize="13"
-                                                  Content="{DynamicResource Loc_SettingsSchedCheck}"/>
-                                        <TextBlock Text="{DynamicResource Loc_SettingsSchedDesc}"
-                                                   FontSize="11.5"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,6,0,10"/>
-                                        <StackPanel Orientation="Horizontal">
-                                           <TextBlock Text="{DynamicResource Loc_SettingsIntervalLabel}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                           <ComboBox ItemsSource="{Binding AvailableMaintenanceIntervalsHours}"
-                                                     SelectedItem="{Binding ScheduledMaintenanceIntervalHours}"
-                                                     Width="90"/>
-                                           <TextBlock Text="{DynamicResource Loc_SettingsHoursSuffix}" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                                            <Button Style="{StaticResource PrimaryButtonStyle}"
-                                                    Content="{DynamicResource Loc_SettingsInstallTaskBtn}"
-                                                    Command="{Binding InstallScheduledMaintenanceCommand}"
-                                                    Margin="0,0,8,0"/>
-                                            <Button Style="{StaticResource SubtleButtonStyle}"
-                                                    Content="{DynamicResource Loc_SettingsRemoveTaskBtn}"
-                                                    Command="{Binding RemoveScheduledMaintenanceCommand}"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14">
-                                    <StackPanel>
-                                        <TextBlock Text="{DynamicResource Loc_SettingsReportTitle}" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                        <TextBlock Text="{DynamicResource Loc_SettingsReportDesc}"
-                                                   FontSize="11.5"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,4,0,12"/>
-                                        <Button Style="{StaticResource PrimaryButtonStyle}"
-                                                Content="{DynamicResource Loc_SettingsExportReportBtn}"
-                                                Command="{Binding ExportReportCommand}"/>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </ScrollViewer>
-                    </Border>
-                </Grid>
+                <!-- VIEW 7: Extracted to modular Lazy UserControl (Views/SettingsView.xaml) -->
 
                 <!-- ========================================================================= -->
                 <!-- VIEW 8: DEVCLEANER & GAMER DEEP CLEANER                                   -->
@@ -4641,105 +4428,7 @@
                     </Grid>
                 </Border>
 
-                <!-- ========================================================================= -->
-                <!-- VIEW 37: LOCAL AI / LLM MODEL & CACHE HUNTER                              -->
-                <!-- ========================================================================= -->
-                <Border Visibility="{Binding IsAiModelCleanerSection, Converter={StaticResource BoolToVis}}"
-                        Background="{DynamicResource BgSecondaryBrush}"
-                        BorderBrush="{DynamicResource BorderSubtleBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="16">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid Grid.Row="0" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="YEREL YAPAY ZEKA (AI / LLM) MODEL &amp; ÖNBELLEK AVCISI"
-                                           FontSize="13"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Ollama, HuggingFace Hub, LM Studio, PyTorch, Whisper önbelleklerini ve diskteki büyük model ağırlıklarını (.gguf, .safetensors, .onnx) bulur."
-                                           FontSize="11.5"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="0,3,0,0"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <Button Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="🤖 AI Modellerini &amp; Önbellekleri Tara"
-                                        Padding="13,7"
-                                        Margin="0,0,8,0"
-                                        Command="{Binding ScanAiModelCachesCommand}"/>
-                                <Button Style="{StaticResource DangerButtonStyle}"
-                                        Content="🧹 Seçili AI Modellerini / Önbellekleri Sil"
-                                        Padding="13,7"
-                                        Command="{Binding CleanSelectedAiCachesCommand}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Border Grid.Row="1"
-                                Background="{DynamicResource BgPrimaryBrush}"
-                                BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="12,9"
-                                Margin="0,0,0,10">
-                            <WrapPanel VerticalAlignment="Center">
-                                <TextBlock Text="Özel Model Tarama Klasörü (.gguf / .safetensors):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBox Text="{Binding AiCustomScanFolder, UpdateSourceTrigger=PropertyChanged}"
-                                         Width="390"
-                                         Padding="8,5"
-                                         Background="#0D1422"
-                                         Foreground="{DynamicResource TextPrimaryBrush}"
-                                         BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                         Margin="0,0,8,0"/>
-                                <Button Style="{StaticResource SecondaryButtonStyle}"
-                                        Content="Klasör Seç &amp; Tara..."
-                                        Padding="12,5"
-                                        Command="{Binding BrowseAiScanFolderCommand}"/>
-                            </WrapPanel>
-                        </Border>
-
-                        <DataGrid Grid.Row="2"
-                                  ItemsSource="{Binding AiModelCaches}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="None"
-                                  Background="{DynamicResource BgPrimaryBrush}"
-                                  RowBackground="{DynamicResource BgSecondaryBrush}"
-                                  AlternatingRowBackground="{DynamicResource BgCardBrush}"
-                                  Foreground="{DynamicResource TextPrimaryBrush}"
-                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                  BorderThickness="1"
-                                  RowHeight="36">
-                            <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                                <DataGridTextColumn Header="AI Çerçevesi / Format" Binding="{Binding AiFramework}" IsReadOnly="True" Width="210"/>
-                                <DataGridTextColumn Header="Model veya Önbellek Adı" Binding="{Binding ModelOrCacheName}" IsReadOnly="True" Width="280"/>
-                                <DataGridTextColumn Header="Kapladığı Alan" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="125"/>
-                                <DataGridTextColumn Header="Tam Klasör / Dosya Yolu" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
-                                <DataGridTemplateColumn Header="Konum" Width="95">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <Button Style="{StaticResource SecondaryButtonStyle}"
-                                                    Content="Aç"
-                                                    Padding="10,3"
-                                                    FontSize="11"
-                                                    Command="{Binding DataContext.OpenAiCacheLocationCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"/>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </Border>
+                <!-- VIEW 37: Extracted to modular Lazy UserControl (Views/AiModelCleanerView.xaml) -->
 
                 <!-- ========================================================================= -->
                 <!-- VIEW 38: WINDOWS FIREWALL APP INTERNET BLOCKER                            -->
@@ -5089,113 +4778,7 @@
                     </Grid>
                 </Border>
 
-                <!-- ========================================================================= -->
-                <!-- VIEW 42: WINGET ONE-CLICK SOFTWARE UPDATER                                -->
-                <!-- ========================================================================= -->
-                <Border Visibility="{Binding IsWingetUpdaterSection, Converter={StaticResource BoolToVis}}"
-                        Background="{DynamicResource BgSecondaryBrush}"
-                        BorderBrush="{DynamicResource BorderSubtleBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="16">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid Grid.Row="0" Margin="0,0,0,12">
-                            <StackPanel>
-                                <TextBlock Text="WINGET TOPLU PROGRAM GÜNCELLEYİCİ (ONE-CLICK SOFTWARE UPDATER)"
-                                           FontSize="13"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Windows Paket Yöneticisi (winget upgrade) ile eski sürümde kalmış tüm programları listeler ve tek tıkla sessizce (--silent) günceller."
-                                           FontSize="11.5"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="0,3,0,0"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <Button Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="🔍 Güncellemeleri Tara"
-                                        Padding="13,7"
-                                        Margin="0,0,8,0"
-                                        Command="{Binding ScanWingetUpgradesCommand}"/>
-                                <Button Style="{StaticResource CleanButtonStyle}"
-                                        Content="🚀 Seçili Programları Güncelle"
-                                        Padding="13,7"
-                                        Margin="0,0,8,0"
-                                        Command="{Binding UpgradeSelectedWingetCommand}"/>
-                                <Button Style="{StaticResource SecondaryButtonStyle}"
-                                        Content="⚡ Tümünü Güncelle (--all)"
-                                        Padding="12,7"
-                                        Margin="0,0,8,0"
-                                        Command="{Binding UpgradeAllWingetCommand}"/>
-                                <Button Style="{StaticResource DangerButtonStyle}"
-                                        Content="⛔ İptal"
-                                        Padding="12,7"
-                                        Command="{Binding CancelCommand}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <!-- Live Winget Progress Panel -->
-                        <Border Grid.Row="1"
-                                Background="{DynamicResource BgPrimaryBrush}"
-                                BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                BorderThickness="1"
-                                CornerRadius="8"
-                                Padding="14,10"
-                                Margin="0,0,0,10">
-                            <StackPanel>
-                                <Grid Margin="0,0,0,6">
-                                    <TextBlock Text="{Binding WingetCurrentPackageText}"
-                                               FontWeight="SemiBold"
-                                               FontSize="12.5"
-                                               Foreground="{DynamicResource AccentBlueBrush}"
-                                               TextTrimming="CharacterEllipsis"
-                                               Margin="0,0,140,0"/>
-                                    <TextBlock Text="{Binding WingetProgressCounterText}"
-                                               FontWeight="Bold"
-                                               FontSize="12.5"
-                                               Foreground="{DynamicResource AccentEmeraldBrush}"
-                                               HorizontalAlignment="Right"/>
-                                </Grid>
-                                <ProgressBar Value="{Binding WingetProgressPercent, Mode=OneWay}"
-                                             Maximum="100"
-                                             Height="10"
-                                             Background="#1B263B"
-                                             Foreground="{DynamicResource CleanGradientBrush}"
-                                             BorderThickness="0"/>
-                            </StackPanel>
-                        </Border>
-
-                        <DataGrid Grid.Row="2"
-                                  ItemsSource="{Binding WingetUpgrades}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="None"
-                                  Background="{DynamicResource BgPrimaryBrush}"
-                                  RowBackground="{DynamicResource BgSecondaryBrush}"
-                                  AlternatingRowBackground="{DynamicResource BgCardBrush}"
-                                  Foreground="{DynamicResource TextPrimaryBrush}"
-                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                  BorderThickness="1"
-                                  RowHeight="36">
-                            <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                                <DataGridTextColumn Header="Güncelleme Durumu" Binding="{Binding UpgradeStatus}" IsReadOnly="True" Width="170"/>
-                                <DataGridTextColumn Header="Program Adı" Binding="{Binding PackageName}" IsReadOnly="True" Width="250"/>
-                                <DataGridTextColumn Header="Winget Paket Kimliği (ID)" Binding="{Binding PackageId}" IsReadOnly="True" Width="230"/>
-                                <DataGridTextColumn Header="Yüklü Sürüm" Binding="{Binding InstalledVersion}" IsReadOnly="True" Width="130"/>
-                                <DataGridTextColumn Header="Yeni Sürüm" Binding="{Binding AvailableVersion}" IsReadOnly="True" Width="130"/>
-                                <DataGridTextColumn Header="Kaynak" Binding="{Binding SourceName}" IsReadOnly="True" Width="*"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </Border>
+                <!-- VIEW 42: Extracted to modular Lazy UserControl (Views/WingetUpdaterView.xaml) -->
 
                 <!-- ========================================================================= -->
                 <!-- VIEW 43: LOCAL NETWORK (LAN / WI-FI) DEVICE RADAR                         -->

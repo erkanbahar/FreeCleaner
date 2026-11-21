@@ -3,40 +3,42 @@
 [![FreeCleaner .NET 10 CI](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--windows-512BD4?logo=dotnet)
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011%20(x64)-0078D6?logo=windows)
-![Modules](https://img.shields.io/badge/Mod%C3%BCller-55%20Ara%C3%A7-10B981)
+![Modules](https://img.shields.io/badge/Mod%C3%BCller-57%20Ara%C3%A7-10B981)
 ![Language](https://img.shields.io/badge/Dil-T%C3%BCrk%C3%A7e%20%7C%20English-38BDF8)
 
-**FreeCleaner Pro**, **.NET 10 (`net10.0-windows`)** ve **WPF (Modern Fluent UI)** altyapısıyla geliştirilmiş, sıfır üçüncü taraf UI bağımlılığına sahip, **55 modüllü** kapsamlı bir Windows sistem temizleme, performans optimizasyonu, güvenlik/gizlilik ve geliştirici bakım paketidir.
+**FreeCleaner Pro**, **.NET 10 (`net10.0-windows`)** ve **WPF (Modern Fluent UI)** altyapısıyla geliştirilmiş, sıfır üçüncü taraf UI bağımlılığına sahip, **57 modüllü** kapsamlı bir Windows sistem temizleme, performans optimizasyonu, güvenlik/gizlilik ve geliştirici bakım paketidir.
 
 ---
 
 ## Flagship Özellikler
 
-- **🩺 Genel Bakış (Dashboard) & Tek Tıkla 100 Puanlık PC Sağlık Kontrolü:** Disk doluluğu, birikmiş çöp miktarı, başlangıç yükü ve RAM kullanımını puanlar; tek tıkla analiz + RAM Working Set boşaltma + DNS yenileme uygular.
-- **🗺️ Etkileşimli Görsel Disk Haritası (Treemap Visualizer):** Klasör ve dosyaların kapladığı alanı orantılı renkli kutucuklarla görselleştirir; klasör bloklarına tıklayarak içine inebilir (`Drill Down`), üst klasöre çıkabilir ve Gezgin'de açabilirsiniz.
-- **📸 Fotoğraf EXIF / GPS Gizlilik Temizleyici (Metadata Scrubber):** JPEG, PNG ve TIFF fotoğraflardaki gömülü GPS konum koordinatlarını, kamera/cihaz bilgisini ve yazılım meta verilerini **orijinal yönelimi ve piksel kalitesini bozmadan** temizler (`FreeCleaner_PhotoBackup` isteğe bağlı yedekli + akıllı JPEG sıkıştırma desteği).
+- **🩺 Genel Bakış (Dashboard), Ömür Boyu Kazanılan Alan & Tek Tıkla 100 Puanlık Sağlık Kontrolü:** Disk doluluğu, çöp yükü, başlangıç uygulamaları ve RAM'i puanlar; `%LocalAppData%\FreeCleaner\history.json` üzerinden **Ömür Boyu Kurtarılan Alan** ve son 14 günlük temizlik geçmişi grafiğini gösterir.
+- **🗺️ Etkileşimli Görsel Disk Haritası (Treemap + Akıllı Dosya Danışmanı):** Doğrudan Win32 `FileSystemEnumerator` ve 2 seviyeli paralel taramayla dev klasörleri saniyeler içinde görselleştirir; `OptGuideOnDeviceModel`, `Claude-Data rootfs.vhdx`, `Docker VHDX`, `hiberfil.sys`, `node_modules` gibi 30+ bilinen yapıyı tanıyıp **Güvenle Geri Dönüşüm'e Gönder** veya koruma önerisi sunar.
+- **💾 Dev Windows Sistem Alanı Kurtarıcısı (`hiberfil.sys`, `WinSxS`, `CompactOS`, `NVIDIA/AMD`):** Hazırda bekletmeyi kapatma/yarıya indirme (`powercfg`), bileşen deposu temizliği (`DISM`), kayıpsız `CompactOS` sıkıştırma ve eski sürücü/Windows.old kurulumlarını temizler.
+- **🖼️ Benzer / Tekrarlayan Fotoğraf Bulucu (`dHash`) & 📸 EXIF / GPS Gizlilik Temizleyici:** 64-bit Perceptual `dHash` ile seri çekilmiş veya yeniden sıkıştırılmış benzer fotoğrafları gruplayıp en yüksek çözünürlüklüyü korur; EXIF/GPS koordinatlarını piksel kalitesini ve yönelimi bozmadan temizler.
 - **📈 Canlı CPU / RAM & Ağ Hızı Sparkline Monitörü:** Win32 `GetSystemTimes` + `NetworkInterface` üzerinden saniyede bir güncellenen gerçek zamanlı sparkline grafikler ve en çok bellek kullanan ilk 10 işlem tablosu.
-- **⌨️ `Ctrl+K` Hızlı Komut Paleti & Sabitlenen Favoriler:** 55 modülün tamamına ve hızlı eylemlere (`RAM Boşalt`, `DNS Temizle`, `Sağlık Kontrolü`, `Güncelleme Denetle`) klavyeden anında ulaşım.
+- **⌨️ `Ctrl+K` Hızlı Komut Paleti & Sabitlenen Favoriler:** 57 modülün tamamına ve hızlı eylemlere (`RAM Boşalt`, `DNS Temizle`, `Sağlık Kontrolü`, `Güncelleme Denetle`) klavyeden anında ulaşım.
 - **🎨 4 Canlı Tema + Canlı Türkçe / English Dil Değiştirici:** `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix` ve `FluentLight` temaları ile `tr-TR` / `en-US` arayüz arasında yeniden başlatma gerektirmeden anlık geçiş.
-- **🚀 Modüler Lazy View Mimarisi (`LazyViewRegistry`):** Ağır görünümler (`DashboardView`, `LiveMonitorView`, `DiskTreemapView`, `ExifScrubberView`) yalnızca ilk ziyaret edildiğinde yüklenerek açılış süresini ve başlangıç bellek tüketimini optimize eder.
-- **🔔 Gerçek Windows Sistem Tepsisi (System Tray) & Zamanlanmış Bakım:** Pencereyi tepsiye küçültme, sağ tık hızlı menüleri ve otomatik eşik uyarıları.
-- **🔄 GitHub Releases Güncelleme Kontrolcüsü:** Ayarlar sekmesinden tek tıkla GitHub Releases API üzerinden yeni taşınabilir `.exe` sürümünü denetleme.
+- **🚀 Tam Modüler Lazy View Mimarisi (`LazyViewRegistry`):** 9 ağır ekran (`DashboardView`, `LiveMonitorView`, `DiskTreemapView`, `DeepSpaceRecoveryView`, `SimilarPhotoFinderView`, `ExifScrubberView`, `SettingsView`, `AiModelCleanerView`, `WingetUpdaterView`) yalnızca ilk açıldığında yüklenerek açılış süresini ve başlangıç bellek kullanımını düşürür.
+- **🔔 Gerçek Windows Sistem Tepsisi (System Tray), VHDX Sıkıştırma & GitHub Releases Kontrolü:** Pencereyi tepsiye küçültme, DiskPart `compact vdisk` ile WSL2/Docker/Claude VM `.vhdx` küçültme ve tek tıkla sürüm denetimi.
 
 ---
 
-## Tüm Modüller (6 Kategori • 55 Araç)
+## Tüm Modüller (6 Kategori • 57 Araç)
 
-### 1. Temizlik & Disk Kurtarma (10 Modül)
-1. **Genel Bakış (Dashboard) & 100 Puanlık Sağlık Kontrolü**
-2. **Etkileşimli Görsel Disk Haritası (Treemap Visualizer)**
-3. **Akıllı Temizlik (Tümü)** — Simülasyon önizlemesi & Geri Dönüşüm Kutusu koruması
-4. **Windows & Sistem Temizliği** — Temp, Prefetch, Windows Update, Dump & Geri Dönüşüm
-5. **Web Tarayıcıları** — Chrome, Edge, Brave, Firefox önbellek & çerez temizliği
-6. **Uygulama & Geliştirici Önbellekleri** — Discord, Steam, VS Code vb.
-7. **Büyük Dosya & Kopya (Duplicate) Bulucu** — SHA-256 tabanlı birebir eşleşme
-8. **İndirilenler Asistanı & Boş Klasör Temizleyici**
-9. **Bloatware (Windows 10/11 UWP Appx) Kaldırıcı**
-10. **Askeri Standartta Dosya Öğütücü (`DoD 5220.22-M`) & Boş Alan Silici**
+### 1. Temizlik & Disk Kurtarma (12 Modül)
+1. **Genel Bakış (Dashboard), Ömür Boyu Geçmiş & 100 Puanlık Sağlık Kontrolü**
+2. **Etkileşimli Görsel Disk Haritası (Treemap + Akıllı Danışman & Güvenli Silme)**
+3. **Dev Windows Sistem Alanı Kurtarıcısı (`hiberfil.sys`, `WinSxS`, `CompactOS`, `NVIDIA/AMD Installer`)**
+4. **Benzer / Tekrarlayan Fotoğraf Bulucu (64-bit Perceptual `dHash` + Önizleme)**
+5. **Akıllı Temizlik (Tümü)** — Simülasyon önizlemesi & Geri Dönüşüm Kutusu koruması
+6. **Windows & Sistem Temizliği** — Temp, Prefetch, Windows Update, Dump & Geri Dönüşüm
+7. **Web Tarayıcıları & Yerel AI Modelleri** — Chrome (`OptGuideOnDeviceModel`/`weights.bin`), Edge, Brave, Firefox
+8. **Uygulama & Geliştirici Önbellekleri** — Discord, Steam, VS Code vb.
+9. **Büyük Dosya & Kopya (`Duplicate`) Bulucu** — SHA-256 tabanlı birebir eşleşme
+10. **İndirilenler Asistanı & Boş Klasör Temizleyici**
+11. **Bloatware (Windows 10/11 UWP Appx) Kaldırıcı**
+12. **Askeri Standartta Dosya Öğütücü (`DoD 5220.22-M`) & Boş Alan Silici**
 
 ### 2. Performans, Açılış & Donanım (9 Modül)
 11. **Canlı CPU, RAM & Ağ Sparkline Monitörü**

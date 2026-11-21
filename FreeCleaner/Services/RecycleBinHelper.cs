@@ -88,15 +88,23 @@ public static class RecycleBinHelper
     }
 
     public static bool MoveFileToRecycleBin(string filePath)
+        => MovePathToRecycleBin(filePath);
+
+    public static bool MovePathToRecycleBin(string targetPath)
     {
         try
         {
-            if (!File.Exists(filePath)) return false;
+            if (string.IsNullOrWhiteSpace(targetPath))
+                return false;
 
+            if (!File.Exists(targetPath) && !Directory.Exists(targetPath))
+                return false;
+
+            string normalized = targetPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             var fs = new SHFILEOPSTRUCT
             {
                 wFunc = FO_DELETE,
-                pFrom = filePath + '\0' + '\0',
+                pFrom = normalized + '\0' + '\0',
                 fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT
             };
             int ret = SHFileOperation(ref fs);

@@ -24,6 +24,8 @@ public class RelayCommand(Action<object?> execute, Predicate<object?>? canExecut
     }
 }
 
+public sealed record SimilarSensitivityOption(string Label, int MaxDistance);
+
 public class MainViewModel : INotifyPropertyChanged
 {
     private readonly CleanerEngine _engine = new();
@@ -61,6 +63,14 @@ public class MainViewModel : INotifyPropertyChanged
     private bool _exifCreateBackup = true;
     private bool _exifOptimizeJpeg;
     private string _exifSummaryText = "Fotoğraf klasörü taraması bekleniyor.";
+    private string _lifetimeFreedFormatted = "0 B";
+    private string _lifetimeSessionsSummary = "Henüz kayıtlı temizlik oturumu yok";
+    private string _deepSpaceSummaryText = "Sistem analizi bekleniyor.";
+    private string _similarPhotosFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+    private bool _similarPhotosIncludeSubfolders = true;
+    private int _similarPhotosMaxDistance = 8;
+    private string _similarPhotosSummaryText = "Fotoğraf klasörü seçip taramayı başlatın.";
+    private SimilarPhotoItem? _selectedSimilarPhoto;
     private int _healthScore = 100;
     private string _healthGradeBadge = "🌟 Hazır";
     private string _healthAdviceText = "Tek tıkla tüm sistemin sağlık kontrolünü, gereksiz dosya taramasını ve bellek optimizasyonunu başlatın.";
@@ -194,6 +204,9 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<NavShortcutItem> AllModuleCatalog { get; } = [];
     public ObservableCollection<TreemapNodeItem> TreemapNodes { get; } = [];
     public ObservableCollection<PhotoMetadataItem> PhotoMetadataItems { get; } = [];
+    public ObservableCollection<DeepSpaceItem> DeepSpaceItems { get; } = [];
+    public ObservableCollection<SimilarPhotoItem> SimilarPhotoItems { get; } = [];
+    public ObservableCollection<CleanupHistoryBarItem> RecentCleanupBars { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -210,6 +223,12 @@ public class MainViewModel : INotifyPropertyChanged
     public string[] AvailableRiskFilters { get; } = ["Tümü", "Düşük", "Orta", "Yüksek"];
     public string[] AvailableThemes => ThemeManagerService.AvailableThemes;
     public IReadOnlyList<LanguageOption> AvailableLanguages => LocalizationService.AvailableLanguages;
+    public SimilarSensitivityOption[] AvailableSimilarSensitivities { get; } =
+    [
+        new("Sıkı (%94+ — Neredeyse Birebir)", 4),
+        new("Dengeli (%88+ — Önerilen)", 8),
+        new("Geniş (%80+ — Seri Çekim)", 13)
+    ];
     public string AppVersionDisplay => $"v{AppUpdateService.CurrentVersion} • .NET 10";
 
     public event Action<string, string, bool>? TrayNotificationRequested;
@@ -444,6 +463,15 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand OpenPhotoLocationCommand { get; }
     public ICommand CheckForUpdatesCommand { get; }
     public ICommand OpenLatestReleasePageCommand { get; }
+
+    // 12th Gen Treemap Advisor Recycle, Deep Windows Space Recovery & Perceptual Similar Photo Finder Commands
+    public ICommand MoveTreemapNodeToRecycleBinCommand { get; }
+    public ICommand ScanDeepSpaceCommand { get; }
+    public ICommand ExecuteDeepSpaceItemCommand { get; }
+    public ICommand BrowseSimilarPhotosFolderCommand { get; }
+    public ICommand ScanSimilarPhotosCommand { get; }
+    public ICommand CleanSelectedSimilarPhotosCommand { get; }
+    public ICommand OpenSimilarPhotoLocationCommand { get; }
 
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
@@ -902,6 +930,27 @@ public class MainViewModel : INotifyPropertyChanged
         CheckForUpdatesCommand = new RelayCommand(async _ => await CheckForUpdatesAsync(), _ => !IsBusy);
         OpenLatestReleasePageCommand = new RelayCommand(_ => OpenUrlSafe(_latestReleaseUrl));
 
+        // 12th Gen Commands
+        MoveTreemapNodeToRecycleBinCommand = new RelayCommand(async param =>
+        {
+            if (param is TreemapNodeItem node)
+                await MoveTreemapNodeToRecycleBinAsync(node);
+        }, param => !IsBusy && param is TreemapNodeItem { CanSafeDelete: true });
+        ScanDeepSpaceCommand = new RelayCommand(async _ => await LoadDeepSpaceAsync(), _ => !IsBusy);
+        ExecuteDeepSpaceItemCommand = new RelayCommand(async param =>
+        {
+            if (param is DeepSpaceItem item)
+                await ExecuteDeepSpaceItemAsync(item);
+        }, param => !IsBusy && param is DeepSpaceItem { CanExecuteAction: true });
+        BrowseSimilarPhotosFolderCommand = new RelayCommand(_ => BrowseSimilarPhotosFolder(), _ => !IsBusy);
+        ScanSimilarPhotosCommand = new RelayCommand(async _ => await LoadSimilarPhotosAsync(), _ => !IsBusy);
+        CleanSelectedSimilarPhotosCommand = new RelayCommand(async _ => await CleanSelectedSimilarPhotosAsync(), _ => !IsBusy && SimilarPhotoItems.Any(p => p.IsSelected));
+        OpenSimilarPhotoLocationCommand = new RelayCommand(param =>
+        {
+            if (param is SimilarPhotoItem photo)
+                OpenExplorerPath(photo.FullPath);
+        });
+
         _liveTelemetryTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(1)
@@ -923,8 +972,9 @@ public class MainViewModel : INotifyPropertyChanged
 
         LocalizationService.ApplyLanguage(_selectedLanguage);
         ThemeManagerService.ApplyTheme(_selectedTheme);
+        RefreshCleanupHistorySummary();
         UpdateHealthScoreSummary(0, StartupItems.Count);
-        AddLog("FreeCleaner Pro (.NET 10) başlatıldı: Dashboard, Disk Treemap, EXIF Temizleyici, Canlı Telemetri & 55 Modül hazır.");
+        AddLog("FreeCleaner Pro (.NET 10) başlatıldı: Dashboard Geçmişi, Akıllı Treemap Danışmanı, Dev Alan Kurtarıcı, dHash & 57 Modül hazır.");
     }
 
     public SystemMetricsSnapshot SystemMetrics
@@ -1005,6 +1055,8 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsMonitorGpuSection));
                 OnPropertyChanged(nameof(IsGitRepoCompressorSection));
                 OnPropertyChanged(nameof(IsDiskTreemapSection));
+                OnPropertyChanged(nameof(IsDeepSpaceRecoverySection));
+                OnPropertyChanged(nameof(IsSimilarPhotosSection));
                 OnPropertyChanged(nameof(IsExifScrubberSection));
                 OnPropertyChanged(nameof(IsSettingsSection));
                 OnPropertyChanged(nameof(SectionTitle));
@@ -1105,6 +1157,8 @@ public class MainViewModel : INotifyPropertyChanged
                     _ = LoadGitReposAsync();
                 else if (_activeSection == "DiskTreemap" && TreemapNodes.Count == 0)
                     _ = LoadTreemapAsync();
+                else if (_activeSection == "DeepSpaceRecovery" && DeepSpaceItems.Count == 0)
+                    _ = LoadDeepSpaceAsync();
 
                 if (_activeSection == "LiveMonitor")
                 {
@@ -1118,7 +1172,10 @@ public class MainViewModel : INotifyPropertyChanged
                 }
 
                 if (_activeSection == "Dashboard")
+                {
+                    RefreshCleanupHistorySummary();
                     UpdateHealthScoreSummary(TotalDetectedBytes, StartupItems.Count);
+                }
             }
         }
     }
@@ -1126,6 +1183,8 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsDashboardSection => ActiveSection == "Dashboard";
     public bool IsLiveMonitorSection => ActiveSection == "LiveMonitor";
     public bool IsDiskTreemapSection => ActiveSection == "DiskTreemap";
+    public bool IsDeepSpaceRecoverySection => ActiveSection == "DeepSpaceRecovery";
+    public bool IsSimilarPhotosSection => ActiveSection == "SimilarPhotos";
     public bool IsExifScrubberSection => ActiveSection == "ExifScrubber";
     public bool IsAllSection => ActiveSection == "All";
     public bool IsSystemSection => ActiveSection == "System";
@@ -1753,6 +1812,7 @@ public class MainViewModel : INotifyPropertyChanged
 
             LastFreedBytes = summary.FreedBytes;
             LastDeletedFiles = summary.DeletedFilesCount;
+            RecordCleanupHistory("Akıllı Temizlik", summary.FreedBytes, summary.DeletedFilesCount);
 
             var remaining = DiscoveredFiles
                 .Where(x => x.Status is not ("Silindi" or "Boşaltıldı" or "Zaten Silinmiş" or "Geri Dönüşüm'e Taşındı"))
@@ -3754,6 +3814,7 @@ public class MainViewModel : INotifyPropertyChanged
             var (cleaned, freed) = await NextGenForensicsAndRescueService.CleanSelectedPackageCachesAsync(selected);
             LastFreedBytes += freed;
             LastDeletedFiles += cleaned;
+            RecordCleanupHistory("Paket Önbellekleri", freed, cleaned);
             RefreshSystemMetrics();
             await LoadGlobalPackageCachesAsync();
 
@@ -3790,6 +3851,7 @@ public class MainViewModel : INotifyPropertyChanged
             if (success && freed > 0)
             {
                 LastFreedBytes += freed;
+                RecordCleanupHistory("VHDX Sıkıştırma", freed, 1);
                 RefreshSystemMetrics();
             }
 
@@ -5663,9 +5725,11 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("CMD:FlushDns", "🌐 Hızlı Eylem: DNS Önbelleğini Temizle (flushdns)", "\uE701", "Hızlı Komut", "dns flush ip yenile");
         AddEntry("CMD:CheckUpdate", "🔄 Hızlı Eylem: Yeni Sürüm Kontrol Et (GitHub Releases)", "\uE895", "Hızlı Komut", "guncelleme update version release github");
 
-        // All 55 Modules
-        AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "\uE80F", "Temizlik & Bakış", "dashboard ana sayfa saglik skoru");
-        AddEntry("DiskTreemap", "🗺️ Görsel Disk Haritası (Treemap Visualizer)", "\uE8A9", "Temizlik & Disk", "treemap harita disk gorsel boyut klasor");
+        // All 57 Modules
+        AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "\uE80F", "Temizlik & Bakış", "dashboard ana sayfa saglik skoru gecmis lifetime");
+        AddEntry("DiskTreemap", "🗺️ Görsel Disk Haritası (Treemap + Danışman)", "\uE8A9", "Temizlik & Disk", "treemap harita disk gorsel boyut klasor danisman sil");
+        AddEntry("DeepSpaceRecovery", "💾 Dev Windows Sistem Alanı Kurtarıcısı (15–40 GB)", "\uEDA2", "Temizlik & Disk", "hiberfil winsxs compactos nvidia amd installer derin sistem alani");
+        AddEntry("SimilarPhotos", "🖼️ Benzer / Tekrarlayan Fotoğraf Bulucu (dHash)", "\uEB9F", "Temizlik & Disk", "benzer fotograf similar duplicate dhash resim galeri");
         AddEntry("LiveMonitor", "Canlı CPU, RAM & Ağ Grafikleri", "\uE9D9", "Performans & Donanım", "canli grafik cpu ram ag hizi monitor sparkline");
         AddEntry("All", "Akıllı Temizlik (Tümü)", "\uE770", "Temizlik & Disk", "temizlik cop temp gecici");
         AddEntry("System", "Windows & Sistem Temizliği", "\uE7F8", "Temizlik & Disk", "windows temp log recycle bin");
@@ -6122,6 +6186,7 @@ public class MainViewModel : INotifyPropertyChanged
                 LastFreedBytes += totalSaved;
 
             LastDeletedFiles += cleanedCount;
+            RecordCleanupHistory("EXIF / GPS Temizliği", totalSaved, cleanedCount);
 
             string summary = $"{cleanedCount}/{targets.Count} fotoğraf EXIF/GPS verilerinden temizlendi ({totalTagsRemoved} etiket silindi, {CleanerRule.FormatBytes(totalSaved)} tasarruf).";
             ExifSummaryText = summary;
@@ -6186,6 +6251,326 @@ public class MainViewModel : INotifyPropertyChanged
         catch (Exception ex)
         {
             StatusMessage = $"Bağlantı açılamadı: {ex.Message}";
+        }
+    }
+
+    // ==================== 19. SMART TREEMAP DELETE, LIFETIME HISTORY, DEEP SPACE RECOVERY & DHASH PHOTO FINDER ====================
+
+    public string LifetimeFreedFormatted
+    {
+        get => _lifetimeFreedFormatted;
+        set { if (_lifetimeFreedFormatted != value) { _lifetimeFreedFormatted = value; OnPropertyChanged(); } }
+    }
+
+    public string LifetimeSessionsSummary
+    {
+        get => _lifetimeSessionsSummary;
+        set { if (_lifetimeSessionsSummary != value) { _lifetimeSessionsSummary = value; OnPropertyChanged(); } }
+    }
+
+    public string DeepSpaceSummaryText
+    {
+        get => _deepSpaceSummaryText;
+        set { if (_deepSpaceSummaryText != value) { _deepSpaceSummaryText = value; OnPropertyChanged(); } }
+    }
+
+    public string SimilarPhotosFolderPath
+    {
+        get => _similarPhotosFolderPath;
+        set { if (_similarPhotosFolderPath != value) { _similarPhotosFolderPath = value; OnPropertyChanged(); } }
+    }
+
+    public bool SimilarPhotosIncludeSubfolders
+    {
+        get => _similarPhotosIncludeSubfolders;
+        set { if (_similarPhotosIncludeSubfolders != value) { _similarPhotosIncludeSubfolders = value; OnPropertyChanged(); } }
+    }
+
+    public int SimilarPhotosMaxDistance
+    {
+        get => _similarPhotosMaxDistance;
+        set { if (_similarPhotosMaxDistance != value) { _similarPhotosMaxDistance = value; OnPropertyChanged(); } }
+    }
+
+    public string SimilarPhotosSummaryText
+    {
+        get => _similarPhotosSummaryText;
+        set { if (_similarPhotosSummaryText != value) { _similarPhotosSummaryText = value; OnPropertyChanged(); } }
+    }
+
+    public SimilarPhotoItem? SelectedSimilarPhoto
+    {
+        get => _selectedSimilarPhoto;
+        set { if (!ReferenceEquals(_selectedSimilarPhoto, value)) { _selectedSimilarPhoto = value; OnPropertyChanged(); } }
+    }
+
+    private void RefreshCleanupHistorySummary()
+    {
+        List<CleanupHistoryEntry> entries = CleanupHistoryService.LoadHistory();
+        long totalBytes = CleanupHistoryService.GetTotalLifetimeFreedBytes(entries);
+        LifetimeFreedFormatted = CleanerRule.FormatBytes(totalBytes);
+        LifetimeSessionsSummary = entries.Count > 0
+            ? $"{entries.Count:N0} oturum • {entries.Sum(e => e.ItemsProcessed):N0} öğe"
+            : "Henüz kayıtlı temizlik oturumu yok";
+
+        List<CleanupHistoryBarItem> bars = CleanupHistoryService.BuildRecentDailyBars(entries, days: 14, maxBarHeight: 54.0);
+        RecentCleanupBars.Clear();
+        foreach (CleanupHistoryBarItem bar in bars)
+            RecentCleanupBars.Add(bar);
+    }
+
+    private void RecordCleanupHistory(string moduleName, long freedBytes, int itemsProcessed)
+    {
+        if (freedBytes <= 0 && itemsProcessed <= 0)
+            return;
+
+        CleanupHistoryService.RecordSession(moduleName, freedBytes, itemsProcessed);
+        RefreshCleanupHistorySummary();
+    }
+
+    private async Task MoveTreemapNodeToRecycleBinAsync(TreemapNodeItem node)
+    {
+        if (IsBusy || !node.CanSafeDelete)
+            return;
+
+        if (ExclusionAndSettingsService.IsPathExcluded(node.FullPath, ExcludedPaths.ToList()))
+        {
+            MessageBox.Show(
+                $"'{node.FullPath}' Beyaz Liste (korunan klasörler) içinde yer aldığı için silinemez.",
+                "Beyaz Liste Koruması",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        if (SmartDiskAdvisorService.IsProtectedSystemPath(node.FullPath))
+        {
+            MessageBox.Show(
+                $"'{node.FullPath}' kritik bir Windows sistem yoludur ve doğrudan silmeye karşı korunmaktadır.",
+                "Sistem Koruması",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        var confirm = MessageBox.Show(
+            $"'{node.Name}' ({node.FormattedSize}) Geri Dönüşüm Kutusuna taşınacak.\n\n" +
+            $"Danışman Notu: {node.AdvisorSummary}\n" +
+            $"Yol: {node.FullPath}\n\nDevam edilsin mi?",
+            "Geri Dönüşüm Kutusuna Taşı",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        IsBusy = true;
+        StatusMessage = $"Geri Dönüşüm Kutusuna taşınıyor: {node.Name}...";
+        try
+        {
+            bool moved = await Task.Run(() => RecycleBinHelper.MovePathToRecycleBin(node.FullPath));
+            if (moved)
+            {
+                LastFreedBytes += node.SizeBytes;
+                LastDeletedFiles += 1;
+                RecordCleanupHistory("Treemap Güvenli Silme", node.SizeBytes, 1);
+                VisualDiskAndMediaService.ClearTreemapCache();
+                RefreshSystemMetrics();
+                AddLog($"[TREEMAP SİLME] '{node.FullPath}' ({node.FormattedSize}) Geri Dönüşüm Kutusuna taşındı.");
+                IsBusy = false;
+                await LoadTreemapAsync(forceRefresh: true);
+            }
+            else
+            {
+                string lockMsg = $"'{node.Name}' şu anda açık bir uygulama tarafından kullanılıyor olabilir (örneğin Chrome veya Claude açıkken kilitli olabilir).";
+                StatusMessage = lockMsg;
+                AddLog($"[TREEMAP UYARI] {lockMsg}");
+                MessageBox.Show(lockMsg, "Dosya Kullanımda / Taşınamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private async Task LoadDeepSpaceAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        DeepSpaceItems.Clear();
+        ProgressPercent = 20;
+        StatusMessage = "Dev Windows sistem alanı kaynakları (hiberfil.sys, WinSxS, CompactOS, GPU kurulumları) analiz ediliyor...";
+
+        try
+        {
+            List<DeepSpaceItem> items = await DeepSpaceRecoveryService.ScanDeepSpaceOpportunitiesAsync();
+            foreach (DeepSpaceItem item in items)
+                DeepSpaceItems.Add(item);
+
+            long knownBytes = items.Where(x => x.SizeBytes > 0 && x.ItemId != "HIBERFIL_REDUCED").Sum(x => x.SizeBytes);
+            DeepSpaceSummaryText = $"{items.Count} sistem modülü • Doğrudan {CleanerRule.FormatBytes(knownBytes)} tespit (+WinSxS/CompactOS)";
+            ProgressPercent = 100;
+            StatusMessage = $"Dev Sistem Alanı Analizi tamamlandı ({CleanerRule.FormatBytes(knownBytes)} doğrudan ölçülebilir alan).";
+            AddLog($"[DEV ALAN KURTARICI] Tarama tamamlandı: {items.Count} öğe.");
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private async Task ExecuteDeepSpaceItemAsync(DeepSpaceItem item)
+    {
+        if (IsBusy || !item.CanExecuteAction) return;
+
+        var confirm = MessageBox.Show(
+            $"'{item.Title}' çalıştırılacak.\n\nAçıklama: {item.Description}\n\nDevam edilsin mi?",
+            "Dev Sistem Alanı Kurtarıcısı",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        IsBusy = true;
+        ProgressPercent = 30;
+        StatusMessage = $"Uygulanıyor: {item.Title}...";
+
+        try
+        {
+            var (success, freed, message) = await DeepSpaceRecoveryService.ExecuteDeepSpaceActionAsync(item.ItemId);
+            if (success && freed > 0)
+            {
+                LastFreedBytes += freed;
+                RecordCleanupHistory("Dev Sistem Kurtarma", freed, 1);
+            }
+
+            RefreshSystemMetrics();
+            ProgressPercent = 100;
+            StatusMessage = message;
+            AddLog($"[DEV ALAN KURTARICI] {message}");
+
+            if (!success)
+            {
+                MessageBox.Show(message, "Sistem Alanı Kurtarma Uyarısı", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else
+            {
+                IsBusy = false;
+                await LoadDeepSpaceAsync();
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private void BrowseSimilarPhotosFolder()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Benzer Fotoğraf Taraması İçin Klasör Seçin",
+            InitialDirectory = Directory.Exists(SimilarPhotosFolderPath)
+                ? SimilarPhotosFolderPath
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+        };
+
+        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
+        {
+            SimilarPhotosFolderPath = dlg.FolderName;
+            _ = LoadSimilarPhotosAsync();
+        }
+    }
+
+    private async Task LoadSimilarPhotosAsync()
+    {
+        if (IsBusy) return;
+        if (string.IsNullOrWhiteSpace(SimilarPhotosFolderPath) || !Directory.Exists(SimilarPhotosFolderPath))
+        {
+            StatusMessage = "Geçerli bir fotoğraf klasörü seçin.";
+            return;
+        }
+
+        IsBusy = true;
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        SimilarPhotoItems.Clear();
+        ProgressPercent = 20;
+        StatusMessage = $"Perceptual dHash ile benzer fotoğraflar aranıyor: {SimilarPhotosFolderPath}";
+
+        try
+        {
+            List<SimilarPhotoItem> found = await SimilarPhotoFinderService.FindSimilarPhotosAsync(
+                SimilarPhotosFolderPath,
+                SimilarPhotosMaxDistance,
+                SimilarPhotosIncludeSubfolders,
+                _cts.Token);
+
+            foreach (SimilarPhotoItem item in found)
+                SimilarPhotoItems.Add(item);
+
+            int groups = found.Select(x => x.GroupId).Distinct().Count();
+            long reclaimable = found.Where(x => x.IsSelected).Sum(x => x.SizeBytes);
+            SimilarPhotosSummaryText = $"{groups} grup • {found.Count} fotoğraf • {CleanerRule.FormatBytes(reclaimable)} seçili kopya";
+            SelectedSimilarPhoto = SimilarPhotoItems.FirstOrDefault();
+            ProgressPercent = 100;
+            StatusMessage = $"Benzer fotoğraf taraması bitti: {groups} grup, {CleanerRule.FormatBytes(reclaimable)} kazanılabilir alan.";
+            AddLog($"[BENZER FOTOĞRAF] {groups} grupta {found.Count} fotoğraf bulundu ({CleanerRule.FormatBytes(reclaimable)} kopya).");
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Benzer fotoğraf taraması iptal edildi.";
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private async Task CleanSelectedSimilarPhotosAsync()
+    {
+        var selected = SimilarPhotoItems.Where(x => x.IsSelected).ToList();
+        if (selected.Count == 0 || IsBusy)
+            return;
+
+        long totalBytes = selected.Sum(x => x.SizeBytes);
+        string modeText = UseRecycleBinSafety ? "Geri Dönüşüm Kutusuna taşınacak" : "KALICI OLARAK SİLİNECEK";
+        var confirm = MessageBox.Show(
+            $"Seçili {selected.Count} benzer kopya fotoğraf ({CleanerRule.FormatBytes(totalBytes)}) {modeText}.\n\nEn yüksek çözünürlüklü asıl kopyalar korunur. Devam edilsin mi?",
+            "Benzer Fotoğraf Temizliği",
+            MessageBoxButton.YesNo,
+            UseRecycleBinSafety ? MessageBoxImage.Question : MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        IsBusy = true;
+        try
+        {
+            var (deleted, freed) = await SimilarPhotoFinderService.CleanSelectedSimilarPhotosAsync(selected, UseRecycleBinSafety);
+            if (freed > 0 || deleted > 0)
+            {
+                LastFreedBytes += freed;
+                LastDeletedFiles += deleted;
+                RecordCleanupHistory("Benzer Fotoğraf Temizliği", freed, deleted);
+                RefreshSystemMetrics();
+            }
+
+            string summary = $"{deleted}/{selected.Count} benzer fotoğraf temizlendi ({CleanerRule.FormatBytes(freed)} yer açıldı).";
+            SimilarPhotosSummaryText = summary;
+            StatusMessage = summary;
+            AddLog($"[BENZER FOTOĞRAF] {summary}");
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 

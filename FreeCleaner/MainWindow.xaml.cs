@@ -34,6 +34,11 @@ public partial class MainWindow : Window
         _lazyViews.Register("LiveMonitor", () => new LiveMonitorView { DataContext = DataContext });
         _lazyViews.Register("DiskTreemap", () => new DiskTreemapView { DataContext = DataContext });
         _lazyViews.Register("ExifScrubber", () => new ExifScrubberView { DataContext = DataContext });
+        _lazyViews.Register("DeepSpaceRecovery", () => new DeepSpaceRecoveryView { DataContext = DataContext });
+        _lazyViews.Register("SimilarPhotos", () => new SimilarPhotoFinderView { DataContext = DataContext });
+        _lazyViews.Register("Settings", () => new SettingsView { DataContext = DataContext });
+        _lazyViews.Register("AiModelCleaner", () => new AiModelCleanerView { DataContext = DataContext });
+        _lazyViews.Register("WingetUpdater", () => new WingetUpdaterView { DataContext = DataContext });
     }
 
     private void SyncLazyModuleHost(string? sectionKey)

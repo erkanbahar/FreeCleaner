@@ -276,6 +276,125 @@ public class NextGenUpgradesTests
         Assert.Equal(0, freed);
     }
 
+    [Fact]
+    public void SmartDiskAdvisorService_ClassifiesProtectedAndSafePathsAccurately()
+    {
+        Assert.True(SmartDiskAdvisorService.IsProtectedSystemPath(@"C:\Windows\System32"));
+        Assert.True(SmartDiskAdvisorService.IsProtectedSystemPath(@"C:\hiberfil.sys"));
+        Assert.False(SmartDiskAdvisorService.IsProtectedSystemPath(@"C:\temp\cache_folder"));
+
+        SmartFileAdvice hiberAdvice = SmartDiskAdvisorService.AnalyzePath(@"C:\hiberfil.sys", "hiberfil.sys", isDirectory: false);
+        Assert.False(hiberAdvice.CanSafeDeleteToRecycleBin);
+
+        SmartFileAdvice chromeAi = SmartDiskAdvisorService.AnalyzePath(
+            @"C:\Users\Test\AppData\Local\Google\Chrome\User Data\OptGuideOnDeviceModel\2025.8.8\weights.bin",
+            "weights.bin",
+            isDirectory: false);
+        Assert.True(chromeAi.CanSafeDeleteToRecycleBin);
+        Assert.Contains("AI", chromeAi.BadgeText, StringComparison.OrdinalIgnoreCase);
+
+        SmartFileAdvice claudeVhdx = SmartDiskAdvisorService.AnalyzePath(
+            @"C:\Users\Test\AppData\Local\Claude-Data\xyz\vm_bundles\claudevm.bundle\rootfs.vhdx",
+            "rootfs.vhdx",
+            isDirectory: false);
+        Assert.Contains("VHDX", claudeVhdx.BadgeText, StringComparison.OrdinalIgnoreCase);
+
+        SmartFileAdvice devNodeModules = SmartDiskAdvisorService.AnalyzePath(
+            @"C:\Projects\App\node_modules",
+            "node_modules",
+            isDirectory: true);
+        Assert.True(devNodeModules.CanSafeDeleteToRecycleBin);
+    }
+
+    [Fact]
+    public void CleanupHistoryService_RecordsPersistsAndBuilds14DailyBars()
+    {
+        string tempHistory = Path.Combine(Path.GetTempPath(), $"FreeCleanerHistory_{Guid.NewGuid():N}", "history.json");
+        try
+        {
+            CleanupHistoryService.RecordSession("Akıllı Temizlik", 2_000_000_000, 120, tempHistory);
+            CleanupHistoryService.RecordSession("Treemap Güvenli Silme", 500_000_000, 1, tempHistory);
+
+            List<FreeCleaner.Models.CleanupHistoryEntry> loaded = CleanupHistoryService.LoadHistory(tempHistory);
+            Assert.Equal(2, loaded.Count);
+            Assert.Equal(2_500_000_000, CleanupHistoryService.GetTotalLifetimeFreedBytes(loaded));
+
+            List<FreeCleaner.Models.CleanupHistoryBarItem> bars = CleanupHistoryService.BuildRecentDailyBars(loaded, days: 14, maxBarHeight: 54.0);
+            Assert.Equal(14, bars.Count);
+            Assert.Equal(2_500_000_000, bars[^1].FreedBytes);
+            Assert.True(bars[^1].BarHeight > 4.0);
+        }
+        finally
+        {
+            string? dir = Path.GetDirectoryName(tempHistory);
+            if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
+                Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void DeepSpaceRecoveryService_ParsesCompactOsAndDismOutputs()
+    {
+        Assert.True(DeepSpaceRecoveryService.ParseCompactOsQueryOutput("The system is in the Compact state."));
+        Assert.True(DeepSpaceRecoveryService.ParseCompactOsQueryOutput("Sistem Compact durumunda."));
+        Assert.False(DeepSpaceRecoveryService.ParseCompactOsQueryOutput("The system is not in the Compact state."));
+        Assert.False(DeepSpaceRecoveryService.ParseCompactOsQueryOutput("Sistem Compact durumunda değil."));
+
+        string dismSample = "Windows Component Store\nBackups and Disabled Features : 4.21 GB\nReclaimable Packages : 3";
+        string summary = DeepSpaceRecoveryService.ParseDismReclaimableSummary(dismSample);
+        Assert.Contains("4.21 GB", summary);
+    }
+
+    [Fact]
+    public async Task SimilarPhotoFinderService_FindsNearIdenticalPhotosAndKeepsHighestResolution()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"FreeCleanerSimilarTest_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            string highResSimilar = Path.Combine(tempDir, "shot_high.png");
+            string lowResSimilar = Path.Combine(tempDir, "shot_low.jpg");
+            string completelyDifferent = Path.Combine(tempDir, "different_scene.png");
+
+            CreateHorizontalGradientBitmap(highResSimilar, width: 128, height: 128, leftToRightBright: true, isJpeg: false);
+            CreateHorizontalGradientBitmap(lowResSimilar, width: 64, height: 64, leftToRightBright: true, isJpeg: true);
+            CreateHorizontalGradientBitmap(completelyDifferent, width: 96, height: 96, leftToRightBright: false, isJpeg: false);
+
+            List<FreeCleaner.Models.SimilarPhotoItem> found =
+                await SimilarPhotoFinderService.FindSimilarPhotosAsync(tempDir, maxHammingDistance: 6, includeSubfolders: false);
+
+            Assert.Equal(2, found.Count);
+            Assert.Equal(found[0].GroupId, found[1].GroupId);
+            Assert.DoesNotContain(found, x => x.FileName == "different_scene.png");
+
+            FreeCleaner.Models.SimilarPhotoItem keeper = Assert.Single(found, x => x.FileName == "shot_high.png");
+            FreeCleaner.Models.SimilarPhotoItem dup = Assert.Single(found, x => x.FileName == "shot_low.jpg");
+            Assert.False(keeper.IsSelected);
+            Assert.True(dup.IsSelected);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+                Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    private static void CreateHorizontalGradientBitmap(string path, int width, int height, bool leftToRightBright, bool isJpeg)
+    {
+        using var bmp = new Drawing.Bitmap(width, height, DrawingImaging.PixelFormat.Format24bppRgb);
+        for (int x = 0; x < width; x++)
+        {
+            int t = (int)Math.Round(x * 255.0 / Math.Max(1, width - 1));
+            int val = leftToRightBright ? 255 - t : t;
+            Drawing.Color c = Drawing.Color.FromArgb(val, val / 2 + 40, 255 - val / 2);
+            for (int y = 0; y < height; y++)
+                bmp.SetPixel(x, y, c);
+        }
+
+        bmp.Save(path, isJpeg ? DrawingImaging.ImageFormat.Jpeg : DrawingImaging.ImageFormat.Png);
+    }
+
     private static void CreateSyntheticJpegWithExifAndGps(string path, int width, int height)
     {
         byte[] cleanJpegBytes;

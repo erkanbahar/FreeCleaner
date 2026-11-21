@@ -505,6 +505,7 @@ public static class VisualDiskAndMediaService
             double drawX = Math.Min(x + 1.5, Math.Max(x, maxRight - insetW));
             double drawY = Math.Min(y + 1.5, Math.Max(y, maxBottom - insetH));
             double share = totalAreaBytes > 0 ? item.SizeBytes * 100.0 / totalAreaBytes : 0.0;
+            SmartFileAdvice advice = SmartDiskAdvisorService.AnalyzePath(item.FullPath, item.Name, item.IsDirectory);
 
             output.Add(new TreemapNodeItem
             {
@@ -517,7 +518,10 @@ public static class VisualDiskAndMediaService
                 Width = Math.Round(insetW, 2),
                 Height = Math.Round(insetH, 2),
                 FillHex = TreemapPaletteHex[colorIndex++ % TreemapPaletteHex.Length],
-                SharePercent = share
+                SharePercent = share,
+                AdvisorBadge = advice.BadgeText,
+                AdvisorSummary = advice.Explanation,
+                CanSafeDelete = advice.CanSafeDeleteToRecycleBin
             });
             return;
         }

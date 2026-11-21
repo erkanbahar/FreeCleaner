@@ -273,6 +273,8 @@
                                         <ContextMenu>
                                             <MenuItem Header="📂 Klasöre Gir (Drill Down)" Click="DrillDownMenuItem_Click"/>
                                             <MenuItem Header="🔍 Dosya Gezgininde Göster" Click="OpenExplorerMenuItem_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="{DynamicResource Loc_TreemapDeleteBtn}" Click="RecycleTreemapMenuItem_Click"/>
                                         </ContextMenu>
                                     </Border.ContextMenu>
                                     <Grid ClipToBounds="True" Margin="6,4">
@@ -350,9 +352,14 @@
                             <TextBlock Text="{DynamicResource Loc_TreemapColSize}"/>
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <DataGridTextColumn Binding="{Binding PercentText}" Width="80">
+                    <DataGridTextColumn Binding="{Binding PercentText}" Width="72">
                         <DataGridTextColumn.Header>
                             <TextBlock Text="{DynamicResource Loc_TreemapColShare}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding AdvisorBadge}" Width="215">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_TreemapColAdvisor}"/>
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
                     <DataGridTextColumn Binding="{Binding FullPath}" Width="*">
@@ -360,7 +367,7 @@
                             <TextBlock Text="{DynamicResource Loc_TreemapColPath}"/>
                         </DataGridTextColumn.Header>
                     </DataGridTextColumn>
-                    <DataGridTemplateColumn Width="115">
+                    <DataGridTemplateColumn Width="145">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -376,8 +383,17 @@
                                             Content="🔍"
                                             Padding="7,2"
                                             FontSize="11"
+                                            Margin="0,0,4,0"
                                             ToolTip="Dosya Gezgininde Aç"
                                             Command="{Binding DataContext.OpenTreemapNodeInExplorerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                    <Button Style="{StaticResource DangerButtonStyle}"
+                                            Content="🗑️"
+                                            Padding="7,2"
+                                            FontSize="11"
+                                            IsEnabled="{Binding CanSafeDelete}"
+                                            ToolTip="{Binding AdvisorSummary}"
+                                            Command="{Binding DataContext.MoveTreemapNodeToRecycleBinCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                 </StackPanel>
                             </DataTemplate>

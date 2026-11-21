@@ -1,0 +1,103 @@
+<UserControl x:Class="FreeCleaner.Views.AiModelCleanerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Border Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="YEREL YAPAY ZEKA (AI / LLM) MODEL &amp; ÖNBELLEK AVCISI"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Ollama, HuggingFace Hub, LM Studio, Claude Desktop VM, Chrome Gemini Nano (OptGuideOnDeviceModel) ve .gguf/.safetensors/weights.bin modellerini tarar."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="🤖 AI Modellerini &amp; Önbellekleri Tara"
+                            Padding="13,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanAiModelCachesCommand}"/>
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Content="🧹 Seçili AI Modellerini / Önbellekleri Sil"
+                            Padding="13,7"
+                            Command="{Binding CleanSelectedAiCachesCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Background="{DynamicResource BgPrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,9"
+                    Margin="0,0,0,10">
+                <WrapPanel VerticalAlignment="Center">
+                    <TextBlock Text="Özel Model Tarama Klasörü (.gguf / .safetensors / weights.bin):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Text="{Binding AiCustomScanFolder, UpdateSourceTrigger=PropertyChanged}"
+                             Width="390"
+                             Padding="8,5"
+                             Background="{DynamicResource BgCardBrush}"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             CaretBrush="{DynamicResource AccentBlueBrush}"
+                             BorderBrush="{DynamicResource BorderSubtleBrush}"
+                             Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="Klasör Seç &amp; Tara..."
+                            Padding="12,5"
+                            Command="{Binding BrowseAiScanFolderCommand}"/>
+                </WrapPanel>
+            </Border>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding AiModelCaches}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="AI Çerçevesi / Format" Binding="{Binding AiFramework}" IsReadOnly="True" Width="210"/>
+                    <DataGridTextColumn Header="Model veya Önbellek Adı" Binding="{Binding ModelOrCacheName}" IsReadOnly="True" Width="280"/>
+                    <DataGridTextColumn Header="Kapladığı Alan" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="125"/>
+                    <DataGridTextColumn Header="Tam Klasör / Dosya Yolu" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
+                    <DataGridTemplateColumn Header="Konum" Width="95">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Aç"
+                                        Padding="10,3"
+                                        FontSize="11"
+                                        Command="{Binding DataContext.OpenAiCacheLocationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

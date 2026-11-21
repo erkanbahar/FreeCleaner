@@ -64,6 +64,16 @@ public partial class DiskTreemapView : UserControl
         }
     }
 
+    private void RecycleTreemapMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (GetNodeFromMenuItem(sender) is TreemapNodeItem node &&
+            DataContext is MainViewModel vm &&
+            vm.MoveTreemapNodeToRecycleBinCommand.CanExecute(node))
+        {
+            vm.MoveTreemapNodeToRecycleBinCommand.Execute(node);
+        }
+    }
+
     private static TreemapNodeItem? GetNodeFromMenuItem(object sender)
     {
         if (sender is MenuItem { Parent: ContextMenu { PlacementTarget: FrameworkElement target } })
