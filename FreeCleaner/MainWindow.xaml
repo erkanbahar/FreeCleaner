@@ -376,7 +376,7 @@
                                                      CommandParameter="Downloads">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="İndirilenler &amp; Boş Klasör" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavDownloads}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -385,7 +385,7 @@
                                                      CommandParameter="Bloatware">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Bloatware (Appx) Kaldırıcı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavBloatware}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -394,7 +394,7 @@
                                                      CommandParameter="Shredder">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Dosya Öğütücü (DoD)" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavShredder}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                     </StackPanel>
@@ -411,7 +411,7 @@
                                                      CommandParameter="LiveMonitor">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Canlı CPU / RAM &amp; Ağ" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavLiveMonitor}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -429,7 +429,7 @@
                                                      CommandParameter="BootPerformance">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE916;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Açılış Süresi (Boot) Analizi" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavBootPerformance}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -438,7 +438,7 @@
                                                      CommandParameter="Booster">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="RAM &amp; Ağ Hızlandırıcı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavBooster}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -447,7 +447,7 @@
                                                      CommandParameter="ProcessPriority">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xEC4A;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Canlı CPU Önceliği &amp; Eco Mod" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavProcessPriority}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -456,7 +456,7 @@
                                                      CommandParameter="DiskBench">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xEC4A;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="SSD / NVMe Disk Hız Testi" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavDiskBench}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -465,7 +465,7 @@
                                                      CommandParameter="SmartPower">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Disk Sağlığı &amp; Güç Planı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavSmartPower}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -474,7 +474,7 @@
                                                      CommandParameter="HardwareSpecs">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE950;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Donanım, BIOS &amp; Lisans" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavHardwareSpecs}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -483,7 +483,7 @@
                                                      CommandParameter="MonitorGpu">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE7F4;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Monitör (Hz) &amp; GPU Doktoru" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavMonitorGpu}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                     </StackPanel>
@@ -500,7 +500,7 @@
                                                      CommandParameter="WingetUpdater">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Winget Program Güncelleyici" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavWingetUpdater}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -509,7 +509,7 @@
                                                      CommandParameter="Win11Tweaker">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE90F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Windows 11 İnce Ayar (Tweaker)" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavWin11Tweaker}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -536,7 +536,7 @@
                                                      CommandParameter="Services">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE912;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Windows Servisleri" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavServices}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -545,7 +545,7 @@
                                                      CommandParameter="RepairCenter">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE90F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Sistem Onarım (SFC/DISM)" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavRepairCenter}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -554,7 +554,7 @@
                                                      CommandParameter="RestoreGodMode">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Geri Yükleme &amp; God Mode" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavRestoreGodMode}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -563,7 +563,7 @@
                                                      CommandParameter="ContextMenu">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE700;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Sağ Tık Menüsü (Shell)" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavContextMenu}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -572,7 +572,7 @@
                                                      CommandParameter="FileAssoc">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Dosya Uzantısı Doktoru" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavFileAssoc}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -581,7 +581,7 @@
                                                      CommandParameter="FontManager">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE8D2;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Font (Yazı Tipi) Yöneticisi" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavFontManager}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                     </StackPanel>
@@ -598,7 +598,7 @@
                                                      CommandParameter="LanScanner">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Yerel Ağ (LAN / Wi-Fi) Radarı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavLanScanner}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -607,7 +607,7 @@
                                                      CommandParameter="WifiDns">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Wi-Fi Şifre &amp; DNS Ping" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavWifiDns}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -616,7 +616,7 @@
                                                      CommandParameter="Network">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE968;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Canlı Ağ &amp; Hosts" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavNetwork}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -625,7 +625,7 @@
                                                      CommandParameter="NetworkAdapterDoctor">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE839;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Ağ Adaptörü &amp; IP Doktoru" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavNetworkAdapterDoctor}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -634,7 +634,7 @@
                                                      CommandParameter="FirewallBlocker">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Firewall &amp; İnternet Kesici" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavFirewallBlocker}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -643,7 +643,7 @@
                                                      CommandParameter="PortHunter">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE968;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Port Avcısı (Port Killer)" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavPortHunter}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                     </StackPanel>
@@ -660,7 +660,7 @@
                                                      CommandParameter="DefenderAuditor">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE83D;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Defender &amp; İstisna Denetçisi" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavDefenderAuditor}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -669,7 +669,7 @@
                                                      CommandParameter="ExifScrubber">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE722;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Fotoğraf EXIF / GPS Temizleyici" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavExifScrubber}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -678,7 +678,7 @@
                                                      CommandParameter="ProcessSecurity">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xEA18;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Süreç &amp; İmza Denetçisi" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavProcessSecurity}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -687,7 +687,7 @@
                                                      CommandParameter="CryptoVault">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="AES-256 Kasa &amp; Çoklu Hash" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavCryptoVault}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -696,7 +696,7 @@
                                                      CommandParameter="Privacy">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Gizlilik &amp; Telemetri" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavPrivacy}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -705,7 +705,7 @@
                                                      CommandParameter="ClipboardShield">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE77F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Akıllı Pano (Clipboard) Kalkanı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavClipboardShield}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -714,7 +714,7 @@
                                                      CommandParameter="BitLocker">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xEDA2;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="BitLocker &amp; ISO/VHD Yöneticisi" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavBitLocker}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -723,7 +723,7 @@
                                                      CommandParameter="CredentialSsh">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Kimlik Kasası &amp; SSH Denetçisi" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavCredentialSsh}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -732,7 +732,7 @@
                                                      CommandParameter="UsbForensics">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE88E;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="USB Depolama Geçmişi" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavUsbForensics}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -741,7 +741,7 @@
                                                      CommandParameter="CrashLogs">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Mavi Ekran &amp; Çökme Logları" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavCrashLogs}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                     </StackPanel>
@@ -758,7 +758,7 @@
                                                      CommandParameter="AiModelCleaner">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE99A;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Yapay Zeka (AI / LLM) Avcısı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavAiModelCleaner}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -767,7 +767,7 @@
                                                      CommandParameter="DockerWsl">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE756;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="WSL2 &amp; Docker Yöneticisi" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavDockerWsl}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -776,7 +776,7 @@
                                                      CommandParameter="GitRepoCompressor">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Git Depo (.git) Sıkıştırıcı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavGitRepoCompressor}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -803,7 +803,7 @@
                                                      CommandParameter="SqliteOptimizer">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xEE94;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="SQLite Veritabanı Sıkıştırıcı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavSqliteOptimizer}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -812,7 +812,7 @@
                                                      CommandParameter="BatchRenamer">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE8AC;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Toplu Dosya Adlandırıcı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavBatchRenamer}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -821,7 +821,7 @@
                                                      CommandParameter="Unlocker">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE785;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Kilitli Dosya Çözücü" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavUnlocker}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -830,7 +830,7 @@
                                                      CommandParameter="PathDoctor">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE950;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="PATH &amp; Kısayol Doktoru" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavPathDoctor}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -839,7 +839,7 @@
                                                      CommandParameter="TasksAndTree">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Görevler &amp; Klasör Ağacı" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavTasksAndTree}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -848,7 +848,7 @@
                                                      CommandParameter="BrowserExtensions">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xEA86;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Tarayıcı Eklentileri" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavBrowserExtensions}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -857,7 +857,7 @@
                                                      CommandParameter="DriversUpdates">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="Güncelleme &amp; Sürücüler" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavDriversUpdates}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -1107,484 +1107,12 @@
 
                 <!-- VIEW 5: Extracted to modular Lazy UserControl (Views/UninstallerView.xaml) -->
 
-                <!-- ========================================================================= -->
-                <!-- VIEW 6: RAM & NETWORK BOOSTER                                             -->
-                <!-- ========================================================================= -->
-                <Grid Visibility="{Binding IsBoosterSection, Converter={StaticResource BoolToVis}}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="420"/>
-                        <ColumnDefinition Width="14"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Booster Quick Action Cards -->
-                    <Border Grid.Column="0"
-                            Background="{DynamicResource BgSecondaryBrush}"
-                            BorderBrush="{DynamicResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="16">
-                        <StackPanel>
-                            <TextBlock Text="HIZLANDIRICI &amp; SİSTEM ARAÇLARI"
-                                       FontSize="12"
-                                       FontWeight="Bold"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Margin="0,0,0,12"/>
-
-                            <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,10">
-                                <StackPanel>
-                                    <TextBlock Text="RAM Bellek Boşaltıcı (Working Set Trim)" FontWeight="SemiBold" FontSize="13.5"/>
-                                    <TextBlock Text="Arka planda çalışan uygulamaların kullanmadığı ayrılmış bellek sayfalarını işletim sistemine geri kazandırır."
-                                               FontSize="11.5"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,10"/>
-                                    <Button Style="{StaticResource CleanButtonStyle}"
-                                            Content="RAM Belleği Şimdi Optimize Et"
-                                            Command="{Binding OptimizeRamCommand}"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,10">
-                                <StackPanel>
-                                    <TextBlock Text="DNS &amp; Ağ Önbelleği Temizleyici" FontWeight="SemiBold" FontSize="13.5"/>
-                                    <TextBlock Text="Bozuk DNS çözümleme önbelleğini (ipconfig /flushdns) ve hedef önbelleğini sıfırlayarak bağlantı sorunlarını giderir."
-                                               FontSize="11.5"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,10"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Button Grid.Column="0"
-                                                Style="{StaticResource PrimaryButtonStyle}"
-                                                Content="DNS Önbelleğini Sil"
-                                                Command="{Binding FlushDnsCommand}"/>
-                                        <Button Grid.Column="2"
-                                                Style="{StaticResource SubtleButtonStyle}"
-                                                Content="Ağ Önbelleğini Sıfırla"
-                                                Command="{Binding ResetNetCacheCommand}"/>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14">
-                                <StackPanel>
-                                    <TextBlock Text="Windows Derin Bakım Kısayolları" FontWeight="SemiBold" FontSize="13.5" Margin="0,0,0,8"/>
-                                    <Button Style="{StaticResource SubtleButtonStyle}"
-                                            Content="Windows Disk Temizleme (cleanmgr / WinSxS)"
-                                            Command="{Binding LaunchCleanMgrCommand}"
-                                            Margin="0,0,0,8"/>
-                                    <Button Style="{StaticResource SubtleButtonStyle}"
-                                            Content="Sistem Geri Yükleme Noktası Yöneticisi"
-                                            Command="{Binding LaunchSystemRestoreCommand}"/>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Top Memory Consuming Processes -->
-                    <Border Grid.Column="2"
-                            Background="{DynamicResource BgSecondaryBrush}"
-                            BorderBrush="{DynamicResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="16">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Grid Grid.Row="0" Margin="0,0,0,10">
-                                <TextBlock Text="EN ÇOK BELLEK (RAM) TÜKETEN İŞLEMLER"
-                                           FontSize="12"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center"/>
-                                <Button Style="{StaticResource SubtleButtonStyle}"
-                                        Content="Listeyi Yenile"
-                                        HorizontalAlignment="Right"
-                                        Command="{Binding RefreshTopProcessesCommand}"/>
-                            </Grid>
-                            <DataGrid Grid.Row="1"
-                                      ItemsSource="{Binding TopMemoryProcesses}"
-                                      AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="True"
-                                      HeadersVisibility="Column"
-                                      GridLinesVisibility="None"
-                                      Background="{DynamicResource BgPrimaryBrush}"
-                                      RowBackground="{DynamicResource BgSecondaryBrush}"
-                                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
-                                      Foreground="{DynamicResource TextPrimaryBrush}"
-                                      BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                      BorderThickness="1"
-                                      RowHeight="32">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="90"/>
-                                    <DataGridTextColumn Header="İşlem Adı (Process)" Binding="{Binding ProcessName}" Width="*"/>
-                                    <DataGridTextColumn Header="Bellek Kullanımı (Working Set)" Binding="{Binding FormattedMemory}" SortMemberPath="WorkingSetBytes" Width="210"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Border>
-                </Grid>
-
+                <!-- VIEW 6: Extracted to modular Lazy UserControl (Views/BoosterView.xaml) -->
                 <!-- VIEW 7: Extracted to modular Lazy UserControl (Views/SettingsView.xaml) -->
-
                 <!-- VIEW 8: Extracted to modular Lazy UserControl (Views/DevCleanerView.xaml) -->
-
-                <!-- ========================================================================= -->
-                <!-- VIEW 9: FILE SHREDDER (DoD 5220.22-M) & FREE SPACE WIPER                  -->
-                <!-- ========================================================================= -->
-                <Grid Visibility="{Binding IsShredderSection, Converter={StaticResource BoolToVis}}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="14"/>
-                        <ColumnDefinition Width="380"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Shredder Queue -->
-                    <Border Grid.Column="0"
-                            Background="{DynamicResource BgSecondaryBrush}"
-                            BorderBrush="{DynamicResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="16">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <Grid Grid.Row="0" Margin="0,0,0,12">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Button Style="{StaticResource PrimaryButtonStyle}"
-                                            Content="+ Dosya Ekle"
-                                            Command="{Binding AddShredFilesCommand}"
-                                            Margin="0,0,8,0"/>
-                                    <Button Style="{StaticResource SubtleButtonStyle}"
-                                            Content="+ Klasör Ekle"
-                                            Command="{Binding AddShredFolderCommand}"
-                                            Margin="0,0,8,0"/>
-                                    <Button Style="{StaticResource SubtleButtonStyle}"
-                                            Content="Listeyi Temizle"
-                                            Command="{Binding ClearShredQueueCommand}"
-                                            Margin="0,0,14,0"/>
-                                    <TextBlock Text="Geçiş Sayısı (DoD):" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <ComboBox ItemsSource="{Binding AvailableShredPasses}"
-                                              SelectedItem="{Binding ShredPassesCount}"
-                                              Width="65"
-                                              VerticalContentAlignment="Center"/>
-                                </StackPanel>
-
-                                <Button Style="{StaticResource CleanButtonStyle}"
-                                        Background="{DynamicResource DangerRedBrush}"
-                                        Content="Kalıcı Olarak Öğüt &amp; İmha Et"
-                                        HorizontalAlignment="Right"
-                                        Command="{Binding ExecuteShredderCommand}"/>
-                            </Grid>
-
-                            <DataGrid Grid.Row="1"
-                                      ItemsSource="{Binding ShredQueueItems}"
-                                      AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="True"
-                                      HeadersVisibility="Column"
-                                      GridLinesVisibility="None"
-                                      Background="{DynamicResource BgPrimaryBrush}"
-                                      RowBackground="{DynamicResource BgSecondaryBrush}"
-                                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
-                                      Foreground="{DynamicResource TextPrimaryBrush}"
-                                      BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                      BorderThickness="1"
-                                      RowHeight="32">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Dosya / Klasör Adı" Binding="{Binding Name}" Width="210"/>
-                                    <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" Width="100"/>
-                                    <DataGridTextColumn Header="Durum" Binding="{Binding Status}" Width="150"/>
-                                    <DataGridTextColumn Header="Tam Yol" Binding="{Binding FullPath}" Width="*"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Border>
-
-                    <!-- Free Space Wiper Card -->
-                    <Border Grid.Column="2"
-                            Background="{DynamicResource BgSecondaryBrush}"
-                            BorderBrush="{DynamicResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="16">
-                        <StackPanel>
-                            <TextBlock Text="SÜRÜCÜ BOŞ ALAN SİLİCİ (FREE SPACE WIPER)"
-                                       FontSize="12"
-                                       FontWeight="Bold"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       Margin="0,0,0,12"/>
-
-                            <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">
-                                <StackPanel>
-                                    <TextBlock Text="Kriptografik Boş Sektör Sıfırlama" FontWeight="SemiBold" FontSize="13.5"/>
-                                    <TextBlock Text="Daha önce normal yollarla silinmiş dosyaların diskteki boş sektörlerde bıraktığı izleri kriptografik rastgele veri yazarak kurtarılamaz hale getirir (Mevcut dosyalarınıza dokunmaz)."
-                                               FontSize="11.5"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,6,0,12"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                        <TextBlock Text="Sıfırlama Boyutu (MB):" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                        <ComboBox ItemsSource="{Binding AvailableSizeThresholdsMb}"
-                                                  SelectedItem="{Binding FreeSpaceWipeMb}"
-                                                  Width="90"/>
-                                    </StackPanel>
-                                    <Button Style="{StaticResource PrimaryButtonStyle}"
-                                            Content="Boş Alanı Şimdi Sıfırla"
-                                            Command="{Binding WipeFreeSpaceCommand}"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Background="#1D1622" BorderBrush="#4C1D24" BorderThickness="1" CornerRadius="10" Padding="14">
-                                <StackPanel>
-                                    <TextBlock Text="DoD 5220.22-M Standardı Nedir?" FontWeight="SemiBold" Foreground="#F87171" FontSize="12.5"/>
-                                    <TextBlock Text="1. Geçiş: Tüm sektörlere 0x00 yazılır.&#x0a;2. Geçiş: Tüm sektörlere 0xFF yazılır.&#x0a;3. Geçiş: Kriptografik rastgele baytlar yazılır, dosya boyutu 0'a indirilir ve MFT dosya adı rastgele değiştirilerek silinir."
-                                               FontSize="11"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <!-- ========================================================================= -->
-                <!-- VIEW 10: WINDOWS PRIVACY & TELEMETRY SHIELD                               -->
-                <!-- ========================================================================= -->
-                <Border Visibility="{Binding IsPrivacySection, Converter={StaticResource BoolToVis}}"
-                        Background="{DynamicResource BgSecondaryBrush}"
-                        BorderBrush="{DynamicResource BorderSubtleBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="16">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid Grid.Row="0" Margin="0,0,0,12">
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="Windows Gizlilik, Etkinlik Geçmişi &amp; Kabuk İzleri Kalkanı"
-                                           FontSize="14"
-                                           FontWeight="SemiBold"/>
-                                <TextBlock Text="Çalıştır (Win+R) geçmişi, Dosya Gezgini arama/adres geçmişi, Görev Çubuğu JumpList, Timeline ve Pano verilerini temizler."
-                                           FontSize="11.5"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="Gizlilik İzlerini Tara"
-                                        Command="{Binding ScanPrivacyTracesCommand}"
-                                        Margin="0,0,8,0"/>
-                                <Button Style="{StaticResource CleanButtonStyle}"
-                                        Content="Seçili İzleri Temizle"
-                                        Command="{Binding CleanPrivacyTracesCommand}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <DataGrid Grid.Row="1"
-                                  ItemsSource="{Binding PrivacyTraces}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="None"
-                                  Background="{DynamicResource BgPrimaryBrush}"
-                                  RowBackground="{DynamicResource BgSecondaryBrush}"
-                                  AlternatingRowBackground="{DynamicResource BgCardBrush}"
-                                  Foreground="{DynamicResource TextPrimaryBrush}"
-                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                  BorderThickness="1"
-                                  RowHeight="36">
-                            <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                                <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" IsReadOnly="True" Width="150"/>
-                                <DataGridTextColumn Header="Gizlilik Öğesi" Binding="{Binding Name}" IsReadOnly="True" Width="280"/>
-                                <DataGridTextColumn Header="Bulunan İz / Boyut" Binding="{Binding StatusText}" IsReadOnly="True" Width="130"/>
-                                <DataGridTextColumn Header="Açıklama" Binding="{Binding Description}" IsReadOnly="True" Width="*"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </Border>
-
-                <!-- ========================================================================= -->
-                <!-- VIEW 11: ACTIVE NETWORK CONNECTIONS & HOSTS EDITOR                        -->
-                <!-- ========================================================================= -->
-                <Grid Visibility="{Binding IsNetworkSection, Converter={StaticResource BoolToVis}}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.25*"/>
-                        <ColumnDefinition Width="14"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Active TCP/UDP Connections -->
-                    <Border Grid.Column="0"
-                            Background="{DynamicResource BgSecondaryBrush}"
-                            BorderBrush="{DynamicResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="14">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            <Grid Grid.Row="0" Margin="0,0,0,10">
-                                <TextBlock Text="CANLI TCP / UDP AĞ BAĞLANTILARI &amp; PORT DENETÇİSİ"
-                                           FontSize="12"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center"/>
-                                <Button Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="Bağlantıları Yenile"
-                                        Padding="12,6"
-                                        HorizontalAlignment="Right"
-                                        Command="{Binding RefreshConnectionsCommand}"/>
-                            </Grid>
-                            <DataGrid Grid.Row="1"
-                                      ItemsSource="{Binding ActiveConnections}"
-                                      AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="True"
-                                      HeadersVisibility="Column"
-                                      GridLinesVisibility="None"
-                                      Background="{DynamicResource BgPrimaryBrush}"
-                                      RowBackground="{DynamicResource BgSecondaryBrush}"
-                                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
-                                      Foreground="{DynamicResource TextPrimaryBrush}"
-                                      BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                      BorderThickness="1"
-                                      RowHeight="30">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Protokol" Binding="{Binding Protocol}" Width="65"/>
-                                    <DataGridTextColumn Header="İşlem (Process)" Binding="{Binding ProcessName}" Width="140"/>
-                                    <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="60"/>
-                                    <DataGridTextColumn Header="Yerel Adres" Binding="{Binding LocalAddress}" Width="145"/>
-                                    <DataGridTextColumn Header="Uzak Adres" Binding="{Binding RemoteAddress}" Width="145"/>
-                                    <DataGridTextColumn Header="Durum" Binding="{Binding State}" Width="*"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Border>
-
-                    <!-- Windows Hosts File Manager -->
-                    <Border Grid.Column="2"
-                            Background="{DynamicResource BgSecondaryBrush}"
-                            BorderBrush="{DynamicResource BorderSubtleBrush}"
-                            BorderThickness="1"
-                            CornerRadius="12"
-                            Padding="14">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <Grid Grid.Row="0" Margin="0,0,0,10">
-                                <TextBlock Text="WINDOWS HOSTS DOSYASI YÖNETİCİSİ"
-                                           FontSize="12"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center"/>
-                                <Button Style="{StaticResource SubtleButtonStyle}"
-                                        Content="Yenile"
-                                        HorizontalAlignment="Right"
-                                        Command="{Binding RefreshHostsCommand}"
-                                        Margin="0,0,84,0"/>
-                                <Button Style="{StaticResource SubtleButtonStyle}"
-                                        Content="Yedeği Geri Yükle"
-                                        HorizontalAlignment="Right"
-                                        Command="{Binding RestoreHostsBackupCommand}"/>
-                            </Grid>
-
-                            <Grid Grid.Row="1" Margin="0,0,0,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="95"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBox Grid.Column="0"
-                                         Text="{Binding NewHostIp, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="{DynamicResource BgCardBrush}"
-                                         Foreground="{DynamicResource TextPrimaryBrush}"
-                                         CaretBrush="{DynamicResource AccentBlueBrush}"
-                                         BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                         Padding="6,5"
-                                         Margin="0,0,6,0"
-                                         ToolTip="Hedef IP (Engellemek için 0.0.0.0)"/>
-                                <TextBox Grid.Column="1"
-                                         Text="{Binding NewHostDomain, UpdateSourceTrigger=PropertyChanged}"
-                                         Background="{DynamicResource BgCardBrush}"
-                                         Foreground="{DynamicResource TextPrimaryBrush}"
-                                         CaretBrush="{DynamicResource AccentBlueBrush}"
-                                         BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                         Padding="6,5"
-                                         Margin="0,0,6,0"
-                                         ToolTip="Alan adı (örn: telemetry.example.com)"/>
-                                <Button Grid.Column="2"
-                                        Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="Kural Ekle"
-                                        Padding="12,5"
-                                        Command="{Binding AddHostEntryCommand}"/>
-                            </Grid>
-
-                            <DataGrid Grid.Row="2"
-                                      ItemsSource="{Binding HostsEntries}"
-                                      AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="False"
-                                      HeadersVisibility="Column"
-                                      GridLinesVisibility="None"
-                                      Background="{DynamicResource BgPrimaryBrush}"
-                                      RowBackground="{DynamicResource BgSecondaryBrush}"
-                                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
-                                      Foreground="{DynamicResource TextPrimaryBrush}"
-                                      BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                      BorderThickness="1"
-                                      RowHeight="30">
-                                <DataGrid.Columns>
-                                    <DataGridCheckBoxColumn Header="Etkin" Binding="{Binding IsEnabled, UpdateSourceTrigger=PropertyChanged}" Width="48"/>
-                                    <DataGridTextColumn Header="IP Adresi" Binding="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}" Width="105"/>
-                                    <DataGridTextColumn Header="Alan Adı (Host)" Binding="{Binding Hostname, UpdateSourceTrigger=PropertyChanged}" Width="165"/>
-                                    <DataGridTextColumn Header="Açıklama" Binding="{Binding Comment, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                                    <DataGridTemplateColumn Header="İşlemler" Width="140">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Button Style="{StaticResource SubtleButtonStyle}"
-                                                            Content="Kaydet"
-                                                            Padding="6,3"
-                                                            Margin="0,0,5,0"
-                                                            Command="{Binding DataContext.SaveHostEntryCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                            CommandParameter="{Binding}"/>
-                                                    <Button Style="{StaticResource SubtleButtonStyle}"
-                                                            Content="Sil"
-                                                            Padding="6,3"
-                                                            Command="{Binding DataContext.DeleteHostEntryCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                            CommandParameter="{Binding}"/>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Border>
-                </Grid>
+                <!-- VIEW 9: Extracted to modular Lazy UserControl (Views/ShredderView.xaml) -->
+                <!-- VIEW 10: Extracted to modular Lazy UserControl (Views/PrivacyView.xaml) -->
+                <!-- VIEW 11: Extracted to modular Lazy UserControl (Views/NetworkView.xaml) -->
 
                 <!-- ========================================================================= -->
                 <!-- VIEW 12: SCHEDULED TASKS & FOLDER SPACE VISUALIZER                        -->
@@ -1714,87 +1242,7 @@
                     </Border>
                 </Grid>
 
-                <!-- ========================================================================= -->
-                <!-- VIEW 13: DOWNLOADS ASSISTANT & EMPTY FOLDER CLEANER                       -->
-                <!-- ========================================================================= -->
-                <Border Visibility="{Binding IsDownloadsSection, Converter={StaticResource BoolToVis}}"
-                        Background="{DynamicResource BgSecondaryBrush}"
-                        BorderBrush="{DynamicResource BorderSubtleBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="16">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid Grid.Row="0" Margin="0,0,0,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Kurulum Yaşı (Gün):" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <ComboBox ItemsSource="{Binding AvailableInstallerAgeDays}"
-                                          SelectedItem="{Binding InstallerMinAgeDays}"
-                                          Width="65"
-                                          VerticalContentAlignment="Center"
-                                          Margin="0,0,12,0"/>
-                                <Button Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="İndirilenler (.exe, .msi, .iso, .zip) Tara"
-                                        Command="{Binding ScanOldInstallersCommand}"
-                                        Margin="0,0,14,0"/>
-
-                                <TextBlock Text="Boş Klasör Hedefi:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBox Text="{Binding EmptyFolderScanTarget, UpdateSourceTrigger=PropertyChanged}"
-                                         Width="185"
-                                         Background="{DynamicResource BgCardBrush}"
-                                         Foreground="{DynamicResource TextPrimaryBrush}"
-                                         CaretBrush="{DynamicResource AccentBlueBrush}"
-                                         BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                         Padding="6,5"
-                                         Margin="0,0,6,0"/>
-                                <Button Style="{StaticResource SubtleButtonStyle}"
-                                        Content="Seç..."
-                                        Command="{Binding BrowseEmptyFolderTargetCommand}"
-                                        Margin="0,0,6,0"/>
-                                <Button Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="Boş Klasörleri Bul"
-                                        Command="{Binding ScanEmptyFoldersCommand}"/>
-                            </StackPanel>
-
-                            <Button Grid.Column="1"
-                                    Style="{StaticResource CleanButtonStyle}"
-                                    Content="Seçilileri Temizle"
-                                    Command="{Binding CleanDownloadsAndEmptyCommand}"/>
-                        </Grid>
-
-                        <DataGrid Grid.Row="1"
-                                  ItemsSource="{Binding DownloadsAndEmptyItems}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="None"
-                                  Background="{DynamicResource BgPrimaryBrush}"
-                                  RowBackground="{DynamicResource BgSecondaryBrush}"
-                                  AlternatingRowBackground="{DynamicResource BgCardBrush}"
-                                  Foreground="{DynamicResource TextPrimaryBrush}"
-                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                  BorderThickness="1"
-                                  RowHeight="32">
-                            <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                                <DataGridTextColumn Header="Tür" Binding="{Binding ItemType}" IsReadOnly="True" Width="175"/>
-                                <DataGridTextColumn Header="Adı" Binding="{Binding Name}" IsReadOnly="True" Width="220"/>
-                                <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="105"/>
-                                <DataGridTextColumn Header="Tarih / Yaş" Binding="{Binding FormattedAge}" IsReadOnly="True" Width="155"/>
-                                <DataGridTextColumn Header="Tam Yol" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </Border>
+                <!-- VIEW 13: Extracted to modular Lazy UserControl (Views/DownloadsView.xaml) -->
 
                 <!-- ========================================================================= -->
                 <!-- VIEW 14: SHELL CONTEXT MENU MANAGER                                       -->
@@ -2830,69 +2278,7 @@
                     </Grid>
                 </Border>
 
-                <!-- ========================================================================= -->
-                <!-- VIEW 28: WINDOWS 10/11 APPX BLOATWARE DEBLOATER                           -->
-                <!-- ========================================================================= -->
-                <Border Visibility="{Binding IsBloatwareSection, Converter={StaticResource BoolToVis}}"
-                        Background="{DynamicResource BgSecondaryBrush}"
-                        BorderBrush="{DynamicResource BorderSubtleBrush}"
-                        BorderThickness="1"
-                        CornerRadius="12"
-                        Padding="16">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <Grid Grid.Row="0" Margin="0,0,0,12">
-                            <StackPanel>
-                                <TextBlock Text="WINDOWS 10 / 11 ÖNYÜKLÜ BLOATWARE (UWP / APPX) KALDIRICI"
-                                           FontSize="13"
-                                           FontWeight="Bold"
-                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                <TextBlock Text="Standart Program Ekle/Kaldır'da görünmeyen Windows mağaza uygulamalarını (Clipchamp, BingNews, Xbox, Solitaire vb.) listeler ve kaldırır."
-                                           FontSize="11.5"
-                                           Foreground="{DynamicResource TextMutedBrush}"
-                                           Margin="0,3,0,0"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                <Button Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="Mağaza Paketlerini Yeniden Tara"
-                                        Padding="12,7"
-                                        Margin="0,0,8,0"
-                                        Command="{Binding ScanAppxBloatwareCommand}"/>
-                                <Button Style="{StaticResource DangerButtonStyle}"
-                                        Content="Seçili Bloatware Paketlerini Kaldır"
-                                        Padding="12,7"
-                                        Command="{Binding RemoveSelectedAppxCommand}"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <DataGrid Grid.Row="1"
-                                  ItemsSource="{Binding AppxBloatwareItems}"
-                                  AutoGenerateColumns="False"
-                                  CanUserAddRows="False"
-                                  HeadersVisibility="Column"
-                                  GridLinesVisibility="None"
-                                  Background="{DynamicResource BgPrimaryBrush}"
-                                  RowBackground="{DynamicResource BgSecondaryBrush}"
-                                  AlternatingRowBackground="{DynamicResource BgCardBrush}"
-                                  Foreground="{DynamicResource TextPrimaryBrush}"
-                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                  BorderThickness="1"
-                                  RowHeight="35">
-                            <DataGrid.Columns>
-                                <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                                <DataGridTextColumn Header="Öneri / Kategori" Binding="{Binding CategoryBadge}" IsReadOnly="True" Width="195"/>
-                                <DataGridTextColumn Header="Uygulama Adı" Binding="{Binding Name}" IsReadOnly="True" Width="260"/>
-                                <DataGridTextColumn Header="Sürüm" Binding="{Binding Version}" IsReadOnly="True" Width="115"/>
-                                <DataGridTextColumn Header="Tam Paket Kimliği (PackageFullName)" Binding="{Binding PackageFullName}" IsReadOnly="True" Width="*"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </Grid>
-                </Border>
+                <!-- VIEW 28: Extracted to modular Lazy UserControl (Views/BloatwareView.xaml) -->
 
                 <!-- ========================================================================= -->
                 <!-- VIEW 29: LIVE SSD / NVME SEQUENTIAL READ & WRITE BENCHMARK                -->

@@ -5,9 +5,8 @@ namespace FreeCleaner.Services;
 
 public static class ErrorLogService
 {
-    private static readonly string LogPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "FreeCleaner",
+    private static string LogPath => Path.Combine(
+        AppStoragePathsService.GetDataDirectory(),
         "errors.log");
 
     public static void Log(string area, Exception exception)

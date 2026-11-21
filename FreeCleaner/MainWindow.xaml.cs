@@ -56,6 +56,12 @@ public partial class MainWindow : Window
         _lazyViews.Register("Startup", () => new StartupView { DataContext = DataContext });
         _lazyViews.Register("Registry", () => new RegistryView { DataContext = DataContext });
         _lazyViews.Register("Uninstaller", () => new UninstallerView { DataContext = DataContext });
+        _lazyViews.Register("Booster", () => new BoosterView { DataContext = DataContext });
+        _lazyViews.Register("Shredder", () => new ShredderView { DataContext = DataContext });
+        _lazyViews.Register("Privacy", () => new PrivacyView { DataContext = DataContext });
+        _lazyViews.Register("Network", () => new NetworkView { DataContext = DataContext });
+        _lazyViews.Register("Downloads", () => new DownloadsView { DataContext = DataContext });
+        _lazyViews.Register("Bloatware", () => new BloatwareView { DataContext = DataContext });
         _lazyViews.Register("Dashboard", () => new DashboardView { DataContext = DataContext });
         _lazyViews.Register("LiveMonitor", () => new LiveMonitorView { DataContext = DataContext });
         _lazyViews.Register("DiskAnalyzer", () => new DiskAnalyzerView { DataContext = DataContext });

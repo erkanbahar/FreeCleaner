@@ -38,15 +38,21 @@ public partial class MainViewModel : INotifyPropertyChanged
     private readonly List<double> _netDownHistory = [];
     private readonly List<double> _netUpHistory = [];
     private readonly List<string> _favoriteSectionKeys = [];
-    private static readonly string ActivityLogPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "FreeCleaner",
+    private static string ActivityLogPath => Path.Combine(
+        AppStoragePathsService.GetDataDirectory(),
         "activity.log");
     private CancellationTokenSource? _cts;
     private DateTime _lastDiskAlertUtc = DateTime.MinValue;
     private DateTime _lastRamAlertUtc = DateTime.MinValue;
     private string _explorerContextMenuStatusText = string.Empty;
     private bool _suppressRuleWarningPrompt;
+    private bool _isPortableMode;
+    private string _storageForecastHeadline = "⏳ Veri toplanıyor";
+    private string _storageForecastDetail = "Trend için en az 2 günlük veri gereklidir.";
+    private string _organizerTargetFolder = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        "Downloads");
+    private string _organizerSummaryText = "Önizleme için 'Düzenlemeyi Önizle' butonuna tıklayın.";
 
     private string _activeSection = "Dashboard";
     private string _selectedTheme = "ObsidianNeon";
@@ -218,6 +224,7 @@ public partial class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<NavShortcutItem> AllModuleCatalog { get; } = [];
     public ObservableCollection<TreemapNodeItem> TreemapNodes { get; } = [];
     public ObservableCollection<DiskGrowthDiffItem> TreemapDiffItems { get; } = [];
+    public ObservableCollection<OrganizePlanItem> OrganizerPlanItems { get; } = [];
     public ObservableCollection<PhotoMetadataItem> PhotoMetadataItems { get; } = [];
     public ObservableCollection<DeepSpaceItem> DeepSpaceItems { get; } = [];
     public ObservableCollection<SimilarPhotoItem> SimilarPhotoItems { get; } = [];
@@ -509,6 +516,14 @@ public partial class MainViewModel : INotifyPropertyChanged
     public ICommand CopyActivityLogsCommand { get; }
     public ICommand ExportActivityLogsCommand { get; }
     public ICommand ClearActivityLogsCommand { get; }
+
+    // 16th Gen Portable Mode, Support Bundle & Smart Folder Organizer Commands
+    public ICommand ExportSupportBundleCommand { get; }
+    public ICommand SelectOrganizerPresetCommand { get; }
+    public ICommand BrowseOrganizerFolderCommand { get; }
+    public ICommand PreviewFolderOrganizeCommand { get; }
+    public ICommand ApplyFolderOrganizeCommand { get; }
+    public ICommand UndoFolderOrganizeCommand { get; }
 
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
@@ -1025,6 +1040,19 @@ public partial class MainViewModel : INotifyPropertyChanged
         CopyActivityLogsCommand = new RelayCommand(_ => ExecuteCopyActivityLogs());
         ExportActivityLogsCommand = new RelayCommand(_ => ExecuteExportActivityLogs());
         ClearActivityLogsCommand = new RelayCommand(_ => ExecuteClearActivityLogs());
+
+        // 16th Gen Portable Mode, Support Bundle & Smart Folder Organizer Commands
+        _isPortableMode = AppStoragePathsService.IsPortableModeEnabled();
+        ExportSupportBundleCommand = new RelayCommand(_ => ExecuteExportSupportBundle());
+        SelectOrganizerPresetCommand = new RelayCommand(param =>
+        {
+            if (param is string preset)
+                SelectOrganizerPreset(preset);
+        }, _ => !IsBusy);
+        BrowseOrganizerFolderCommand = new RelayCommand(_ => BrowseOrganizerFolder(), _ => !IsBusy);
+        PreviewFolderOrganizeCommand = new RelayCommand(_ => ExecutePreviewFolderOrganize(), _ => !IsBusy);
+        ApplyFolderOrganizeCommand = new RelayCommand(_ => ExecuteApplyFolderOrganize(), _ => !IsBusy);
+        UndoFolderOrganizeCommand = new RelayCommand(_ => ExecuteUndoFolderOrganize(), _ => !IsBusy && SmartFolderOrganizerService.HasUndoJournal());
 
         _liveTelemetryTimer = new DispatcherTimer
         {
@@ -1725,6 +1753,7 @@ public partial class MainViewModel : INotifyPropertyChanged
     public void RefreshSystemMetrics()
     {
         SystemMetrics = SystemInfoService.GetMetrics();
+        RefreshStorageForecast();
     }
 
     private async Task RunAnalyzeAsync()
@@ -2215,598 +2244,6 @@ public partial class MainViewModel : INotifyPropertyChanged
         if (!result.Success)
             MessageBox.Show(result.Message, "Zamanlanmış Bakım", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
-
-    // ==================== 8. DEVCLEANER & GAMER CACHES ====================
-
-    public string DevWorkspacePath
-    {
-        get => _devWorkspacePath;
-        set
-        {
-            if (_devWorkspacePath != value)
-            {
-                _devWorkspacePath = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public bool VsIncludeDebug
-    {
-        get => _vsIncludeDebug;
-        set
-        {
-            if (_vsIncludeDebug != value)
-            {
-                _vsIncludeDebug = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public bool VsIncludeRetailAndRelease
-    {
-        get => _vsIncludeRetailAndRelease;
-        set
-        {
-            if (_vsIncludeRetailAndRelease != value)
-            {
-                _vsIncludeRetailAndRelease = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public bool VsIncludeObjAndVs
-    {
-        get => _vsIncludeObjAndVs;
-        set
-        {
-            if (_vsIncludeObjAndVs != value)
-            {
-                _vsIncludeObjAndVs = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    private async Task RunScanVsDebugRetailAsync(bool autoDeleteAfterScan)
-    {
-        IsBusy = true;
-        ProgressPercent = 20;
-        DevArtifactItems.Clear();
-
-        StatusMessage = $"'{DevWorkspacePath}' içindeki Visual Studio projelerinin Debug / Retail / Release klasörleri taranıyor...";
-        AddLog($"[VS TEMİZLEYİCİ] Visual Studio Debug & Retail klasörleri taranıyor: {DevWorkspacePath}");
-
-        _cts = new CancellationTokenSource();
-        var progress = new Progress<(string CurrentDir, int FoundCount)>(rep =>
-        {
-            CurrentOperationDetail = $"Bulunan VS Klasörü: {rep.FoundCount} • {rep.CurrentDir}";
-        });
-
-        try
-        {
-            var found = await DevAndGamerCleanerService.ScanVisualStudioDebugAndRetailAsync(
-                DevWorkspacePath,
-                VsIncludeDebug,
-                VsIncludeRetailAndRelease,
-                VsIncludeObjAndVs,
-                progress,
-                _cts.Token);
-
-            foreach (var item in found)
-                DevArtifactItems.Add(item);
-
-            ProgressPercent = 100;
-            long totalSize = found.Sum(x => x.SizeBytes);
-
-            if (found.Count == 0)
-            {
-                StatusMessage = "Visual Studio Debug / Retail klasörü bulunamadı (Projeler zaten temiz).";
-                AddLog("[VS TEMİZLEYİCİ] Silinecek Debug/Retail klasörü bulunamadı.");
-                return;
-            }
-
-            StatusMessage = $"VS Temizleyici: {found.Count} adet Debug / Retail / obj klasörü bulundu ({CleanerRule.FormatBytes(totalSize)}).";
-            AddLog($"[VS TEMİZLEYİCİ] {found.Count} VS çıktı klasörü ({CleanerRule.FormatBytes(totalSize)}) tespit edildi.");
-
-            if (autoDeleteAfterScan)
-            {
-                int deleted = 0;
-                long freed = 0;
-
-                await Task.Run(() =>
-                {
-                    foreach (var item in found)
-                    {
-                        try
-                        {
-                            if (Directory.Exists(item.FullPath))
-                            {
-                                Directory.Delete(item.FullPath, recursive: true);
-                                deleted++;
-                                freed += item.SizeBytes;
-                            }
-                        }
-                        catch
-                        {
-                            // Skip locked active build folder
-                        }
-                    }
-                });
-
-                DevArtifactItems.Clear();
-                LastFreedBytes += freed;
-                LastDeletedFiles += deleted;
-                RefreshSystemMetrics();
-
-                StatusMessage = $"VS Otomatik Temizlik Tamamlandı! {deleted} adet Debug/Retail klasörü silindi, {CleanerRule.FormatBytes(freed)} yer açıldı.";
-                CurrentOperationDetail = $"Temizlenen kök dizin: {DevWorkspacePath}";
-                AddLog($"[VS OTOMATİK SİLME] {deleted} adet Visual Studio Debug/Retail klasörü otomatik silindi ({CleanerRule.FormatBytes(freed)} kazanıldı).");
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            StatusMessage = "Visual Studio Debug/Retail taraması durduruldu.";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    public int ShredPassesCount
-    {
-        get => _shredPassesCount;
-        set
-        {
-            if (_shredPassesCount != value)
-            {
-                _shredPassesCount = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public int FreeSpaceWipeMb
-    {
-        get => _freeSpaceWipeMb;
-        set
-        {
-            if (_freeSpaceWipeMb != value)
-            {
-                _freeSpaceWipeMb = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public string NewHostIp
-    {
-        get => _newHostIp;
-        set
-        {
-            if (_newHostIp != value)
-            {
-                _newHostIp = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public string NewHostDomain
-    {
-        get => _newHostDomain;
-        set
-        {
-            if (_newHostDomain != value)
-            {
-                _newHostDomain = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public string NewHostComment
-    {
-        get => _newHostComment;
-        set
-        {
-            if (_newHostComment != value)
-            {
-                _newHostComment = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    public string SpaceTreeTargetFolder
-    {
-        get => _spaceTreeTargetFolder;
-        set
-        {
-            if (_spaceTreeTargetFolder != value)
-            {
-                _spaceTreeTargetFolder = value;
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    private void BrowseDevWorkspace()
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "Yazılım Projelerinin Bulunduğu Klasörü Seçin (node_modules, bin/obj, .venv taraması)",
-            InitialDirectory = Directory.Exists(DevWorkspacePath) ? DevWorkspacePath : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
-        };
-        if (dlg.ShowDialog() == true)
-        {
-            DevWorkspacePath = dlg.FolderName;
-        }
-    }
-
-    private async Task RunScanDevProjectsAsync()
-    {
-        IsBusy = true;
-        ProgressPercent = 20;
-        DevArtifactItems.Clear();
-        StatusMessage = $"'{DevWorkspacePath}' içindeki yazılım projelerinin derleme/paket klasörleri taranıyor...";
-        AddLog($"[DEVCLEANER] Proje klasörü taranıyor: {DevWorkspacePath}");
-
-        _cts = new CancellationTokenSource();
-        var progress = new Progress<(string CurrentDir, int FoundCount)>(rep =>
-        {
-            CurrentOperationDetail = $"Bulunan: {rep.FoundCount} • {rep.CurrentDir}";
-        });
-
-        try
-        {
-            var found = await DevAndGamerCleanerService.ScanWorkspaceArtifactsAsync(DevWorkspacePath, progress, _cts.Token);
-            foreach (var item in found)
-                DevArtifactItems.Add(item);
-
-            ProgressPercent = 100;
-            long totalSize = found.Sum(x => x.SizeBytes);
-            StatusMessage = $"DevCleaner: {found.Count} derleme/paket klasörü bulundu (Toplam {CleanerRule.FormatBytes(totalSize)}).";
-            AddLog($"[DEVCLEANER] {found.Count} klasör ({CleanerRule.FormatBytes(totalSize)}) tespit edildi.");
-        }
-        catch (OperationCanceledException)
-        {
-            StatusMessage = "DevCleaner taraması iptal edildi.";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task RunScanGamerCachesAsync()
-    {
-        IsBusy = true;
-        ProgressPercent = 30;
-        DevArtifactItems.Clear();
-        StatusMessage = "GPU Shader (NVIDIA/AMD), Steam, Epic, Pip, Yarn, Gradle ve Cargo önbellekleri taranıyor...";
-        AddLog("[GAMER & GLOBAL CACHE] Oyun ve paket yöneticisi önbellekleri taranıyor...");
-
-        _cts = new CancellationTokenSource();
-        try
-        {
-            var found = await DevAndGamerCleanerService.ScanGlobalDevAndGamerCachesAsync(_cts.Token);
-            foreach (var item in found)
-                DevArtifactItems.Add(item);
-
-            ProgressPercent = 100;
-            long totalSize = found.Sum(x => x.SizeBytes);
-            StatusMessage = $"Oyun & Paket Önbellekleri: {found.Count} hedef bulundu ({CleanerRule.FormatBytes(totalSize)}).";
-            AddLog($"[GAMER & CACHE] {found.Count} önbellek hedefi ({CleanerRule.FormatBytes(totalSize)}) bulundu.");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private void CleanSelectedDevArtifacts()
-    {
-        var selected = DevArtifactItems.Where(x => x.IsSelected).ToList();
-        if (selected.Count == 0) return;
-
-        long totalBytes = selected.Sum(x => x.SizeBytes);
-        var confirm = MessageBox.Show(
-            $"Seçili {selected.Count} adet geliştirici/oyun önbellek klasörü ({CleanerRule.FormatBytes(totalBytes)}) temizlenecek.\n\nOnaylıyor musunuz?",
-            "DevCleaner & Gamer Temizlik Onayı",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-
-        if (confirm != MessageBoxResult.Yes) return;
-
-        int deleted = 0;
-        long freed = 0;
-        foreach (var item in selected)
-        {
-            try
-            {
-                if (Directory.Exists(item.FullPath))
-                {
-                    Directory.Delete(item.FullPath, recursive: true);
-                    deleted++;
-                    freed += item.SizeBytes;
-                    DevArtifactItems.Remove(item);
-                }
-            }
-            catch
-            {
-                // Ignore locked files inside active shader cache
-            }
-        }
-
-        LastFreedBytes += freed;
-        LastDeletedFiles += deleted;
-        RefreshSystemMetrics();
-        StatusMessage = $"{deleted} geliştirici/oyun klasörü silindi ({CleanerRule.FormatBytes(freed)} alan açıldı).";
-        AddLog($"[DEVCLEANER] {deleted} klasör temizlendi ({CleanerRule.FormatBytes(freed)}).");
-    }
-
-    // ==================== 9. FILE SHREDDER & FREE SPACE WIPER ====================
-
-    private void AddFilesToShredQueue()
-    {
-        var dlg = new Microsoft.Win32.OpenFileDialog
-        {
-            Title = "Kurtarılamaz Şekilde İmha Edilecek (Öğütülecek) Dosyaları Seçin",
-            Multiselect = true
-        };
-        if (dlg.ShowDialog() == true)
-        {
-            foreach (string file in dlg.FileNames)
-            {
-                if (ShredQueueItems.Any(x => x.FullPath.Equals(file, StringComparison.OrdinalIgnoreCase)))
-                    continue;
-
-                var fi = new FileInfo(file);
-                ShredQueueItems.Add(new ShredTargetItem
-                {
-                    FullPath = file,
-                    Name = fi.Name,
-                    SizeBytes = fi.Exists ? fi.Length : 0,
-                    IsDirectory = false
-                });
-            }
-        }
-    }
-
-    private void AddFolderToShredQueue()
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "Kurtarılamaz Şekilde İmha Edilecek Klasörü Seçin"
-        };
-        if (dlg.ShowDialog() == true && Directory.Exists(dlg.FolderName))
-        {
-            var di = new DirectoryInfo(dlg.FolderName);
-            long size = di.GetFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
-            ShredQueueItems.Add(new ShredTargetItem
-            {
-                FullPath = di.FullName,
-                Name = $"[KLASÖR] {di.Name}",
-                SizeBytes = size,
-                IsDirectory = true
-            });
-        }
-    }
-
-    private async Task RunFileShredderAsync()
-    {
-        if (ShredQueueItems.Count == 0) return;
-
-        var confirm = MessageBox.Show(
-            $"DİKKAT! Listede bulunan {ShredQueueItems.Count} öğe ({ShredPassesCount} geçişli DoD 5220.22-M algoritmasıyla) üzerine yazılarak KALICI OLARAK İMHA EDİLECEKTİR!\n\n" +
-            "Bu işlem sonrasında dosyalar hiçbir veri kurtarma yazılımıyla geri getirilemez.\n\nDevam etmek istiyor musunuz?",
-            "Güvenli Dosya Öğütücü - Kalıcı İmha Onayı",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Stop);
-
-        if (confirm != MessageBoxResult.Yes) return;
-
-        IsBusy = true;
-        ProgressPercent = 0;
-        _cts = new CancellationTokenSource();
-
-        var progress = new Progress<(int Percent, string CurrentItem)>(rep =>
-        {
-            ProgressPercent = rep.Percent;
-            CurrentOperationDetail = $"Öğütülüyor ({ShredPassesCount} geçiş): {rep.CurrentItem}";
-        });
-
-        try
-        {
-            var (shreddedCount, bytes) = await FileShredderAndWiperService.ShredItemsAsync(
-                ShredQueueItems,
-                ShredPassesCount,
-                progress,
-                _cts.Token);
-
-            LastFreedBytes += bytes;
-            LastDeletedFiles += shreddedCount;
-            StatusMessage = $"{shreddedCount} dosya kurtarılamaz şekilde imha edildi ({CleanerRule.FormatBytes(bytes)}).";
-            AddLog($"[DOSYA ÖĞÜTÜCÜ] {shreddedCount} dosya ({ShredPassesCount} geçişli DoD) imha edildi.");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task RunFreeSpaceWiperAsync()
-    {
-        var confirm = MessageBox.Show(
-            $"Boş disk sektörlerindeki eski silinmiş dosya kalıntılarını temizlemek için {FreeSpaceWipeMb} MB kriptografik sıfırlama işlemi uygulanacak.\n\nBaşlatılsın mı?",
-            "Boş Disk Alanı Sıfırlayıcı (Free Space Wiper)",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-
-        if (confirm != MessageBoxResult.Yes) return;
-
-        IsBusy = true;
-        ProgressPercent = 0;
-        _cts = new CancellationTokenSource();
-
-        var progress = new Progress<(int Percent, string Status)>(rep =>
-        {
-            ProgressPercent = rep.Percent;
-            CurrentOperationDetail = rep.Status;
-        });
-
-        try
-        {
-            long wiped = await FileShredderAndWiperService.WipeDriveFreeSpaceSampleAsync(
-                "C:\\",
-                FreeSpaceWipeMb,
-                progress,
-                _cts.Token);
-
-            StatusMessage = $"Boş alan sıfırlama tamamlandı ({CleanerRule.FormatBytes(wiped)} sektör temizlendi).";
-            AddLog($"[BOŞ ALAN SİLİCİ] {CleanerRule.FormatBytes(wiped)} boş disk alanı kriptografik olarak sıfırlandı.");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    // ==================== 10. PRIVACY SHIELD ====================
-
-    private async Task RunScanPrivacyTracesAsync()
-    {
-        IsBusy = true;
-        StatusMessage = "Windows gizlilik ve etkinlik izleri (RunMRU, JumpList, Timeline, Pano) taranıyor...";
-        try
-        {
-            await PrivacyAndNetworkShieldService.ScanPrivacyTracesAsync(PrivacyTraces);
-            int totalTraces = PrivacyTraces.Sum(x => x.DetectedCount);
-            StatusMessage = $"Gizlilik Taraması: {totalTraces} etkinlik ve geçmiş izi bulundu.";
-            AddLog($"[GİZLİLİK KALKANI] {totalTraces} Windows kullanım izi tespit edildi.");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task RunCleanPrivacyTracesAsync()
-    {
-        IsBusy = true;
-        try
-        {
-            var (cleaned, bytes) = await PrivacyAndNetworkShieldService.CleanPrivacyTracesAsync(PrivacyTraces);
-            LastFreedBytes += bytes;
-            LastDeletedFiles += cleaned;
-            StatusMessage = $"Gizlilik Kalkanı: {cleaned} etkinlik geçmişi/iz başarıyla temizlendi.";
-            AddLog($"[GİZLİLİK KALKANI] {cleaned} Windows izi ve pano geçmişi temizlendi.");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    // ==================== 11. NETWORK CONNECTIONS & HOSTS ====================
-
-    private async Task LoadActiveConnectionsAsync()
-    {
-        IsBusy = true;
-        ActiveConnections.Clear();
-        StatusMessage = "Canlı TCP/UDP ağ bağlantıları ve portlar listeleniyor...";
-        try
-        {
-            var conns = await PrivacyAndNetworkShieldService.GetActiveNetworkConnectionsAsync();
-            foreach (var c in conns)
-                ActiveConnections.Add(c);
-            StatusMessage = $"{ActiveConnections.Count} aktif TCP/UDP bağlantısı listelendi.";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private void LoadHostsEntries()
-    {
-        HostsEntries.Clear();
-        foreach (var h in PrivacyAndNetworkShieldService.LoadHostsFileEntries())
-        {
-            h.MarkSaved();
-            HostsEntries.Add(h);
-        }
-    }
-
-    private void AddNewHostEntry()
-    {
-        if (string.IsNullOrWhiteSpace(NewHostDomain)) return;
-        if (PrivacyAndNetworkShieldService.AddHostsEntry(NewHostIp.Trim(), NewHostDomain.Trim(), NewHostComment.Trim(), out string msg))
-        {
-            NewHostDomain = string.Empty;
-            LoadHostsEntries();
-            StatusMessage = msg;
-            AddLog($"[HOSTS] {msg}");
-        }
-        else
-        {
-            MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-    }
-
-    private void SaveHostEntry(HostsEntryItem? item)
-    {
-        if (item is null) return;
-        if (PrivacyAndNetworkShieldService.UpdateHostsEntry(item, out string msg))
-        {
-            StatusMessage = msg;
-            AddLog($"[HOSTS] {msg}");
-        }
-        else
-            MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
-    }
-
-    private void DeleteHostEntry(HostsEntryItem? item)
-    {
-        if (item is null ||
-            MessageBox.Show($"'{item.Hostname}' hosts kaydı silinecek. Devam edilsin mi?",
-                "Hosts Kaydı Sil", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
-            return;
-
-        if (PrivacyAndNetworkShieldService.RemoveHostsEntry(item, out string msg))
-        {
-            HostsEntries.Remove(item);
-            StatusMessage = msg;
-            AddLog($"[HOSTS] {msg}");
-        }
-        else
-            MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
-    }
-
-    private void RestoreLatestHostsBackup()
-    {
-        string? backupPath = PrivacyAndNetworkShieldService.GetLatestHostsBackup();
-        if (backupPath is null) return;
-
-        if (MessageBox.Show(
-                $"Son hosts yedeği geri yüklenecek:\n\n{backupPath}\n\nDevam edilsin mi?",
-                "Hosts Yedeğini Geri Yükle",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning) != MessageBoxResult.Yes)
-            return;
-
-        var result = PrivacyAndNetworkShieldService.RestoreHostsBackup(backupPath);
-        StatusMessage = result.Message;
-        AddLog($"[GERİ YÜKLEME] {result.Message}");
-        if (result.Success)
-            LoadHostsEntries();
-        else
-            MessageBox.Show(result.Message, "Hosts Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
-    }
 
     // ==================== 12. TASK SCHEDULER & FOLDER SPACE TREE ====================
 
@@ -5297,6 +4734,13 @@ public partial class MainViewModel : INotifyPropertyChanged
             case "CMD:ExportSettings":
                 ExecuteExportSettingsConfig();
                 break;
+            case "CMD:ExportSupportBundle":
+                ExecuteExportSupportBundle();
+                break;
+            case "CMD:OrganizeDownloads":
+                ActiveSection = "Downloads";
+                SelectOrganizerPreset("Downloads");
+                break;
             default:
                 ActiveSection = item.SectionKey;
                 break;
@@ -5471,90 +4915,110 @@ public partial class MainViewModel : INotifyPropertyChanged
 
     private void PopulateModuleCatalog()
     {
+        bool en = LocalizationService.NormalizeLanguageCode(_selectedLanguage) == "en-US";
         AllModuleCatalog.Clear();
-        void AddEntry(string key, string title, string glyph, string cat, string keywords)
+        void AddEntry(string key, string trTitle, string enTitle, string glyph, string trCat, string enCat, string keywords)
             => AllModuleCatalog.Add(new NavShortcutItem
             {
                 SectionKey = key,
-                Title = title,
+                Title = en ? enTitle : trTitle,
                 IconGlyph = glyph,
-                CategoryName = cat,
+                CategoryName = en ? enCat : trCat,
                 Keywords = keywords
             });
 
+        const string TrCmd = "Hızlı Komut";
+        const string EnCmd = "Quick Action";
+        const string TrClean = "Temizlik & Disk";
+        const string EnClean = "Clean & Disk";
+        const string TrPerf = "Performans & Donanım";
+        const string EnPerf = "Performance & Hardware";
+        const string TrSys = "Sistem & Windows 11";
+        const string EnSys = "System & Windows 11";
+        const string TrNet = "Ağ & Firewall";
+        const string EnNet = "Network & Firewall";
+        const string TrSec = "Güvenlik & Gizlilik";
+        const string EnSec = "Security & Privacy";
+        const string TrDev = "Geliştirici & AI";
+        const string EnDev = "Developer & AI";
+        const string TrSet = "Ayarlar & Tema";
+        const string EnSet = "Settings & Theme";
+
         // Quick Actions (Ctrl+K)
-        AddEntry("CMD:HealthCheck", "⚡ Hızlı Eylem: Tek Tıkla PC Sağlık Kontrolü Başlat", "\uE95E", "Hızlı Komut", "saglik skor health check tarama hizlandir");
-        AddEntry("CMD:Analyze", "🔍 Hızlı Eylem: Akıllı Gereksiz Dosya Analizini Başlat", "\uE721", "Hızlı Komut", "analiz tara temizlik cop");
-        AddEntry("CMD:OptimizeRam", "🧠 Hızlı Eylem: RAM Belleğini Şimdi Boşalt", "\uE945", "Hızlı Komut", "ram bellek bosalt memory boost");
-        AddEntry("CMD:FlushDns", "🌐 Hızlı Eylem: DNS Önbelleğini Temizle (flushdns)", "\uE701", "Hızlı Komut", "dns flush ip yenile");
-        AddEntry("CMD:CheckUpdate", "🔄 Hızlı Eylem: Yeni Sürüm Kontrol Et (GitHub Releases)", "\uE895", "Hızlı Komut", "guncelleme update version release github");
-        AddEntry("CMD:ProfileSafe", "🛡️ Profil Uygula: Güvenli Günlük Temizlik Kural Seti", "\uEA18", "Hızlı Komut", "profil safe gunluk temizlik kural");
-        AddEntry("CMD:ProfileDev", "🛠️ Profil Uygula: Geliştirici Derin (SDK / Cache) Kural Seti", "\uE943", "Hızlı Komut", "profil developer gelistirici sdk cache nuget npm");
-        AddEntry("CMD:ProfileGamer", "🎮 Profil Uygula: Oyuncu Boost (GPU / Shader / Temp)", "\uE7FC", "Hızlı Komut", "profil gamer oyuncu shader directx steam temp");
-        AddEntry("CMD:ProfilePrivacy", "🕵️ Profil Uygula: Maksimum Gizlilik (Tarayıcı / Telemetri)", "\uE72E", "Hızlı Komut", "profil gizlilik privacy cookie gecmis history");
-        AddEntry("CMD:ExportSettings", "📤 Hızlı Eylem: Ayar Profilini JSON Olarak Dışa Aktar", "\uE74E", "Hızlı Komut", "ayar yedek export import json profil");
+        AddEntry("CMD:HealthCheck", "⚡ Hızlı Eylem: Tek Tıkla PC Sağlık Kontrolü Başlat", "⚡ Quick Action: Run 1-Click PC Health Check", "\uE95E", TrCmd, EnCmd, "saglik skor health check tarama hizlandir");
+        AddEntry("CMD:Analyze", "🔍 Hızlı Eylem: Akıllı Gereksiz Dosya Analizini Başlat", "🔍 Quick Action: Start Smart Junk Analysis", "\uE721", TrCmd, EnCmd, "analiz tara temizlik cop analyze scan junk");
+        AddEntry("CMD:OptimizeRam", "🧠 Hızlı Eylem: RAM Belleğini Şimdi Boşalt", "🧠 Quick Action: Optimize RAM Now", "\uE945", TrCmd, EnCmd, "ram bellek bosalt memory boost optimize");
+        AddEntry("CMD:FlushDns", "🌐 Hızlı Eylem: DNS Önbelleğini Temizle (flushdns)", "🌐 Quick Action: Flush DNS Cache (flushdns)", "\uE701", TrCmd, EnCmd, "dns flush ip yenile");
+        AddEntry("CMD:CheckUpdate", "🔄 Hızlı Eylem: Yeni Sürüm Kontrol Et (GitHub Releases)", "🔄 Quick Action: Check for Updates (GitHub Releases)", "\uE895", TrCmd, EnCmd, "guncelleme update version release github");
+        AddEntry("CMD:ProfileSafe", "🛡️ Profil Uygula: Güvenli Günlük Temizlik Kural Seti", "🛡️ Apply Profile: Safe Daily Rule Preset", "\uEA18", TrCmd, EnCmd, "profil safe gunluk daily temizlik kural");
+        AddEntry("CMD:ProfileDev", "🛠️ Profil Uygula: Geliştirici Derin (SDK / Cache) Kural Seti", "🛠️ Apply Profile: Developer Deep Rule Preset", "\uE943", TrCmd, EnCmd, "profil developer gelistirici sdk cache nuget npm");
+        AddEntry("CMD:ProfileGamer", "🎮 Profil Uygula: Oyuncu Boost (GPU / Shader / Temp)", "🎮 Apply Profile: Gamer Boost Rule Preset", "\uE7FC", TrCmd, EnCmd, "profil gamer oyuncu shader directx steam temp");
+        AddEntry("CMD:ProfilePrivacy", "🕵️ Profil Uygula: Maksimum Gizlilik (Tarayıcı / Telemetri)", "🕵️ Apply Profile: Max Privacy Rule Preset", "\uE72E", TrCmd, EnCmd, "profil gizlilik privacy cookie gecmis history");
+        AddEntry("CMD:ExportSettings", "📤 Hızlı Eylem: Ayar Profilini JSON Olarak Dışa Aktar", "📤 Quick Action: Export Settings Profile (JSON)", "\uE74E", TrCmd, EnCmd, "ayar yedek export import json profil settings");
+        AddEntry("CMD:ExportSupportBundle", "📦 Hızlı Eylem: Teşhis Destek Paketi (.zip) Oluştur", "📦 Quick Action: Export Diagnostic Support Bundle (.zip)", "\uE7B8", TrCmd, EnCmd, "destek teshis zip support bundle diagnostic report");
+        AddEntry("CMD:OrganizeDownloads", "🗂️ Hızlı Eylem: İndirilenler Klasörünü Düzenle (Önizleme)", "🗂️ Quick Action: Organize Downloads Folder (Preview)", "\uE8F4", TrCmd, EnCmd, "indirilenler downloads duzenle organize sort undo");
 
         // All 57 Modules
-        AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "\uE80F", "Temizlik & Bakış", "dashboard ana sayfa saglik skoru gecmis lifetime");
-        AddEntry("DiskTreemap", "🗺️ Görsel Disk Haritası (Treemap + Danışman)", "\uE8A9", "Temizlik & Disk", "treemap harita disk gorsel boyut klasor danisman sil");
-        AddEntry("DeepSpaceRecovery", "💾 Dev Windows Sistem Alanı Kurtarıcısı (15–40 GB)", "\uEDA2", "Temizlik & Disk", "hiberfil winsxs compactos nvidia amd installer derin sistem alani");
-        AddEntry("SimilarPhotos", "🖼️ Benzer / Tekrarlayan Fotoğraf Bulucu (dHash)", "\uEB9F", "Temizlik & Disk", "benzer fotograf similar duplicate dhash resim galeri");
-        AddEntry("LiveMonitor", "Canlı CPU, RAM & Ağ Grafikleri", "\uE9D9", "Performans & Donanım", "canli grafik cpu ram ag hizi monitor sparkline");
-        AddEntry("All", "Akıllı Temizlik (Tümü)", "\uE770", "Temizlik & Disk", "temizlik cop temp gecici");
-        AddEntry("System", "Windows & Sistem Temizliği", "\uE7F8", "Temizlik & Disk", "windows temp log recycle bin");
-        AddEntry("Browsers", "Web Tarayıcıları Temizliği", "\uE774", "Temizlik & Disk", "chrome edge firefox brave cache cookie gemini nano optguideondevicemodel weights.bin");
-        AddEntry("Apps", "Uygulama & Geliştirici Önbelleği", "\uE943", "Temizlik & Disk", "app cache discord steam vscode");
-        AddEntry("DiskAnalyzer", "Büyük & Kopya Dosya Bulucu", "\uEDA2", "Temizlik & Disk", "buyuk dosya duplicate sha256 kopya");
-        AddEntry("Downloads", "İndirilenler & Boş Klasör Temizleyici", "\uE896", "Temizlik & Disk", "downloads kurulum setup iso bos klasor");
-        AddEntry("Bloatware", "Bloatware (UWP Appx) Kaldırıcı", "\uE74D", "Temizlik & Disk", "bloatware appx uwp xbox windows 11");
-        AddEntry("Shredder", "Dosya Öğütücü (DoD 5220.22-M)", "\uE74D", "Temizlik & Disk", "shredder kalici silme bos alan");
-        AddEntry("Startup", "Başlangıç (Startup) Yöneticisi", "\uE7E8", "Performans & Donanım", "startup acilis baslangic");
-        AddEntry("BootPerformance", "Açılış Süresi (Boot Time) Analizi", "\uE916", "Performans & Donanım", "boot acilis suresi darbogaz");
-        AddEntry("Booster", "RAM & Ağ Hızlandırıcı", "\uE945", "Performans & Donanım", "ram booster hizlandirici dns");
-        AddEntry("ProcessPriority", "Canlı CPU Önceliği & Eco Mod", "\uEC4A", "Performans & Donanım", "cpu oncelik priority eco game boost");
-        AddEntry("DiskBench", "SSD / NVMe Disk Hız Testi", "\uEC4A", "Performans & Donanım", "ssd nvme benchmark okuma yazma hiz");
-        AddEntry("SmartPower", "Disk Sağlığı (S.M.A.R.T.) & Güç Planı", "\uE945", "Performans & Donanım", "smart disk saglik pil guc oyun modu");
-        AddEntry("HardwareSpecs", "Donanım, BIOS & OEM Lisans", "\uE950", "Performans & Donanım", "cpu gpu ram bios anakart lisans product key");
-        AddEntry("MonitorGpu", "Monitör (Hz) & GPU Doktoru", "\uE7F4", "Performans & Donanım", "monitor edid hz yenileme gpu reset");
-        AddEntry("WingetUpdater", "Winget Program Güncelleyici", "\uE896", "Sistem & Windows 11", "winget guncelle update yazilim");
-        AddEntry("Win11Tweaker", "Windows 11 İnce Ayar (Tweaker)", "\uE90F", "Sistem & Windows 11", "win11 sag tik explorer bing saniye gemini nano optguideondevicemodel weights.bin chrome ai");
-        AddEntry("Registry", "Kayıt Defteri (Registry) Temizleyici", "\uE90F", "Sistem & Windows 11", "registry regedit yedek");
-        AddEntry("Uninstaller", "Program Kaldırıcı & Yetim Kalıntılar", "\uE7B8", "Sistem & Windows 11", "uninstall program kaldir appdata");
-        AddEntry("Services", "Windows Servisleri Yöneticisi", "\uE912", "Sistem & Windows 11", "services hizmetler telemetri");
-        AddEntry("RepairCenter", "Sistem Onarım Merkezi (SFC/DISM)", "\uE90F", "Sistem & Windows 11", "sfc dism onarim windows.old fontcache");
-        AddEntry("RestoreGodMode", "Geri Yükleme Noktası & God Mode", "\uE81C", "Sistem & Windows 11", "restore point tanri modu god mode");
-        AddEntry("ContextMenu", "Sağ Tık Bağlam Menüsü (Shell)", "\uE700", "Sistem & Windows 11", "context menu shell sag tik");
-        AddEntry("FileAssoc", "Dosya Uzantısı Doktoru (UserChoice)", "\uE8A5", "Sistem & Windows 11", "uzanti file association progid");
-        AddEntry("FontManager", "Font (Yazı Tipi) Yöneticisi", "\uE8D2", "Sistem & Windows 11", "font yazi tipi ttf otf");
-        AddEntry("LanScanner", "Yerel Ağ (LAN / Wi-Fi) Radarı", "\uE701", "Ağ & Firewall", "lan arp ping modem wifi cihaz");
-        AddEntry("WifiDns", "Wi-Fi Şifreleri & DNS Ping Testi", "\uE701", "Ağ & Firewall", "wifi sifre password dns ping");
-        AddEntry("Network", "Canlı Ağ Bağlantıları & Hosts", "\uE968", "Ağ & Firewall", "tcp udp netstat hosts");
-        AddEntry("NetworkAdapterDoctor", "Ağ Adaptörü, MAC & Winsock Doktoru", "\uE839", "Ağ & Firewall", "mac ip gateway dhcp winsock arp");
-        AddEntry("FirewallBlocker", "Firewall & Uygulama İnternet Kesici", "\uE72E", "Ağ & Firewall", "firewall guvenlik duvari engel");
-        AddEntry("PortHunter", "Geliştirici Port Avcısı (Port Killer)", "\uE968", "Ağ & Firewall", "port 3000 8080 5000 pid kill");
-        AddEntry("DefenderAuditor", "Windows Defender & İstisna Denetçisi", "\uE83D", "Güvenlik & Gizlilik", "defender antivirus tarama exclusion");
-        AddEntry("ExifScrubber", "📸 Fotoğraf EXIF / GPS Gizlilik Temizleyici", "\uE722", "Güvenlik & Gizlilik", "exif gps fotograf resim gizlilik metadata scrubber optimize");
-        AddEntry("ProcessSecurity", "Süreç & Dijital İmza Denetçisi", "\uEA18", "Güvenlik & Gizlilik", "imza x509 sha256 unsigned process");
-        AddEntry("CryptoVault", "AES-256 Dosya Kasası & Çoklu Hash", "\uE8D7", "Güvenlik & Gizlilik", "aes256 sifrele fcvault md5 sha256 sha512");
-        AddEntry("Privacy", "Windows Gizlilik & Telemetri Kalkanı", "\uE72E", "Güvenlik & Gizlilik", "gizlilik mru jumplist telemetri");
-        AddEntry("ClipboardShield", "Akıllı Pano & Takip URL Temizleyici", "\uE77F", "Güvenlik & Gizlilik", "clipboard pano utm api key iban");
-        AddEntry("BitLocker", "BitLocker & ISO/VHD Sanal Disk", "\uEDA2", "Güvenlik & Gizlilik", "bitlocker iso vhd vhdx mount");
-        AddEntry("CredentialSsh", "Kimlik Kasası (cmdkey) & SSH", "\uE8D7", "Güvenlik & Gizlilik", "ssh credential cmdkey git key");
-        AddEntry("UsbForensics", "USB Depolama Geçmişi (USBSTOR)", "\uE88E", "Güvenlik & Gizlilik", "usb usbstor adli analiz");
-        AddEntry("CrashLogs", "Mavi Ekran (BSOD) & Olay Günlüğü", "\uE7BA", "Güvenlik & Gizlilik", "bsod dmp eventlog cokme");
-        AddEntry("AiModelCleaner", "Yapay Zeka (AI / LLM) Model Avcısı", "\uE99A", "Geliştirici & AI", "ollama huggingface lmstudio gguf safetensors ai llm chrome gemini nano optguideondevicemodel weights.bin claude rootfs vhdx vm_bundles");
-        AddEntry("DockerWsl", "WSL2 & Docker Yöneticisi", "\uE756", "Geliştirici & AI", "wsl wsl2 docker container prune");
-        AddEntry("GitRepoCompressor", "Git Depo (.git) Sıkıştırıcı (git gc)", "\uE8B7", "Geliştirici & AI", "git gc branch repo");
-        AddEntry("DevCleaner", "VS Debug/Retail & DevCleaner", "\uE943", "Geliştirici & AI", "visual studio debug release obj node_modules");
-        AddEntry("PackageCaches", "NuGet / NPM & WSL2 / Claude VHDX Yöneticisi", "\uE7B8", "Geliştirici & AI", "nuget npm pip cargo gradle maven vhdx claude rootfs compact sikistir");
-        AddEntry("SqliteOptimizer", "Tarayıcı & IDE SQLite Sıkıştırıcı", "\uEE94", "Geliştirici & AI", "sqlite veritabani wal chrome vscode cursor");
-        AddEntry("BatchRenamer", "Toplu Dosya Adlandırıcı (PowerRename)", "\uE8AC", "Geliştirici & AI", "rename toplu adlandirma prefix suffix");
-        AddEntry("Unlocker", "Kilitli Dosya Çözücü (File Unlocker)", "\uE785", "Geliştirici & AI", "kilitli dosya unlocker restart manager");
-        AddEntry("PathDoctor", "PATH Doktoru & Kırık Kısayollar", "\uE950", "Geliştirici & AI", "path ortam degiskeni lnk kisayol");
-        AddEntry("TasksAndTree", "Zamanlanmış Görevler & Klasör Ağacı", "\uE823", "Geliştirici & AI", "task scheduler klasor boyutu");
-        AddEntry("BrowserExtensions", "Tarayıcı Eklentileri Denetçisi", "\uEA86", "Geliştirici & AI", "extension eklenti chrome edge");
-        AddEntry("DriversUpdates", "KB Güncellemeler & Sürücü Deposu", "\uE777", "Geliştirici & AI", "hotfix kb driverstore pnputil");
-        AddEntry("Settings", "Tema, Dil, Güncelleme, Beyaz Liste & Raporlar", "\uE713", "Ayarlar & Tema", "tema theme dil language tr en guncelle update tray sistem tepsisi whitelist ayarlar rapor");
+        AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "Overview (Dashboard) & Health Score", "\uE80F", TrClean, EnClean, "dashboard ana sayfa overview saglik skoru gecmis lifetime forecast");
+        AddEntry("DiskTreemap", "🗺️ Görsel Disk Haritası (Treemap + Danışman)", "🗺️ Visual Disk Treemap & Smart Advisor", "\uE8A9", TrClean, EnClean, "treemap harita disk gorsel boyut klasor danisman snapshot diff");
+        AddEntry("DeepSpaceRecovery", "💾 Dev Windows Sistem Alanı Kurtarıcısı (15–40 GB)", "💾 Deep Windows Space Recovery (15–40 GB)", "\uEDA2", TrClean, EnClean, "hiberfil winsxs compactos nvidia amd installer deep space");
+        AddEntry("SimilarPhotos", "🖼️ Benzer / Tekrarlayan Fotoğraf Bulucu (dHash)", "🖼️ Similar Photo Finder (Perceptual dHash)", "\uEB9F", TrClean, EnClean, "benzer fotograf similar duplicate dhash resim galeri");
+        AddEntry("LiveMonitor", "Canlı CPU, RAM & Ağ Grafikleri", "Live CPU, RAM & Network Graphs", "\uE9D9", TrPerf, EnPerf, "canli live grafik cpu ram ag hizi monitor sparkline");
+        AddEntry("All", "Akıllı Temizlik (Tümü)", "Smart Cleaner (All Rules)", "\uE770", TrClean, EnClean, "temizlik cop temp gecici smart clean");
+        AddEntry("System", "Windows & Sistem Temizliği", "Windows & System Cleanup", "\uE7F8", TrClean, EnClean, "windows temp log recycle bin system");
+        AddEntry("Browsers", "Web Tarayıcıları Temizliği", "Web Browsers & AI Cache Cleanup", "\uE774", TrClean, EnClean, "chrome edge firefox brave cache cookie gemini nano optguideondevicemodel weights.bin");
+        AddEntry("Apps", "Uygulama & Geliştirici Önbelleği", "Apps & Developer Caches", "\uE943", TrClean, EnClean, "app cache discord steam vscode");
+        AddEntry("DiskAnalyzer", "Büyük & Kopya Dosya Bulucu", "Large & Duplicate File Finder (Hardlink)", "\uEDA2", TrClean, EnClean, "buyuk large dosya duplicate sha256 kopya hardlink");
+        AddEntry("Downloads", "İndirilenler, Boş Klasör & Düzenleyici", "Downloads, Empty Folders & Organizer", "\uE896", TrClean, EnClean, "downloads kurulum setup iso bos klasor organize sort undo");
+        AddEntry("Bloatware", "Bloatware (UWP Appx) Kaldırıcı", "Appx Bloatware Remover", "\uE74D", TrClean, EnClean, "bloatware appx uwp xbox windows 11");
+        AddEntry("Shredder", "Dosya Öğütücü (DoD 5220.22-M)", "File Shredder (DoD 5220.22-M)", "\uE74D", TrClean, EnClean, "shredder kalici silme bos alan wipe");
+        AddEntry("Startup", "Başlangıç (Startup) Yöneticisi", "Startup Applications Manager", "\uE7E8", TrPerf, EnPerf, "startup acilis baslangic");
+        AddEntry("BootPerformance", "Açılış Süresi (Boot Time) Analizi", "Boot Time Bottleneck Analyzer", "\uE916", TrPerf, EnPerf, "boot acilis suresi darbogaz startup");
+        AddEntry("Booster", "RAM & Ağ Hızlandırıcı", "RAM & Network Booster", "\uE945", TrPerf, EnPerf, "ram booster hizlandirici dns");
+        AddEntry("ProcessPriority", "Canlı CPU Önceliği & Eco Mod", "Live CPU Priority & EcoQoS", "\uEC4A", TrPerf, EnPerf, "cpu oncelik priority eco game boost");
+        AddEntry("DiskBench", "SSD / NVMe Disk Hız Testi", "SSD / NVMe Read & Write Benchmark", "\uEC4A", TrPerf, EnPerf, "ssd nvme benchmark okuma yazma hiz");
+        AddEntry("SmartPower", "Disk Sağlığı (S.M.A.R.T.) & Güç Planı", "Disk S.M.A.R.T., Battery & Power Plan", "\uE945", TrPerf, EnPerf, "smart disk saglik pil guc oyun modu battery power");
+        AddEntry("HardwareSpecs", "Donanım, BIOS & OEM Lisans", "Hardware Inventory, BIOS & OEM Key", "\uE950", TrPerf, EnPerf, "cpu gpu ram bios anakart lisans product key");
+        AddEntry("MonitorGpu", "Monitör (Hz) & GPU Doktoru", "Monitor EDID (Hz) & GPU Reset Doctor", "\uE7F4", TrPerf, EnPerf, "monitor edid hz yenileme gpu reset");
+        AddEntry("WingetUpdater", "Winget Program Güncelleyici", "Winget Bulk App Updater", "\uE896", TrSys, EnSys, "winget guncelle update yazilim apps");
+        AddEntry("Win11Tweaker", "Windows 11 İnce Ayar (Tweaker)", "Windows 11 Ultimate Tweaker", "\uE90F", TrSys, EnSys, "win11 sag tik explorer bing gemini nano chrome ai tweak");
+        AddEntry("Registry", "Kayıt Defteri (Registry) Temizleyici", "Registry Scanner & Backup", "\uE90F", TrSys, EnSys, "registry regedit yedek backup");
+        AddEntry("Uninstaller", "Program Kaldırıcı & Yetim Kalıntılar", "Program Uninstaller & Orphan Cleaner", "\uE7B8", TrSys, EnSys, "uninstall program kaldir appdata orphan");
+        AddEntry("Services", "Windows Servisleri Yöneticisi", "Windows Services Optimizer", "\uE912", TrSys, EnSys, "services hizmetler telemetri");
+        AddEntry("RepairCenter", "Sistem Onarım Merkezi (SFC/DISM)", "System Repair Center (SFC / DISM)", "\uE90F", TrSys, EnSys, "sfc dism onarim repair windows.old fontcache");
+        AddEntry("RestoreGodMode", "Geri Yükleme Noktası & God Mode", "Restore Points & Windows God Mode", "\uE81C", TrSys, EnSys, "restore point tanri modu god mode");
+        AddEntry("ContextMenu", "Sağ Tık Bağlam Menüsü (Shell)", "Shell Context Menu Manager", "\uE700", TrSys, EnSys, "context menu shell sag tik");
+        AddEntry("FileAssoc", "Dosya Uzantısı Doktoru (UserChoice)", "File Association Doctor (UserChoice)", "\uE8A5", TrSys, EnSys, "uzanti file association progid default");
+        AddEntry("FontManager", "Font (Yazı Tipi) Yöneticisi", "System & User Font Manager", "\uE8D2", TrSys, EnSys, "font yazi tipi ttf otf");
+        AddEntry("LanScanner", "Yerel Ağ (LAN / Wi-Fi) Radarı", "Local Network (LAN / Wi-Fi) Radar", "\uE701", TrNet, EnNet, "lan arp ping modem wifi cihaz device");
+        AddEntry("WifiDns", "Wi-Fi Şifreleri & DNS Ping Testi", "Saved Wi-Fi Passwords & DNS Ping", "\uE701", TrNet, EnNet, "wifi sifre password dns ping");
+        AddEntry("Network", "Canlı Ağ Bağlantıları & Hosts", "Live TCP/UDP Connections & Hosts", "\uE968", TrNet, EnNet, "tcp udp netstat hosts");
+        AddEntry("NetworkAdapterDoctor", "Ağ Adaptörü, MAC & Winsock Doktoru", "Network Adapter, MAC & Winsock Doctor", "\uE839", TrNet, EnNet, "mac ip gateway dhcp winsock arp");
+        AddEntry("FirewallBlocker", "Firewall & Uygulama İnternet Kesici", "Windows Firewall & 1-Click Blocker", "\uE72E", TrNet, EnNet, "firewall guvenlik duvari engel block");
+        AddEntry("PortHunter", "Geliştirici Port Avcısı (Port Killer)", "Developer Port Hunter (Port Killer)", "\uE968", TrNet, EnNet, "port 3000 8080 5000 pid kill");
+        AddEntry("DefenderAuditor", "Windows Defender & İstisna Denetçisi", "Defender Shield & Exclusions Auditor", "\uE83D", TrSec, EnSec, "defender antivirus tarama exclusion");
+        AddEntry("ExifScrubber", "📸 Fotoğraf EXIF / GPS Gizlilik Temizleyici", "📸 Photo EXIF / GPS Privacy Scrubber", "\uE722", TrSec, EnSec, "exif gps fotograf resim photo gizlilik metadata scrubber");
+        AddEntry("ProcessSecurity", "Süreç & Dijital İmza Denetçisi", "Process & X.509 Signature Auditor", "\uEA18", TrSec, EnSec, "imza x509 sha256 unsigned process signature");
+        AddEntry("CryptoVault", "AES-256 Dosya Kasası & Çoklu Hash", "AES-256 Vault (.fcvault) & Multi-Hash", "\uE8D7", TrSec, EnSec, "aes256 sifrele encrypt fcvault md5 sha256 sha512");
+        AddEntry("Privacy", "Windows Gizlilik & Telemetri Kalkanı", "Windows Privacy & Telemetry Shield", "\uE72E", TrSec, EnSec, "gizlilik privacy mru jumplist telemetri");
+        AddEntry("ClipboardShield", "Akıllı Pano & Takip URL Temizleyici", "Smart Clipboard Privacy Shield", "\uE77F", TrSec, EnSec, "clipboard pano utm api key iban");
+        AddEntry("BitLocker", "BitLocker & ISO/VHD Sanal Disk", "BitLocker & Mounted ISO/VHD", "\uEDA2", TrSec, EnSec, "bitlocker iso vhd vhdx mount");
+        AddEntry("CredentialSsh", "Kimlik Kasası (cmdkey) & SSH", "Credential Vault (cmdkey) & SSH", "\uE8D7", TrSec, EnSec, "ssh credential cmdkey git key");
+        AddEntry("UsbForensics", "USB Depolama Geçmişi (USBSTOR)", "USB Storage Forensics (USBSTOR)", "\uE88E", TrSec, EnSec, "usb usbstor adli analiz history");
+        AddEntry("CrashLogs", "Mavi Ekran (BSOD) & Olay Günlüğü", "BSOD Crash Dumps & Event Logs", "\uE7BA", TrSec, EnSec, "bsod dmp eventlog cokme crash");
+        AddEntry("AiModelCleaner", "Yapay Zeka (AI / LLM) Model Avcısı", "Local AI / LLM Model & Cache Hunter", "\uE99A", TrDev, EnDev, "ollama huggingface lmstudio gguf safetensors ai llm chrome gemini nano optguideondevicemodel weights.bin claude rootfs vhdx");
+        AddEntry("DockerWsl", "WSL2 & Docker Yöneticisi", "WSL2 & Docker Cleaner", "\uE756", TrDev, EnDev, "wsl wsl2 docker container prune");
+        AddEntry("GitRepoCompressor", "Git Depo (.git) Sıkıştırıcı (git gc)", "Git Repository (.git) Compressor (git gc)", "\uE8B7", TrDev, EnDev, "git gc branch repo");
+        AddEntry("DevCleaner", "VS Debug/Retail & DevCleaner", "DevCleaner (VS Debug/Retail, node_modules)", "\uE943", TrDev, EnDev, "visual studio debug release obj node_modules");
+        AddEntry("PackageCaches", "NuGet / NPM & WSL2 / Claude VHDX Yöneticisi", "Package Caches & WSL2 / Claude VHDX", "\uE7B8", TrDev, EnDev, "nuget npm pip cargo gradle maven vhdx claude rootfs compact sikistir");
+        AddEntry("SqliteOptimizer", "Tarayıcı & IDE SQLite Sıkıştırıcı", "Browser & IDE SQLite Vacuum Optimizer", "\uEE94", TrDev, EnDev, "sqlite veritabani wal chrome vscode cursor vacuum");
+        AddEntry("BatchRenamer", "Toplu Dosya Adlandırıcı (PowerRename)", "Batch File Renamer (PowerRename)", "\uE8AC", TrDev, EnDev, "rename toplu adlandirma prefix suffix");
+        AddEntry("Unlocker", "Kilitli Dosya Çözücü (File Unlocker)", "Locked File Unlocker (Restart Manager)", "\uE785", TrDev, EnDev, "kilitli dosya locked unlocker restart manager");
+        AddEntry("PathDoctor", "PATH Doktoru & Kırık Kısayollar", "Environment PATH & Shortcut Doctor", "\uE950", TrDev, EnDev, "path ortam degiskeni lnk kisayol shortcut");
+        AddEntry("TasksAndTree", "Zamanlanmış Görevler & Klasör Ağacı", "Task Scheduler & Folder Size Tree", "\uE823", TrDev, EnDev, "task scheduler klasor boyutu folder size");
+        AddEntry("BrowserExtensions", "Tarayıcı Eklentileri Denetçisi", "Browser Extensions Auditor", "\uEA86", TrDev, EnDev, "extension eklenti chrome edge browser");
+        AddEntry("DriversUpdates", "KB Güncellemeler & Sürücü Deposu", "Windows Updates (KB) & DriverStore", "\uE777", TrDev, EnDev, "hotfix kb driverstore pnputil drivers");
+        AddEntry("Settings", "Tema, Dil, Güncelleme, Beyaz Liste & Raporlar", "Settings, Themes, Language, Portable & Bundles", "\uE713", TrSet, EnSet, "tema theme dil language tr en guncelle update tray portable support zip whitelist ayarlar rapor settings");
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

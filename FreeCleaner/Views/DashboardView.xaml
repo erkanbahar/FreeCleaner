@@ -141,7 +141,7 @@
                 </Button>
             </UniformGrid>
 
-            <!-- Lifetime Recovered Space & 14-Day History Sparkbars -->
+            <!-- Lifetime Recovered Space, 14-Day Sparkbars & Storage Forecast -->
             <Border Grid.Row="2"
                     Background="{DynamicResource BgPrimaryBrush}"
                     BorderBrush="{DynamicResource BorderSubtleBrush}"
@@ -151,9 +151,11 @@
                     Margin="0,0,0,12">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="230"/>
-                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="210"/>
+                        <ColumnDefinition Width="14"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="14"/>
+                        <ColumnDefinition Width="230"/>
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
@@ -213,6 +215,31 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </Grid>
+
+                    <Border Grid.Column="4"
+                            Background="{DynamicResource BgCardBrush}"
+                            BorderBrush="{DynamicResource BorderSubtleBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="11,8"
+                            VerticalAlignment="Center">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Loc_DashForecastTitle}"
+                                       FontSize="10"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding StorageForecastHeadline}"
+                                       FontSize="13.5"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource AccentBlueBrush}"
+                                       Margin="0,4,0,2"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding StorageForecastDetail}"
+                                       FontSize="10.5"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
                 </Grid>
             </Border>
 

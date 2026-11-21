@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -909,6 +910,208 @@ public class NextGenUpgradesTests
         ];
 
         foreach (string key in requiredKeys)
+        {
+            string tr = LocalizationService.Get(key, "tr-TR");
+            string en = LocalizationService.Get(key, "en-US");
+            Assert.False(string.IsNullOrWhiteSpace(tr));
+            Assert.False(string.IsNullOrWhiteSpace(en));
+            Assert.NotEqual(tr, en);
+        }
+    }
+
+    [Fact]
+    public void AppStoragePathsService_TogglesPortableModeAndExportsSanitizedSupportBundleZip()
+    {
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"FreeCleanerPortTest_{Guid.NewGuid():N}");
+        string baseDir = Path.Combine(tempRoot, "app");
+        string stdDir = Path.Combine(tempRoot, "appdata");
+        string outZip = Path.Combine(tempRoot, "support.zip");
+
+        Directory.CreateDirectory(baseDir);
+        Directory.CreateDirectory(stdDir);
+
+        try
+        {
+            File.WriteAllText(Path.Combine(stdDir, "settings.json"), "{\"SelectedTheme\":\"ObsidianNeon\"}");
+
+            Assert.False(AppStoragePathsService.IsPortableModeEnabled(baseDir));
+            var (okOn, _) = AppStoragePathsService.SetPortableMode(true, baseDir, stdDir);
+            Assert.True(okOn);
+            Assert.True(AppStoragePathsService.IsPortableModeEnabled(baseDir));
+            Assert.True(File.Exists(AppStoragePathsService.GetPortableFlagPath(baseDir)));
+            Assert.True(File.Exists(Path.Combine(baseDir, "data", "settings.json")));
+            Assert.EndsWith("data", AppStoragePathsService.GetDataDirectory(baseDir), StringComparison.OrdinalIgnoreCase);
+
+            var metrics = new SystemMetricsSnapshot("Windows 11", "X64", ".NET 10", @"C:\", 500_000_000_000, 200_000_000_000, 60.0, 32_000_000_000, 16_000_000_000, 50.0);
+            var rules = new List<FreeCleaner.Models.CleanerRule>
+            {
+                new() { Id = "tmp", Name = "Windows Temp", Category = "Sistem", Description = "Temp", IconGlyph = "\uE7F8", Group = FreeCleaner.Models.RuleGroup.System }
+            };
+
+            AppStoragePathsService.ExportSupportBundleZip(
+                outZip,
+                metrics,
+                rules,
+                totalFreedBytes: 1024,
+                totalDeletedFiles: 2,
+                logs: ["Auth header: Bearer super_secret_token_123", "Config check token=mySecretKeyValue42"],
+                healthScore: 95,
+                healthBadge: "A+",
+                lifetimeFreedBytes: 4096,
+                recentHistory: null,
+                dataDirOverride: Path.Combine(baseDir, "data"));
+
+            Assert.True(File.Exists(outZip));
+            using (ZipArchive zip = ZipFile.OpenRead(outZip))
+            {
+                Assert.NotNull(zip.GetEntry("diagnostic_report.html"));
+                Assert.NotNull(zip.GetEntry("system_summary.json"));
+                Assert.NotNull(zip.GetEntry("settings.json"));
+
+                ZipArchiveEntry? logEntry = zip.GetEntry("activity_sanitized.log");
+                Assert.NotNull(logEntry);
+                using var reader = new StreamReader(logEntry.Open());
+                string logContent = reader.ReadToEnd();
+                Assert.DoesNotContain("super_secret_token_123", logContent);
+                Assert.DoesNotContain("mySecretKeyValue42", logContent);
+                Assert.Contains("***REDACTED***", logContent);
+            }
+
+            var (okOff, _) = AppStoragePathsService.SetPortableMode(false, baseDir, stdDir);
+            Assert.True(okOff);
+            Assert.False(AppStoragePathsService.IsPortableModeEnabled(baseDir));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void StorageForecastService_ComputesDailyGrowthAndDaysTo90Percent()
+    {
+        const long gb = 1024L * 1024 * 1024;
+        long total = 100L * gb;
+
+        var growingSamples = new List<DailyDriveSample>
+        {
+            new("2026-11-18", 70L * gb, total, 30L * gb),
+            new("2026-11-19", 75L * gb, total, 25L * gb),
+            new("2026-11-20", 80L * gb, total, 20L * gb),
+            new("2026-11-21", 85L * gb, total, 15L * gb)
+        };
+
+        StorageForecastSummary summary = StorageForecastService.ComputeForecast(growingSamples, criticalThresholdPercent: 90.0);
+        Assert.InRange(summary.AvgDailyGrowthBytes, 4.9 * gb, 5.1 * gb);
+        Assert.Equal(1, summary.EstimatedDaysTo90Percent);
+        Assert.Equal(4, summary.SampleCount);
+        Assert.Contains("~1", summary.HeadlineText);
+
+        string tempFile = Path.Combine(Path.GetTempPath(), $"FreeCleanerForecast_{Guid.NewGuid():N}.json");
+        try
+        {
+            var snap = new SystemMetricsSnapshot("Win11", "X64", ".NET 10", @"C:\", total, 15L * gb, 85.0, 32L * gb, 16L * gb, 50.0);
+            List<DailyDriveSample> saved = StorageForecastService.RecordDailySample(snap, tempFile, new DateTime(2026, 11, 21));
+            Assert.Single(saved);
+            Assert.Equal("2026-11-21", saved[0].DateKey);
+            Assert.Single(StorageForecastService.LoadSamples(tempFile));
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+                File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void StorageForecastService_HandlesSingleSampleAndStableOrOverThresholdSeries()
+    {
+        const long gb = 1024L * 1024 * 1024;
+        long total = 100L * gb;
+
+        StorageForecastSummary single = StorageForecastService.ComputeForecast([new DailyDriveSample("2026-11-21", 60L * gb, total, 40L * gb)]);
+        Assert.Null(single.EstimatedDaysTo90Percent);
+        Assert.Equal(1, single.SampleCount);
+
+        StorageForecastSummary stable = StorageForecastService.ComputeForecast(
+        [
+            new("2026-11-19", 70L * gb, total, 30L * gb),
+            new("2026-11-20", 70L * gb, total, 30L * gb),
+            new("2026-11-21", 69L * gb, total, 31L * gb)
+        ]);
+        Assert.Null(stable.EstimatedDaysTo90Percent);
+
+        StorageForecastSummary over = StorageForecastService.ComputeForecast(
+        [
+            new("2026-11-20", 88L * gb, total, 12L * gb),
+            new("2026-11-21", 92L * gb, total, 8L * gb)
+        ], criticalThresholdPercent: 90.0);
+        Assert.Equal(0, over.EstimatedDaysTo90Percent);
+    }
+
+    [Fact]
+    public void SmartFolderOrganizerService_PreviewsExecutesAndUndoesFileMovesCleanly()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"FreeCleanerOrgTest_{Guid.NewGuid():N}");
+        string journalPath = Path.Combine(tempDir, "_journal.json");
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            string[] inputs = ["setup.exe", "report.pdf", "photo.jpg", "clip.mp4", "bundle.zip", "program.cs", "data.xyz", "desktop.lnk"];
+            foreach (string f in inputs)
+                File.WriteAllText(Path.Combine(tempDir, f), f);
+
+            List<OrganizePlanItem> plan = SmartFolderOrganizerService.BuildOrganizePlan(tempDir);
+            Assert.Equal(7, plan.Count);
+            Assert.DoesNotContain(plan, p => p.FileName == "desktop.lnk");
+            Assert.Contains(plan, p => p.FileName == "setup.exe" && p.TargetCategory == "Kurulumlar");
+            Assert.Contains(plan, p => p.FileName == "program.cs" && p.TargetCategory == "Kod");
+
+            var (moved, failed, _) = SmartFolderOrganizerService.ExecutePlan(plan, tempDir, journalPath);
+            Assert.Equal(7, moved);
+            Assert.Equal(0, failed);
+            Assert.True(File.Exists(Path.Combine(tempDir, "Kurulumlar", "setup.exe")));
+            Assert.True(File.Exists(Path.Combine(tempDir, "Belgeler", "report.pdf")));
+            Assert.True(File.Exists(Path.Combine(tempDir, "desktop.lnk")));
+            Assert.True(SmartFolderOrganizerService.HasUndoJournal(journalPath));
+
+            var (restored, undoFailed, _) = SmartFolderOrganizerService.UndoLastOrganize(journalPath);
+            Assert.Equal(7, restored);
+            Assert.Equal(0, undoFailed);
+            Assert.True(File.Exists(Path.Combine(tempDir, "setup.exe")));
+            Assert.False(Directory.Exists(Path.Combine(tempDir, "Kurulumlar")));
+            Assert.False(SmartFolderOrganizerService.HasUndoJournal(journalPath));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+                Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void LocalizationService_CoversAllSidebarNavKeysWithDistinctEnglishAndTurkish()
+    {
+        string[] navAndFeatureKeys =
+        [
+            "Loc_SettingsPortableTitle",
+            "Loc_DashForecastTitle",
+            "Loc_OrgPreviewBtn",
+            "Loc_NavDownloads",
+            "Loc_NavBloatware",
+            "Loc_NavShredder",
+            "Loc_NavBooster",
+            "Loc_NavPrivacy",
+            "Loc_NavNetwork",
+            "Loc_NavWingetUpdater",
+            "Loc_NavAiModelCleaner",
+            "Loc_NavExifScrubber",
+            "Loc_NavGitRepoCompressor"
+        ];
+
+        foreach (string key in navAndFeatureKeys)
         {
             string tr = LocalizationService.Get(key, "tr-TR");
             string en = LocalizationService.Get(key, "en-US");

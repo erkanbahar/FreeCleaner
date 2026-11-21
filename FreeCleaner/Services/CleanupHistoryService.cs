@@ -12,9 +12,8 @@ public static class CleanupHistoryService
 {
     private const int MaxStoredEntries = 500;
 
-    private static readonly string DefaultHistoryPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "FreeCleaner",
+    private static string DefaultHistoryPath => Path.Combine(
+        AppStoragePathsService.GetDataDirectory(),
         "history.json");
 
     public static List<CleanupHistoryEntry> LoadHistory(string? customFilePath = null)

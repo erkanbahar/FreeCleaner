@@ -36,9 +36,8 @@ public sealed record DiskGrowthDiffItem(
 
 public static class DiskSnapshotDiffService
 {
-    private static readonly string DefaultSnapshotsDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "FreeCleaner",
+    private static string DefaultSnapshotsDir => Path.Combine(
+        AppStoragePathsService.GetDataDirectory(),
         "snapshots");
 
     private static readonly JsonSerializerOptions JsonOptions = new()

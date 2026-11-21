@@ -23,7 +23,7 @@ jobs:
         run: dotnet restore FreeCleaner.slnx
 
       - name: Build solution
-        run: dotnet build FreeCleaner.slnx --configuration Release --no-restore
+        run: dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
 
       - name: Run unit tests
         run: dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release --no-build --verbosity normal

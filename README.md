@@ -4,7 +4,7 @@
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--windows-512BD4?logo=dotnet)
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011%20(x64)-0078D6?logo=windows)
 ![Modules](https://img.shields.io/badge/Modules-57%20Tools-10B981)
-![Tests](https://img.shields.io/badge/Tests-39%20Passing-22C55E)
+![Tests](https://img.shields.io/badge/Tests-44%20Passing-22C55E)
 ![Language](https://img.shields.io/badge/Language-English%20%7C%20T%C3%BCrk%C3%A7e-38BDF8)
 
 > 🌐 **Language / Dil:** [English](#english) • [Türkçe](#türkçe) • 📋 [Changelog](CHANGELOG.md)
@@ -27,13 +27,14 @@
 - **🔔 Live System Tray Telemetry & Cooldown Alerts:** Displays real-time `CPU %`, `RAM %`, and `C:` free GB in the tray tooltip (63-char safe), supports minimize-to-tray, and sends cooldown-protected alerts when Disk (`>= 90%`) or RAM (`>= 92%`) reaches critical thresholds.
 - **📊 SVG Diagnostic HTML Report & Filterable Activity Console:** Exports rich HTML/JSON reports featuring an inline SVG health-score gauge and 14-day cleanup history bars, paired with live log search, clipboard copy, `.log` export, and clear buttons in the Activity Console.
 - **🪟 Native Windows 11 DWM & Manifest Polish:** Includes `app.manifest` (`PerMonitorV2` DPI awareness and `longPathAware` for deep `node_modules`/cache paths) plus DWM rounded corners and theme-adaptive frame attributes.
-- **🩺 Dashboard, Lifetime Saved Space & 100-Point Health Check:** Scores disk usage, junk load, startup items, and RAM; tracks **Lifetime Reclaimed Space** and a 14-day cleanup chart via `%LocalAppData%\FreeCleaner\history.json`.
+- **🎒 True Portable Mode (`portable.flag`) & Diagnostic Support Bundle (`.zip`):** Stores settings, cleanup history, snapshots, telemetry, and logs inside a local `data\` folder when enabled, and exports a redacted support `.zip` (`diagnostic_report.html`, `system_summary.json`, sanitized logs).
+- **🩺 Dashboard, Lifetime Saved Space, Storage Fill Forecast & 100-Point Health Check:** Scores disk usage, junk load, startup items, and RAM; tracks **Lifetime Reclaimed Space**, a 14-day cleanup chart, and linear `C:` storage growth forecast (`+GB/day` & days to 90%).
 - **🗺️ Interactive Disk Treemap & Smart File Advisor:** Fast Win32 `FileSystemEnumerator` scanning visualizes large folders in seconds and classifies 30+ known targets (`OptGuideOnDeviceModel`, `Claude-Data rootfs.vhdx`, `Docker VHDX`, `hiberfil.sys`, `node_modules`) with safe recycle or protection guidance.
 - **💾 Deep Windows Space Recovery & VHDX Compactor:** Manages `hiberfil.sys` (`powercfg`), `WinSxS` (`DISM`), lossless `CompactOS`, `NVIDIA/AMD` installer caches, and one-click DiskPart `compact vdisk` for WSL2 / Docker / Claude VM `.vhdx` virtual disks.
-- **🖼️ Perceptual Similar Photo Finder (`dHash`) & 📸 EXIF / GPS Scrubber:** Clusters near-identical/burst photos with 64-bit `dHash` while preserving highest-resolution copies, and strips embedded GPS/camera metadata pixel-safely.
+- **🖼️ Perceptual Similar Photo Finder (`dHash`), 📸 EXIF Scrubber & 🗂️ Smart Folder Organizer:** Clusters burst photos with 64-bit `dHash`, strips GPS/EXIF metadata pixel-safely, and organizes Downloads / Desktop folders with one-click Undo.
 - **📈 Live CPU / RAM & Network Sparkline Monitor:** 1-second Win32 `GetSystemTimes` + `NetworkInterface` telemetry with sparkline charts and top-10 memory consumers.
-- **⌨️ `Ctrl+K` Command Palette, 4 Live Themes & Live EN/TR Switcher:** Instant keyboard navigation across all 57 modules and quick actions; live switching across `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix`, and `FluentLight` themes and `en-US` / `tr-TR` languages without restarting.
-- **🚀 Modular Partial ViewModel & 16 Lazy Views (`LazyViewRegistry`):** Core & heavy views (`CleanerView`, `StartupView`, `RegistryView`, `UninstallerView`, `DashboardView`, `LiveMonitorView`, `DiskAnalyzerView`, `DevCleanerView`, `PackageCachesView`, `DiskTreemapView`, `ExifScrubberView`, `DeepSpaceRecoveryView`, `SimilarPhotoFinderView`, `SettingsView`, `AiModelCleanerView`, `WingetUpdaterView`) instantiate on first demand, backed by modular partial files (`MainViewModel.cs`, `MainViewModel.CoreTools.cs`, `MainViewModel.NextGen.cs`, `MainViewModel.PowerSuite.cs`).
+- **⌨️ Bilingual `Ctrl+K` Command Palette, 4 Live Themes & Complete EN/TR UI:** Live switching across `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix`, and `FluentLight` themes and full `en-US` / `tr-TR` translation across all 57 sidebar modules and palette actions.
+- **🚀 Modular Partial ViewModel & 22 Lazy Views (`LazyViewRegistry`):** 22 core & heavy views instantiate on first demand, backed by clean partial splits (`MainViewModel.cs`, `MainViewModel.CoreTools.cs`, `MainViewModel.SystemTools.cs`, `MainViewModel.NextGen.cs`, `MainViewModel.PowerSuite.cs`) and `-p:TreatWarningsAsErrors=true` CI enforcement.
 
 ### All Modules (6 Categories • 57 Tools)
 
@@ -130,7 +131,7 @@
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### CLI Build & Unit Tests (39 Tests)
+#### CLI Build & Unit Tests (44 Tests)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore
@@ -164,13 +165,14 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **🔔 Canlı Sistem Tepsisi Telemetrisi & Bekleme Süreli Kritik Uyarılar:** Tepsi ikonu üzerine gelince anlık `CPU %`, `RAM %` ve `C:` boş alanı (63 karakter sınırına uygun) gösterir; Disk (`>= %90`) veya RAM (`>= %92`) kritik eşiğe ulaştığında 30 dakikalık bekleme süresiyle (cooldown) akıllı uyarı gönderir.
 - **📊 SVG Sağlık Göstergeli HTML Rapor & Filtrelenebilir Konsol:** Inline SVG sağlık puanı kadranı ve 14 günlük geçmiş çubukları içeren HTML/JSON rapor üretir; işlem konsolunda canlı arama, panoya kopyalama, `.log` dışa aktarma ve temizleme araçları sunar.
 - **🪟 Windows 11 Yerel Pencere Cilası & `app.manifest`:** `PerMonitorV2` DPI, `longPathAware` uzun yol desteği ve DWM yuvarlatılmış pencere/uyumlu çerçeve özellikleri içerir.
-- **🩺 Genel Bakış (Dashboard), Ömür Boyu Kazanılan Alan & 100 Puanlık Sağlık Kontrolü:** Disk doluluğu, çöp yükü, başlangıç uygulamaları ve RAM'i puanlar; `%LocalAppData%\FreeCleaner\history.json` üzerinden **Ömür Boyu Kurtarılan Alan** ve son 14 günlük temizlik grafiğini gösterir.
+- **🎒 Gerçek Taşınabilir Mod (`portable.flag`) & Teşhis Destek Paketi (`.zip`):** Etkinleştirildiğinde tüm ayar, geçmiş, snapshot, telemetri ve logları uygulama yanındaki `data\` klasöründe tutar; hassas verilerden arındırılmış tek dosyalık destek `.zip` arşivi dışa aktarır.
+- **🩺 Genel Bakış (Dashboard), Ömür Boyu Kazanılan Alan, Doluluk Tahmini & 100 Puanlık Sağlık Kontrolü:** Disk doluluğu, çöp yükü, başlangıç uygulamaları ve RAM'i puanlar; **Ömür Boyu Kurtarılan Alan**, 14 günlük grafik ve `C:` için doğrusal dolma tahminini (`+GB/gün` & `%90`'a kalan gün) gösterir.
 - **🗺️ Etkileşimli Görsel Disk Haritası (Treemap + Akıllı Dosya Danışmanı):** Doğrudan Win32 `FileSystemEnumerator` ve 2 seviyeli paralel taramayla dev klasörleri saniyeler içinde görselleştirir; `OptGuideOnDeviceModel`, `Claude-Data rootfs.vhdx`, `Docker VHDX`, `hiberfil.sys`, `node_modules` gibi 30+ bilinen yapıyı tanıyıp **Güvenle Geri Dönüşüm'e Gönder** veya koruma önerisi sunar.
 - **💾 Dev Windows Sistem Alanı Kurtarıcısı & VHDX Sıkıştırıcı:** Hazırda bekletmeyi kapatma/yarıya indirme (`powercfg`), bileşen deposu temizliği (`DISM`), kayıpsız `CompactOS` sıkıştırma, `NVIDIA/AMD` sürücü artıkları ve WSL2/Docker/Claude VM `.vhdx` sanal diskleri için tek tıkla DiskPart `compact vdisk` desteği sunar.
-- **🖼️ Benzer / Tekrarlayan Fotoğraf Bulucu (`dHash`) & 📸 EXIF / GPS Gizlilik Temizleyici:** 64-bit Perceptual `dHash` ile seri çekilmiş veya yeniden sıkıştırılmış benzer fotoğrafları gruplayıp en yüksek çözünürlüklüyü korur; EXIF/GPS koordinatlarını piksel kalitesini ve yönelimi bozmadan temizler.
+- **🖼️ Benzer Fotoğraf Bulucu (`dHash`), 📸 EXIF Temizleyici & 🗂️ Akıllı Klasör Düzenleyici:** 64-bit `dHash` ile seri fotoğrafları kümeleyip en kalitelisini korur, EXIF/GPS metaverilerini siler ve İndirilenler / Masaüstü klasörlerini önizleme + tek tıkla Geri Al (Undo) ile düzenler.
 - **📈 Canlı CPU / RAM & Ağ Hızı Sparkline Monitörü:** Win32 `GetSystemTimes` + `NetworkInterface` üzerinden saniyede bir güncellenen gerçek zamanlı sparkline grafikler ve en çok bellek kullanan ilk 10 işlem tablosu.
-- **⌨️ `Ctrl+K` Hızlı Komut Paleti, 4 Canlı Tema & TR/EN Dil Değiştirici:** 57 modüle, temizlik profillerine ve hızlı komutlara klavyeden anında erişim; `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix` ve `FluentLight` temaları ile `tr-TR` / `en-US` dilleri arasında yeniden başlatmadan anlık geçiş.
-- **🚀 Modüler `partial class MainViewModel` & 16 Lazy View (`LazyViewRegistry`):** `CleanerView`, `StartupView`, `RegistryView`, `UninstallerView`, `DashboardView`, `LiveMonitorView`, `DiskAnalyzerView`, `DevCleanerView`, `PackageCachesView`, `DiskTreemapView`, `ExifScrubberView`, `DeepSpaceRecoveryView`, `SimilarPhotoFinderView`, `SettingsView`, `AiModelCleanerView` ve `WingetUpdaterView` yalnızca ilk açıldığında yüklenir; ViewModel ise `MainViewModel.cs`, `MainViewModel.CoreTools.cs`, `MainViewModel.NextGen.cs` ve `MainViewModel.PowerSuite.cs` olarak bölünmüştür.
+- **⌨️ Çift Dilli `Ctrl+K` Komut Paleti, 4 Canlı Tema & Tam TR/EN Arayüz:** Dil değiştirildiğinde tüm 57 modül, sol menü, sabitlenen favoriler ve Komut Paleti eylemleri `tr-TR` / `en-US` arasında anında çevrilir; `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix` ve `FluentLight` temaları canlı geçiş destekler.
+- **🚀 Modüler `partial class MainViewModel`, 22 Lazy View & CI Uyarı Kapısı:** 22 modüler görünüm ilk açıldığında yüklenir; ViewModel `MainViewModel.cs`, `MainViewModel.CoreTools.cs`, `MainViewModel.SystemTools.cs`, `MainViewModel.NextGen.cs` ve `MainViewModel.PowerSuite.cs` olarak ayrılmıştır ve CI `-p:TreatWarningsAsErrors=true` ile doğrulanır.
 
 ### Tüm Modüller (6 Kategori • 57 Araç)
 
@@ -267,7 +269,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### Komut Satırı ile Derleme & Test (39 Test)
+#### Komut Satırı ile Derleme & Test (44 Test)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore

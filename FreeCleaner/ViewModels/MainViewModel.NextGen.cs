@@ -26,6 +26,8 @@ public partial class MainViewModel
                 OnPropertyChanged(nameof(SectionTitle));
                 OnPropertyChanged(nameof(AdminStatusBadge));
                 OnPropertyChanged(nameof(FavoriteButtonText));
+                PopulateModuleCatalog();
+                RebuildFavoriteNavItems();
                 SaveCurrentSettings();
                 StatusMessage = _selectedLanguage == "en-US"
                     ? "Language switched to English (en-US)."

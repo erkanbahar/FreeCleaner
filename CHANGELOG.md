@@ -6,6 +6,14 @@
 
 ## English
 
+### [4.2.0] - 2026-11-21
+#### Added
+- **True Portable Mode (`portable.flag`) & Diagnostic Support Bundle (`.zip`)** (`AppStoragePathsService`): stores settings, history, snapshots, telemetry, and logs inside a local `data\` folder when enabled, and exports a redacted support `.zip` (`diagnostic_report.html`, `system_summary.json`, `activity_sanitized.log`, `errors_sanitized.log`).
+- **Disk Storage Fill Forecast (`StorageForecastService`)**: tracks daily `C:` utilization series and computes linear growth rate (`+GB/day`) plus estimated days remaining until the 90% critical threshold on the Dashboard.
+- **Smart Folder Organizer with Preview & One-Click Undo (`SmartFolderOrganizerService`)**: previews and sorts loose files in Downloads / Desktop into categorized folders with collision-safe naming and JSON undo journal rollback.
+- **Full Bilingual Sidebar & Live `Ctrl+K` Command Palette**: localized all remaining sidebar modules (`Loc_Nav*`) and dynamically switches all 67 Command Palette entries + Pinned Favorites between English and Turkish on language change.
+- **CI Strict Warnings Gate & 22 Modular Lazy Views**: enforced `-p:TreatWarningsAsErrors=true` in `.github/workflows/dotnet-ci.yml`, extracted 6 more Lazy Views (`BoosterView`, `ShredderView`, `PrivacyView`, `NetworkView`, `DownloadsView`, `BloatwareView`), split `MainViewModel.SystemTools.cs`, and expanded the test suite to 44 passing unit tests.
+
 ### [4.1.0] - 2026-11-21
 #### Added
 - **Single-Instance & Named Pipe IPC Bridge** (`SingleInstanceBridgeService`): forwards Explorer context-menu and CLI arguments directly to the active instance and restores the window cleanly.
@@ -26,6 +34,14 @@
 ---
 
 ## Türkçe
+
+### [4.2.0] - 2026-11-21
+#### Eklenenler ve İyileştirmeler
+- **Gerçek Taşınabilir Mod (`portable.flag`) & Teşhis Destek Paketi (`.zip`)** (`AppStoragePathsService`): Etkinleştirildiğinde tüm ayar, geçmiş, snapshot, telemetri ve log dosyalarını `.exe` yanındaki `data\` klasöründe tutar; hassas token/şifre ifadelerinden arındırılmış tek dosyalık destek arşivi üretir.
+- **Disk Doluluk Tahmini (`StorageForecastService`)**: Günlük `C:` kullanım eğilimini analiz ederek günlük ortalama büyümeyi ve `%90` kritik eşiğine tahmini kalan günü Dashboard'da gösterir.
+- **Önizlemeli & Geri Alınabilir Akıllı Klasör Düzenleyici (`SmartFolderOrganizerService`)**: İndirilenler / Masaüstü içindeki dağınık dosyaları uzantıya göre alt klasörlere ayırır ve tek tıkla geri alma sunar.
+- **Tam Çift Dilli Sol Menü & Canlı `Ctrl+K` Komut Paleti**: Kalan tüm sol menü öğeleri yerelleştirildi ve dil değişikliğinde tüm 67 Komut Paleti öğesi ile favoriler anında güncellenir.
+- **CI Katı Uyarı Kapısı & 22 Modüler Lazy View**: `.github/workflows/dotnet-ci.yml` içine `-p:TreatWarningsAsErrors=true` eklendi, 6 ekran daha (`BoosterView`, `ShredderView`, `PrivacyView`, `NetworkView`, `DownloadsView`, `BloatwareView`) ayrıştırıldı, `MainViewModel.SystemTools.cs` bölündü ve test sayısı 44'e çıkarıldı.
 
 ### [4.1.0] - 2026-11-21
 #### Eklenenler ve İyileştirmeler

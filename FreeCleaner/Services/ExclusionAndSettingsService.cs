@@ -26,11 +26,9 @@ public class CleanerConfigData
 
 public static class ExclusionAndSettingsService
 {
-    private static readonly string ConfigFolder = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "FreeCleaner");
+    private static string ConfigFolder => AppStoragePathsService.GetDataDirectory();
 
-    private static readonly string ConfigFilePath = Path.Combine(ConfigFolder, "settings.json");
+    private static string ConfigFilePath => Path.Combine(ConfigFolder, "settings.json");
 
     public static CleanerConfigData Load()
     {

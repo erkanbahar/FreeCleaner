@@ -846,4 +846,235 @@ public partial class MainViewModel
         StatusMessage = "Ekrandaki işlem günlüğü temizlendi.";
     }
 
+    // ==================== 23. PORTABLE MODE, SUPPORT BUNDLE, STORAGE FORECAST & FOLDER ORGANIZER ====================
+
+    public bool IsPortableMode
+    {
+        get => _isPortableMode;
+        set
+        {
+            if (_isPortableMode != value)
+            {
+                var (success, message) = AppStoragePathsService.SetPortableMode(value);
+                if (success)
+                {
+                    _isPortableMode = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ActiveDataDirectoryDisplay));
+                    SaveCurrentSettings();
+                    RefreshCleanupHistorySummary();
+                    RefreshStorageForecast();
+                    StatusMessage = message;
+                    AddLog($"[TAŞINABİLİR MOD] {message}");
+                }
+                else
+                {
+                    StatusMessage = message;
+                    MessageBox.Show(message, "Taşınabilir Mod", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+    }
+
+    public string ActiveDataDirectoryDisplay =>
+        $"Veri Klasörü: {AppStoragePathsService.GetDataDirectory()}";
+
+    public string StorageForecastHeadline
+    {
+        get => _storageForecastHeadline;
+        private set
+        {
+            if (_storageForecastHeadline != value)
+            {
+                _storageForecastHeadline = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string StorageForecastDetail
+    {
+        get => _storageForecastDetail;
+        private set
+        {
+            if (_storageForecastDetail != value)
+            {
+                _storageForecastDetail = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private void RefreshStorageForecast()
+    {
+        try
+        {
+            List<DailyDriveSample> samples = StorageForecastService.RecordDailySample(SystemMetrics);
+            StorageForecastSummary summary = StorageForecastService.ComputeForecast(samples);
+            StorageForecastHeadline = summary.HeadlineText;
+            StorageForecastDetail = summary.DetailText;
+        }
+        catch
+        {
+            StorageForecastHeadline = "⏳ Veri bekleniyor";
+            StorageForecastDetail = "Disk doluluk trendi hesaplanıyor.";
+        }
+    }
+
+    private void ExecuteExportSupportBundle()
+    {
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Teşhis Destek Paketi (.zip) Oluştur",
+            Filter = "ZIP Arşivi (*.zip)|*.zip",
+            FileName = $"FreeCleaner-SupportBundle-{DateTime.Now:yyyyMMdd_HHmm}.zip",
+            DefaultExt = ".zip"
+        };
+
+        if (dlg.ShowDialog() != true)
+            return;
+
+        try
+        {
+            long lifetimeFreed = CleanupHistoryService.GetTotalLifetimeFreedBytes(CleanupHistoryService.LoadHistory());
+            string zipPath = AppStoragePathsService.ExportSupportBundleZip(
+                dlg.FileName,
+                SystemMetrics,
+                AllRules,
+                LastFreedBytes,
+                LastDeletedFiles,
+                ActivityLogs,
+                HealthScore,
+                HealthGradeBadge,
+                lifetimeFreed,
+                RecentCleanupBars.ToList());
+
+            StatusMessage = $"📦 Teşhis destek paketi oluşturuldu: {zipPath}";
+            AddLog($"[TEŞHİS PAKETİ] Hassas verilerden arındırılmış ZIP paketi: {zipPath}");
+
+            if (MessageBox.Show(
+                    $"Teşhis paketi hazır:\n{zipPath}\n\nDosya konumunu Gezgin'de açmak ister misiniz?",
+                    "Destek Paketi Oluşturuldu",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information) == MessageBoxResult.Yes)
+            {
+                OpenExplorerPath(zipPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Destek paketi oluşturulamadı: {ex.Message}";
+            AddLog($"[HATA] Destek paketi oluşturulamadı: {ex.Message}");
+        }
+    }
+
+    public string OrganizerTargetFolder
+    {
+        get => _organizerTargetFolder;
+        set
+        {
+            if (_organizerTargetFolder != value)
+            {
+                _organizerTargetFolder = value ?? string.Empty;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string OrganizerSummaryText
+    {
+        get => _organizerSummaryText;
+        private set
+        {
+            if (_organizerSummaryText != value)
+            {
+                _organizerSummaryText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private void SelectOrganizerPreset(string preset)
+    {
+        OrganizerTargetFolder = preset.Equals("Desktop", StringComparison.OrdinalIgnoreCase)
+            ? Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+        ExecutePreviewFolderOrganize();
+    }
+
+    private void BrowseOrganizerFolder()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Düzenlenecek Klasörü Seçin",
+            InitialDirectory = Directory.Exists(OrganizerTargetFolder)
+                ? OrganizerTargetFolder
+                : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+        };
+        if (dlg.ShowDialog() == true)
+        {
+            OrganizerTargetFolder = dlg.FolderName;
+            ExecutePreviewFolderOrganize();
+        }
+    }
+
+    private void ExecutePreviewFolderOrganize()
+    {
+        if (string.IsNullOrWhiteSpace(OrganizerTargetFolder) || !Directory.Exists(OrganizerTargetFolder))
+        {
+            OrganizerSummaryText = "Geçerli bir klasör seçin.";
+            return;
+        }
+
+        List<OrganizePlanItem> plan = SmartFolderOrganizerService.BuildOrganizePlan(OrganizerTargetFolder);
+        OrganizerPlanItems.Clear();
+        foreach (OrganizePlanItem item in plan)
+            OrganizerPlanItems.Add(item);
+
+        long totalBytes = plan.Sum(x => x.SizeBytes);
+        OrganizerSummaryText = plan.Count > 0
+            ? $"👁️ Önizleme: {plan.Count} dosya ({CleanerRule.FormatBytes(totalBytes)}) kategorilere ayrılacak."
+            : "✅ Bu klasörde taşınacak dağınık dosya yok.";
+
+        StatusMessage = OrganizerSummaryText;
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    private void ExecuteApplyFolderOrganize()
+    {
+        if (OrganizerPlanItems.Count == 0)
+            ExecutePreviewFolderOrganize();
+
+        if (OrganizerPlanItems.Count == 0)
+            return;
+
+        if (MessageBox.Show(
+                $"'{OrganizerTargetFolder}' içindeki {OrganizerPlanItems.Count} dosya uzantı kategorilerine (Kurulumlar, Belgeler, Görseller, Medya, Arşivler, Kod) taşınacak.\n\nİsterseniz sonradan 'Son Düzenlemeyi Geri Al' ile tamamını geri alabilirsiniz. Devam edilsin mi?",
+                "Akıllı Klasör Düzenleyici",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        var (moved, failed, notes) = SmartFolderOrganizerService.ExecutePlan(OrganizerPlanItems, OrganizerTargetFolder);
+        foreach (string note in notes.Take(5))
+            AddLog($"[DÜZENLEYİCİ NOT] {note}");
+
+        OrganizerPlanItems.Clear();
+        OrganizerSummaryText = $"🗂️ {moved} dosya düzenlendi (hata: {failed}).";
+        StatusMessage = OrganizerSummaryText;
+        AddLog($"[KLASÖR DÜZENLEYİCİ] '{OrganizerTargetFolder}': {OrganizerSummaryText}");
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    private void ExecuteUndoFolderOrganize()
+    {
+        var (restored, failed, message) = SmartFolderOrganizerService.UndoLastOrganize();
+        OrganizerSummaryText = message;
+        StatusMessage = message;
+        AddLog($"[KLASÖR GERİ AL] {restored} dosya iade edildi (hata: {failed}).");
+        CommandManager.InvalidateRequerySuggested();
+    }
+
 }
