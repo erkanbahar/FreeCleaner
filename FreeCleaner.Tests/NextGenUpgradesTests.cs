@@ -44,6 +44,77 @@ public class NextGenUpgradesTests
     }
 
     [Fact]
+    public async Task AnalyzeTreemapFolderAsync_ComputesNestedSizesReportsProgressAndCaches()
+    {
+        VisualDiskAndMediaService.ClearTreemapCache();
+        string tempRoot = Path.Combine(Path.GetTempPath(), $"FreeCleanerTreemapTest_{Guid.NewGuid():N}");
+        string subA = Path.Combine(tempRoot, "FolderA");
+        string subB = Path.Combine(tempRoot, "FolderB", "Deep");
+        Directory.CreateDirectory(subA);
+        Directory.CreateDirectory(subB);
+
+        try
+        {
+            byte[] dataA = new byte[4096];
+            byte[] dataB = new byte[8192];
+            byte[] dataRoot = new byte[1024];
+
+            await File.WriteAllBytesAsync(Path.Combine(subA, "a.bin"), dataA);
+            await File.WriteAllBytesAsync(Path.Combine(subB, "b.bin"), dataB);
+            await File.WriteAllBytesAsync(Path.Combine(tempRoot, "root.bin"), dataRoot);
+
+            var reportedSnapshots = new List<TreemapScanProgress>();
+            IProgress<TreemapScanProgress> progress = new Progress<TreemapScanProgress>(p =>
+            {
+                lock (reportedSnapshots)
+                    reportedSnapshots.Add(p);
+            });
+
+            TreemapAnalysisResult result = await VisualDiskAndMediaService.AnalyzeTreemapFolderAsync(
+                tempRoot,
+                canvasWidth: 800,
+                canvasHeight: 400,
+                progress: progress,
+                forceRefresh: true);
+
+            Assert.Equal(4096 + 8192 + 1024, result.TotalBytes);
+            Assert.Equal(3, result.ScannedFileCount);
+            Assert.Equal(3, result.Nodes.Count);
+            Assert.False(result.UsedCache);
+
+            // Second scan with forceRefresh=false should hit the warm subtree cache.
+            TreemapAnalysisResult cachedSub = await VisualDiskAndMediaService.AnalyzeTreemapFolderAsync(
+                tempRoot,
+                canvasWidth: 800,
+                canvasHeight: 400,
+                progress: null,
+                forceRefresh: false);
+
+            Assert.Equal(result.TotalBytes, cachedSub.TotalBytes);
+            Assert.True(cachedSub.UsedCache);
+
+            // Writing an extra file and scanning with forceRefresh=true bypasses cache cleanly.
+            await File.WriteAllBytesAsync(Path.Combine(subA, "a2.bin"), new byte[2048]);
+            TreemapAnalysisResult refreshed = await VisualDiskAndMediaService.AnalyzeTreemapFolderAsync(
+                tempRoot,
+                canvasWidth: 800,
+                canvasHeight: 400,
+                progress: null,
+                forceRefresh: true);
+
+            Assert.Equal(result.TotalBytes + 2048, refreshed.TotalBytes);
+            Assert.Equal(4, refreshed.ScannedFileCount);
+            Assert.False(refreshed.UsedCache);
+        }
+        finally
+        {
+            VisualDiskAndMediaService.ClearTreemapCache();
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task ExifScrubber_DetectsGpsAndExif_ThenScrubsCleanlyWithBackup()
     {
         string tempDir = Path.Combine(Path.GetTempPath(), $"FreeCleanerExifTest_{Guid.NewGuid():N}");

@@ -21,6 +21,17 @@ public partial class DiskTreemapView : UserControl
         }
     }
 
+    private void TreemapPathTextBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter &&
+            DataContext is MainViewModel vm &&
+            vm.AnalyzeTreemapCommand.CanExecute(null))
+        {
+            vm.AnalyzeTreemapCommand.Execute(null);
+            e.Handled = true;
+        }
+    }
+
     private void TreemapTile_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement { DataContext: TreemapNodeItem node } &&

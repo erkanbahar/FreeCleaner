@@ -1,5 +1,8 @@
 using System.Buffers.Binary;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
+using System.IO.Enumeration;
 using System.Text;
 using FreeCleaner.Models;
 using Drawing = System.Drawing;
@@ -9,6 +12,24 @@ using DrawingImaging = System.Drawing.Imaging;
 namespace FreeCleaner.Services;
 
 public sealed record RawTreemapEntry(string Name, string FullPath, long SizeBytes, bool IsDirectory);
+
+public sealed record TreemapScanProgress(
+    int CompletedUnits,
+    int TotalUnits,
+    long ScannedFiles,
+    long ScannedBytes,
+    string CurrentPath,
+    TimeSpan Elapsed,
+    IReadOnlyList<RawTreemapEntry>? PartialEntries);
+
+public sealed record TreemapAnalysisResult(
+    List<RawTreemapEntry> RawEntries,
+    List<TreemapNodeItem> Nodes,
+    long TotalBytes,
+    long ScannedFileCount,
+    int TopItemCount,
+    TimeSpan Elapsed,
+    bool UsedCache);
 
 /// <summary>
 /// Provides interactive disk treemap layout analysis and lossless/privacy-first photo EXIF/GPS scrubbing.
@@ -47,157 +68,386 @@ public static class VisualDiskAndMediaService
         RecurseSubdirectories = false
     };
 
+    private static readonly EnumerationOptions SafeRecursiveOptions = new()
+    {
+        IgnoreInaccessible = true,
+        AttributesToSkip = FileAttributes.ReparsePoint,
+        RecurseSubdirectories = true
+    };
+
+    private static readonly TimeSpan TreemapCacheTtl = TimeSpan.FromMinutes(3);
+    private static readonly ConcurrentDictionary<string, (long Bytes, long Files, DateTime CachedUtc)> SubtreeSizeCache = new(StringComparer.OrdinalIgnoreCase);
+
+    public static void ClearTreemapCache() => SubtreeSizeCache.Clear();
+
+    private sealed class TopDirAggregate(string name, string fullPath)
+    {
+        public string Name { get; } = name;
+        public string FullPath { get; } = fullPath;
+        public long Bytes;
+        public long Files;
+        public int RemainingUnits;
+    }
+
+    private sealed record ScanWorkUnit(TopDirAggregate Parent, string TargetPath);
+
+    private readonly record struct TopLevelSnapshot(
+        List<RawTreemapEntry> Files,
+        List<string> Directories,
+        long DirectFileBytes,
+        long DirectFileCount);
+
     // ==================== 1. INTERACTIVE DISK TREEMAP ENGINE ====================
 
-    public static async Task<(List<RawTreemapEntry> RawEntries, List<TreemapNodeItem> Nodes, long TotalBytes, int ScannedCount)> AnalyzeTreemapFolderAsync(
+    public static async Task<TreemapAnalysisResult> AnalyzeTreemapFolderAsync(
         string rootPath,
         double canvasWidth,
         double canvasHeight,
+        IProgress<TreemapScanProgress>? progress = null,
+        bool forceRefresh = false,
         CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(rootPath) || !Directory.Exists(rootPath))
-            return ([], [], 0, 0);
+            return new TreemapAnalysisResult([], [], 0, 0, 0, TimeSpan.Zero, false);
 
         return await Task.Run(async () =>
         {
-            var collected = new List<RawTreemapEntry>();
-            int scannedCount = 0;
+            var stopwatch = Stopwatch.StartNew();
 
-            string[] subDirs = [];
-            try
+            TopLevelSnapshot topSnapshot = EnumerateTopLevelFast(rootPath, ct);
+            var aggregates = new List<TopDirAggregate>(topSnapshot.Directories.Count);
+            var workUnits = new List<ScanWorkUnit>();
+
+            long scannedFiles = topSnapshot.DirectFileCount;
+            long scannedBytes = topSnapshot.DirectFileBytes;
+            int cacheHitDirs = 0;
+
+            foreach (string subDir in topSnapshot.Directories)
             {
-                subDirs = Directory.GetDirectories(rootPath, "*", SafeTopLevelOptions);
+                ct.ThrowIfCancellationRequested();
+                string dirName = Path.GetFileName(subDir);
+                if (string.IsNullOrWhiteSpace(dirName))
+                    dirName = subDir;
+
+                var agg = new TopDirAggregate(dirName, subDir);
+                aggregates.Add(agg);
+
+                if (!forceRefresh &&
+                    SubtreeSizeCache.TryGetValue(subDir, out var cachedTop) &&
+                    (DateTime.UtcNow - cachedTop.CachedUtc) < TreemapCacheTtl)
+                {
+                    agg.Bytes = cachedTop.Bytes;
+                    agg.Files = cachedTop.Files;
+                    scannedBytes += cachedTop.Bytes;
+                    scannedFiles += cachedTop.Files;
+                    cacheHitDirs++;
+                    continue;
+                }
+
+                // Expand 1 level deeper so huge trees (e.g. AppData/Local, Program Files, Users) fan out across cores.
+                TopLevelSnapshot childSnapshot = EnumerateTopLevelFast(subDir, ct);
+                if (childSnapshot.DirectFileCount > 0 || childSnapshot.DirectFileBytes > 0)
+                {
+                    Interlocked.Add(ref agg.Bytes, childSnapshot.DirectFileBytes);
+                    Interlocked.Add(ref agg.Files, childSnapshot.DirectFileCount);
+                    Interlocked.Add(ref scannedBytes, childSnapshot.DirectFileBytes);
+                    Interlocked.Add(ref scannedFiles, childSnapshot.DirectFileCount);
+                }
+
+                if (childSnapshot.Directories.Count == 0)
+                {
+                    SubtreeSizeCache[subDir] = (childSnapshot.DirectFileBytes, childSnapshot.DirectFileCount, DateTime.UtcNow);
+                    continue;
+                }
+
+                agg.RemainingUnits = childSnapshot.Directories.Count;
+                foreach (string level2Dir in childSnapshot.Directories)
+                {
+                    workUnits.Add(new ScanWorkUnit(agg, level2Dir));
+                }
             }
-            catch
+
+            int totalUnits = workUnits.Count;
+            int completedUnits = 0;
+            long lastProgressTicks = Stopwatch.GetTimestamp();
+            long throttleIntervalTicks = Stopwatch.Frequency / 5; // ~200 ms UI updates
+
+            void ReportProgressSnapshot(string currentPath, bool forceReport)
             {
-                subDirs = [];
+                if (progress is null)
+                    return;
+
+                long now = Stopwatch.GetTimestamp();
+                if (!forceReport)
+                {
+                    long prev = Volatile.Read(ref lastProgressTicks);
+                    if (now - prev < throttleIntervalTicks)
+                        return;
+                    if (Interlocked.CompareExchange(ref lastProgressTicks, now, prev) != prev)
+                        return;
+                }
+
+                List<RawTreemapEntry> combined = CollectCurrentEntries(topSnapshot.Files, aggregates);
+                List<RawTreemapEntry> partial = BuildDisplayEntries(combined, rootPath);
+                progress.Report(new TreemapScanProgress(
+                    CompletedUnits: Volatile.Read(ref completedUnits),
+                    TotalUnits: totalUnits,
+                    ScannedFiles: Interlocked.Read(ref scannedFiles),
+                    ScannedBytes: Interlocked.Read(ref scannedBytes),
+                    CurrentPath: currentPath,
+                    Elapsed: stopwatch.Elapsed,
+                    PartialEntries: partial));
             }
 
-            var dirBag = new System.Collections.Concurrent.ConcurrentBag<RawTreemapEntry>();
-            await Parallel.ForEachAsync(
-                subDirs,
-                new ParallelOptions
-                {
-                    MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 2, 6),
-                    CancellationToken = ct
-                },
-                (dir, token) =>
-                {
-                    long dirBytes = ComputeDirectorySizeSafe(dir, token);
-                    Interlocked.Increment(ref scannedCount);
-                    if (dirBytes > 0)
-                    {
-                        string name = Path.GetFileName(dir);
-                        if (string.IsNullOrWhiteSpace(name))
-                            name = dir;
-                        dirBag.Add(new RawTreemapEntry(name, dir, dirBytes, IsDirectory: true));
-                    }
-                    return ValueTask.CompletedTask;
-                });
+            ReportProgressSnapshot(rootPath, forceReport: true);
 
-            collected.AddRange(dirBag);
-
-            try
+            if (workUnits.Count > 0)
             {
-                foreach (string file in Directory.EnumerateFiles(rootPath, "*", SafeTopLevelOptions))
-                {
-                    ct.ThrowIfCancellationRequested();
-                    try
+                await Parallel.ForEachAsync(
+                    workUnits,
+                    new ParallelOptions
                     {
-                        var info = new FileInfo(file);
-                        if (info.Length > 0)
+                        MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 4, 12),
+                        CancellationToken = ct
+                    },
+                    (unit, token) =>
+                    {
+                        if (!forceRefresh &&
+                            SubtreeSizeCache.TryGetValue(unit.TargetPath, out var cachedSub) &&
+                            (DateTime.UtcNow - cachedSub.CachedUtc) < TreemapCacheTtl)
                         {
-                            collected.Add(new RawTreemapEntry(info.Name, info.FullName, info.Length, IsDirectory: false));
+                            Interlocked.Add(ref unit.Parent.Bytes, cachedSub.Bytes);
+                            Interlocked.Add(ref unit.Parent.Files, cachedSub.Files);
+                            Interlocked.Add(ref scannedBytes, cachedSub.Bytes);
+                            Interlocked.Add(ref scannedFiles, cachedSub.Files);
                         }
-                        scannedCount++;
-                    }
-                    catch
-                    {
-                        // Skip inaccessible files.
-                    }
-                }
-            }
-            catch
-            {
-                // Skip inaccessible folder enumeration errors.
+                        else
+                        {
+                            long unitBytes = 0;
+                            long unitFiles = 0;
+
+                            using var enumerator = new FastSizeFileSystemEnumerator(
+                                unit.TargetPath,
+                                recurse: true,
+                                (batchFiles, batchBytes, batchDir) =>
+                                {
+                                    unitFiles += batchFiles;
+                                    unitBytes += batchBytes;
+                                    Interlocked.Add(ref unit.Parent.Bytes, batchBytes);
+                                    Interlocked.Add(ref unit.Parent.Files, batchFiles);
+                                    Interlocked.Add(ref scannedFiles, batchFiles);
+                                    Interlocked.Add(ref scannedBytes, batchBytes);
+                                    ReportProgressSnapshot(string.IsNullOrEmpty(batchDir) ? unit.TargetPath : batchDir, forceReport: false);
+                                },
+                                token);
+
+                            while (enumerator.MoveNext())
+                            {
+                                // Enumeration happens in ShouldIncludeEntry with zero item allocations.
+                            }
+                            enumerator.Flush();
+
+                            SubtreeSizeCache[unit.TargetPath] = (unitBytes, unitFiles, DateTime.UtcNow);
+                        }
+
+                        if (Interlocked.Decrement(ref unit.Parent.RemainingUnits) == 0)
+                        {
+                            long parentBytes = Interlocked.Read(ref unit.Parent.Bytes);
+                            long parentFiles = Interlocked.Read(ref unit.Parent.Files);
+                            SubtreeSizeCache[unit.Parent.FullPath] = (parentBytes, parentFiles, DateTime.UtcNow);
+                        }
+
+                        Interlocked.Increment(ref completedUnits);
+                        ReportProgressSnapshot(unit.TargetPath, forceReport: false);
+                        return ValueTask.CompletedTask;
+                    });
             }
 
-            var sorted = collected
-                .Where(e => e.SizeBytes > 0)
-                .OrderByDescending(e => e.SizeBytes)
-                .ToList();
+            List<RawTreemapEntry> finalCombined = CollectCurrentEntries(topSnapshot.Files, aggregates);
+            long totalBytes = finalCombined.Sum(e => e.SizeBytes);
+            List<RawTreemapEntry> rawEntries = BuildDisplayEntries(finalCombined, rootPath);
+            List<TreemapNodeItem> nodes = ComputeTreemapLayout(rawEntries, canvasWidth, canvasHeight);
+            bool usedCache = !forceRefresh && topSnapshot.Directories.Count > 0 && cacheHitDirs == topSnapshot.Directories.Count && workUnits.Count == 0;
 
-            long totalBytes = sorted.Sum(e => e.SizeBytes);
-
-            List<RawTreemapEntry> rawEntries;
-            if (sorted.Count > 24)
-            {
-                rawEntries = sorted.Take(24).ToList();
-                var tail = sorted.Skip(24).ToList();
-                long tailBytes = tail.Sum(e => e.SizeBytes);
-                if (tailBytes > 0)
-                {
-                    rawEntries.Add(new RawTreemapEntry(
-                        Name: $"Diğer Küçük Öğeler ({tail.Count} öğe)",
-                        FullPath: rootPath,
-                        SizeBytes: tailBytes,
-                        IsDirectory: false));
-                }
-            }
-            else
-            {
-                rawEntries = sorted;
-            }
-
-            var nodes = ComputeTreemapLayout(rawEntries, canvasWidth, canvasHeight);
-            return (rawEntries, nodes, totalBytes, scannedCount);
+            stopwatch.Stop();
+            return new TreemapAnalysisResult(
+                RawEntries: rawEntries,
+                Nodes: nodes,
+                TotalBytes: totalBytes,
+                ScannedFileCount: Interlocked.Read(ref scannedFiles),
+                TopItemCount: finalCombined.Count,
+                Elapsed: stopwatch.Elapsed,
+                UsedCache: usedCache);
         }, ct);
     }
 
-    private static long ComputeDirectorySizeSafe(string directoryPath, CancellationToken ct)
+    private static List<RawTreemapEntry> CollectCurrentEntries(
+        List<RawTreemapEntry> topFiles,
+        List<TopDirAggregate> aggregates)
     {
-        long total = 0;
-        var stack = new Stack<string>();
-        stack.Push(directoryPath);
+        var list = new List<RawTreemapEntry>(topFiles.Count + aggregates.Count);
+        foreach (RawTreemapEntry f in topFiles)
+            list.Add(f);
 
-        while (stack.Count > 0)
+        foreach (TopDirAggregate agg in aggregates)
         {
-            ct.ThrowIfCancellationRequested();
-            string current = stack.Pop();
+            long bytes = Interlocked.Read(ref agg.Bytes);
+            if (bytes > 0)
+                list.Add(new RawTreemapEntry(agg.Name, agg.FullPath, bytes, IsDirectory: true));
+        }
+        return list;
+    }
 
-            try
-            {
-                foreach (string file in Directory.EnumerateFiles(current, "*", SafeTopLevelOptions))
-                {
-                    try
-                    {
-                        total += new FileInfo(file).Length;
-                    }
-                    catch
-                    {
-                        // Skip individual locked/unreadable file sizes.
-                    }
-                }
-            }
-            catch
-            {
-                // Skip inaccessible directory files.
-            }
+    private static List<RawTreemapEntry> BuildDisplayEntries(IEnumerable<RawTreemapEntry> entries, string rootPath)
+    {
+        var sorted = entries
+            .Where(e => e.SizeBytes > 0)
+            .OrderByDescending(e => e.SizeBytes)
+            .ToList();
 
-            try
+        if (sorted.Count <= 24)
+            return sorted;
+
+        List<RawTreemapEntry> top = sorted.Take(24).ToList();
+        var tail = sorted.Skip(24).ToList();
+        long tailBytes = tail.Sum(e => e.SizeBytes);
+        if (tailBytes > 0)
+        {
+            top.Add(new RawTreemapEntry(
+                Name: $"Diğer Küçük Öğeler ({tail.Count} öğe)",
+                FullPath: rootPath,
+                SizeBytes: tailBytes,
+                IsDirectory: false));
+        }
+        return top;
+    }
+
+    private static TopLevelSnapshot EnumerateTopLevelFast(string directoryPath, CancellationToken ct)
+    {
+        var files = new List<RawTreemapEntry>();
+        var dirs = new List<string>();
+        long directBytes = 0;
+        long directFiles = 0;
+
+        try
+        {
+            using var enumerator = new TopLevelFastEnumerator(directoryPath, files, dirs, ct);
+            while (enumerator.MoveNext())
             {
-                foreach (string sub in Directory.EnumerateDirectories(current, "*", SafeTopLevelOptions))
-                {
-                    stack.Push(sub);
-                }
+                // Populates files and dirs directly without FileInfo/DirectoryInfo syscalls.
             }
-            catch
-            {
-                // Skip inaccessible subdirectories.
-            }
+            directBytes = enumerator.DirectFileBytes;
+            directFiles = enumerator.DirectFileCount;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            // Skip inaccessible directory safely.
         }
 
-        return total;
+        return new TopLevelSnapshot(files, dirs, directBytes, directFiles);
+    }
+
+    private sealed class TopLevelFastEnumerator : FileSystemEnumerator<int>
+    {
+        private readonly List<RawTreemapEntry> _files;
+        private readonly List<string> _dirs;
+        private readonly CancellationToken _ct;
+
+        public long DirectFileBytes { get; private set; }
+        public long DirectFileCount { get; private set; }
+
+        public TopLevelFastEnumerator(string directory, List<RawTreemapEntry> files, List<string> dirs, CancellationToken ct)
+            : base(directory, SafeTopLevelOptions)
+        {
+            _files = files;
+            _dirs = dirs;
+            _ct = ct;
+        }
+
+        protected override int TransformEntry(ref FileSystemEntry entry) => 0;
+
+        protected override bool ShouldIncludeEntry(ref FileSystemEntry entry)
+        {
+            if (_ct.IsCancellationRequested)
+                _ct.ThrowIfCancellationRequested();
+
+            if (entry.IsDirectory)
+            {
+                if ((entry.Attributes & FileAttributes.ReparsePoint) == 0)
+                    _dirs.Add(entry.ToFullPath());
+            }
+            else
+            {
+                long len = entry.Length;
+                DirectFileCount++;
+                DirectFileBytes += len;
+                if (len > 0)
+                    _files.Add(new RawTreemapEntry(entry.FileName.ToString(), entry.ToFullPath(), len, IsDirectory: false));
+            }
+            return false;
+        }
+
+        protected override bool ContinueOnError(int error) => true;
+    }
+
+    private sealed class FastSizeFileSystemEnumerator : FileSystemEnumerator<int>
+    {
+        private readonly Action<long, long, string> _batchCallback;
+        private readonly CancellationToken _ct;
+        private long _batchBytes;
+        private long _batchFiles;
+        private string _lastDir = string.Empty;
+
+        public FastSizeFileSystemEnumerator(string directory, bool recurse, Action<long, long, string> batchCallback, CancellationToken ct)
+            : base(directory, recurse ? SafeRecursiveOptions : SafeTopLevelOptions)
+        {
+            _batchCallback = batchCallback;
+            _ct = ct;
+        }
+
+        protected override int TransformEntry(ref FileSystemEntry entry) => 0;
+
+        protected override bool ShouldIncludeEntry(ref FileSystemEntry entry)
+        {
+            if (_ct.IsCancellationRequested)
+                _ct.ThrowIfCancellationRequested();
+
+            if (!entry.IsDirectory)
+            {
+                _batchBytes += entry.Length;
+                _batchFiles++;
+                if ((_batchFiles & 0x1FF) == 0)
+                {
+                    _lastDir = entry.Directory.ToString();
+                    Flush();
+                }
+            }
+            return false;
+        }
+
+        protected override bool ShouldRecurseIntoEntry(ref FileSystemEntry entry)
+        {
+            if (_ct.IsCancellationRequested)
+                _ct.ThrowIfCancellationRequested();
+
+            return entry.IsDirectory && (entry.Attributes & FileAttributes.ReparsePoint) == 0;
+        }
+
+        protected override bool ContinueOnError(int error) => true;
+
+        public void Flush()
+        {
+            if (_batchFiles > 0 || _batchBytes > 0)
+            {
+                _batchCallback(_batchFiles, _batchBytes, _lastDir);
+                _batchFiles = 0;
+                _batchBytes = 0;
+            }
+        }
     }
 
     /// <summary>

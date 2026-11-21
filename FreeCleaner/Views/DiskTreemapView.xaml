@@ -13,12 +13,14 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*" MinHeight="270"/>
-                <RowDefinition Height="165"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" MinHeight="250"/>
+                <RowDefinition Height="155"/>
             </Grid.RowDefinitions>
 
             <!-- Row 0: Header & Summary Pill -->
-            <Grid Grid.Row="0" Margin="0,0,0,12">
+            <Grid Grid.Row="0" Margin="0,0,0,10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -50,7 +52,7 @@
             </Grid>
 
             <!-- Row 1: Path Bar & Controls -->
-            <Grid Grid.Row="1" Margin="0,0,0,12">
+            <Grid Grid.Row="1" Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
@@ -66,7 +68,8 @@
                          BorderBrush="{DynamicResource BorderSubtleBrush}"
                          Padding="10,7"
                          FontSize="12.5"
-                         Margin="0,0,8,0"/>
+                         Margin="0,0,8,0"
+                         KeyDown="TreemapPathTextBox_KeyDown"/>
                 <Button Grid.Column="1"
                         Style="{StaticResource SubtleButtonStyle}"
                         Content="{DynamicResource Loc_TreemapBrowseBtn}"
@@ -88,9 +91,100 @@
                         Command="{Binding OpenTreemapCurrentFolderCommand}"/>
             </Grid>
 
-            <!-- Row 2: Interactive Treemap Canvas -->
+            <!-- Row 2: Quick Jump Location Chips -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
+                <Button Style="{StaticResource SubtleButtonStyle}"
+                        Content="💿 C:\"
+                        Padding="9,4"
+                        FontSize="11"
+                        Margin="0,0,6,0"
+                        Command="{Binding QuickSelectTreemapPathCommand}"
+                        CommandParameter="C"/>
+                <Button Style="{StaticResource SubtleButtonStyle}"
+                        Content="{DynamicResource Loc_TreemapQuickUser}"
+                        Padding="9,4"
+                        FontSize="11"
+                        Margin="0,0,6,0"
+                        Command="{Binding QuickSelectTreemapPathCommand}"
+                        CommandParameter="User"/>
+                <Button Style="{StaticResource SubtleButtonStyle}"
+                        Content="{DynamicResource Loc_TreemapQuickDownloads}"
+                        Padding="9,4"
+                        FontSize="11"
+                        Margin="0,0,6,0"
+                        Command="{Binding QuickSelectTreemapPathCommand}"
+                        CommandParameter="Downloads"/>
+                <Button Style="{StaticResource SubtleButtonStyle}"
+                        Content="{DynamicResource Loc_TreemapQuickDesktop}"
+                        Padding="9,4"
+                        FontSize="11"
+                        Margin="0,0,6,0"
+                        Command="{Binding QuickSelectTreemapPathCommand}"
+                        CommandParameter="Desktop"/>
+                <Button Style="{StaticResource SubtleButtonStyle}"
+                        Content="{DynamicResource Loc_TreemapQuickAppData}"
+                        Padding="9,4"
+                        FontSize="11"
+                        Command="{Binding QuickSelectTreemapPathCommand}"
+                        CommandParameter="AppData"/>
+            </StackPanel>
+
+            <!-- Row 3: Live Scanning Progress & Status Banner -->
+            <Border Grid.Row="3"
+                    Visibility="{Binding IsTreemapScanning, Converter={StaticResource BoolToVis}}"
+                    Background="{DynamicResource BgCardBrush}"
+                    BorderBrush="{DynamicResource AccentBlueBrush}"
+                    BorderThickness="1"
+                    CornerRadius="9"
+                    Padding="12,9"
+                    Margin="0,0,0,10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource AccentBlueBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding TreemapScanStatusDetail}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Style="{StaticResource DangerButtonStyle}"
+                                Content="{DynamicResource Loc_TreemapCancelBtn}"
+                                Padding="10,4"
+                                FontSize="11"
+                                Command="{Binding CancelCommand}"/>
+                    </Grid>
+                    <ProgressBar Grid.Row="1"
+                                 Minimum="0"
+                                 Maximum="100"
+                                 Value="{Binding TreemapScanPercent, Mode=OneWay}"
+                                 IsIndeterminate="{Binding IsTreemapIndeterminate, Mode=OneWay}"
+                                 Height="7"
+                                 Background="{DynamicResource BgPrimaryBrush}"
+                                 Foreground="{DynamicResource PrimaryGradientBrush}"
+                                 BorderThickness="0"/>
+                    <TextBlock Grid.Row="2"
+                               Text="{Binding TreemapActiveScanPath}"
+                               FontSize="10.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               TextTrimming="CharacterEllipsis"
+                               Margin="0,5,0,0"/>
+                </Grid>
+            </Border>
+
+            <!-- Row 4: Interactive Treemap Canvas -->
             <Border x:Name="TreemapSurfaceBorder"
-                    Grid.Row="2"
+                    Grid.Row="4"
                     Background="{DynamicResource BgPrimaryBrush}"
                     BorderBrush="{DynamicResource BorderSubtleBrush}"
                     BorderThickness="1"
@@ -99,6 +193,7 @@
                     Margin="0,0,0,12"
                     SizeChanged="TreemapSurface_SizeChanged">
                 <Grid>
+                    <!-- Idle empty hint (hidden while scanning) -->
                     <TextBlock Text="{DynamicResource Loc_TreemapEmptyHint}"
                                FontSize="13"
                                Foreground="{DynamicResource TextMutedBrush}"
@@ -108,13 +203,48 @@
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed"/>
                                 <Style.Triggers>
-                                    <DataTrigger Binding="{Binding TreemapNodes.Count}" Value="0">
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding TreemapNodes.Count}" Value="0"/>
+                                            <Condition Binding="{Binding IsTreemapScanning}" Value="False"/>
+                                        </MultiDataTrigger.Conditions>
                                         <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
+                                    </MultiDataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </TextBlock.Style>
                     </TextBlock>
+
+                    <!-- Centered initial scan overlay before first partial blocks render -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="420">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding TreemapNodes.Count}" Value="0"/>
+                                            <Condition Binding="{Binding IsTreemapScanning}" Value="True"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <TextBlock Text="{DynamicResource Loc_TreemapScanningOverlay}"
+                                   FontSize="13"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AccentBlueBrush}"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,10"/>
+                        <ProgressBar IsIndeterminate="True"
+                                     Height="6"
+                                     Background="{DynamicResource BgCardBrush}"
+                                     Foreground="{DynamicResource PrimaryGradientBrush}"
+                                     BorderThickness="0"/>
+                    </StackPanel>
 
                     <ItemsControl ItemsSource="{Binding TreemapNodes}">
                         <ItemsControl.ItemsPanel>
@@ -189,8 +319,8 @@
                 </Grid>
             </Border>
 
-            <!-- Row 3: Compact Detail Table -->
-            <DataGrid Grid.Row="3"
+            <!-- Row 5: Compact Detail Table -->
+            <DataGrid Grid.Row="5"
                       ItemsSource="{Binding TreemapNodes}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

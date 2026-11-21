@@ -48,6 +48,11 @@ public class MainViewModel : INotifyPropertyChanged
     private string _latestReleaseUrl = AppUpdateService.ReleasesPageUrl;
     private string _treemapCurrentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     private string _treemapSummaryText = "Bir klasör seçip 'Haritayı Oluştur' butonuna tıklayın.";
+    private bool _isTreemapScanning;
+    private int _treemapScanPercent;
+    private bool _isTreemapIndeterminate;
+    private string _treemapScanStatusDetail = string.Empty;
+    private string _treemapActiveScanPath = string.Empty;
     private List<RawTreemapEntry> _lastTreemapRawEntries = [];
     private double _treemapCanvasWidth = 920;
     private double _treemapCanvasHeight = 340;
@@ -428,6 +433,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand BrowseTreemapFolderCommand { get; }
     public ICommand AnalyzeTreemapCommand { get; }
     public ICommand NavigateTreemapParentCommand { get; }
+    public ICommand QuickSelectTreemapPathCommand { get; }
     public ICommand DrillDownTreemapNodeCommand { get; }
     public ICommand OpenTreemapNodeInExplorerCommand { get; }
     public ICommand OpenTreemapCurrentFolderCommand { get; }
@@ -856,14 +862,19 @@ public class MainViewModel : INotifyPropertyChanged
 
         // 11th Gen Disk Treemap, Photo EXIF/GPS Scrubber & App Update Commands
         BrowseTreemapFolderCommand = new RelayCommand(_ => BrowseTreemapFolder(), _ => !IsBusy);
-        AnalyzeTreemapCommand = new RelayCommand(async _ => await LoadTreemapAsync(), _ => !IsBusy);
+        AnalyzeTreemapCommand = new RelayCommand(async _ => await LoadTreemapAsync(forceRefresh: true), _ => !IsBusy);
         NavigateTreemapParentCommand = new RelayCommand(async _ => await NavigateTreemapParentAsync(), _ => !IsBusy);
+        QuickSelectTreemapPathCommand = new RelayCommand(async param =>
+        {
+            if (param is string preset)
+                await SelectTreemapPresetAsync(preset);
+        }, _ => !IsBusy);
         DrillDownTreemapNodeCommand = new RelayCommand(async param =>
         {
             if (param is TreemapNodeItem node && node.IsDirectory && System.IO.Directory.Exists(node.FullPath))
             {
                 TreemapCurrentPath = node.FullPath;
-                await LoadTreemapAsync();
+                await LoadTreemapAsync(forceRefresh: false);
             }
         }, param => !IsBusy && param is TreemapNodeItem { IsDirectory: true });
         OpenTreemapNodeInExplorerCommand = new RelayCommand(param =>
@@ -5737,6 +5748,36 @@ public class MainViewModel : INotifyPropertyChanged
         set { if (_exifSummaryText != value) { _exifSummaryText = value; OnPropertyChanged(); } }
     }
 
+    public bool IsTreemapScanning
+    {
+        get => _isTreemapScanning;
+        set { if (_isTreemapScanning != value) { _isTreemapScanning = value; OnPropertyChanged(); } }
+    }
+
+    public int TreemapScanPercent
+    {
+        get => _treemapScanPercent;
+        set { if (_treemapScanPercent != value) { _treemapScanPercent = value; OnPropertyChanged(); } }
+    }
+
+    public bool IsTreemapIndeterminate
+    {
+        get => _isTreemapIndeterminate;
+        set { if (_isTreemapIndeterminate != value) { _isTreemapIndeterminate = value; OnPropertyChanged(); } }
+    }
+
+    public string TreemapScanStatusDetail
+    {
+        get => _treemapScanStatusDetail;
+        set { if (_treemapScanStatusDetail != value) { _treemapScanStatusDetail = value; OnPropertyChanged(); } }
+    }
+
+    public string TreemapActiveScanPath
+    {
+        get => _treemapActiveScanPath;
+        set { if (_treemapActiveScanPath != value) { _treemapActiveScanPath = value; OnPropertyChanged(); } }
+    }
+
     public void UpdateTreemapViewport(double width, double height)
     {
         if (width <= 32 || height <= 32)
@@ -5757,6 +5798,28 @@ public class MainViewModel : INotifyPropertyChanged
             TreemapNodes.Add(node);
     }
 
+    private async Task SelectTreemapPresetAsync(string preset)
+    {
+        string target = preset switch
+        {
+            "C" => @"C:\",
+            "User" => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Downloads" => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
+            "Desktop" => Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+            "AppData" => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            _ => TreemapCurrentPath
+        };
+
+        if (string.IsNullOrWhiteSpace(target) || !Directory.Exists(target))
+        {
+            StatusMessage = $"Klasör bulunamadı: {target}";
+            return;
+        }
+
+        TreemapCurrentPath = target;
+        await LoadTreemapAsync(forceRefresh: false);
+    }
+
     private void BrowseTreemapFolder()
     {
         var dlg = new Microsoft.Win32.OpenFolderDialog
@@ -5770,7 +5833,7 @@ public class MainViewModel : INotifyPropertyChanged
         if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
         {
             TreemapCurrentPath = dlg.FolderName;
-            _ = LoadTreemapAsync();
+            _ = LoadTreemapAsync(forceRefresh: false);
         }
     }
 
@@ -5787,10 +5850,10 @@ public class MainViewModel : INotifyPropertyChanged
         }
 
         TreemapCurrentPath = parent.FullName;
-        await LoadTreemapAsync();
+        await LoadTreemapAsync(forceRefresh: false);
     }
 
-    private async Task LoadTreemapAsync()
+    private async Task LoadTreemapAsync(bool forceRefresh = false)
     {
         if (IsBusy) return;
         if (string.IsNullOrWhiteSpace(TreemapCurrentPath) || !Directory.Exists(TreemapCurrentPath))
@@ -5800,33 +5863,91 @@ public class MainViewModel : INotifyPropertyChanged
         }
 
         IsBusy = true;
+        IsTreemapScanning = true;
+        IsTreemapIndeterminate = true;
+        TreemapScanPercent = 0;
+        ProgressPercent = 5;
+        TreemapActiveScanPath = TreemapCurrentPath;
+        TreemapScanStatusDetail = "⏳ Klasör yapısı hızlı Win32 tarayıcı ile okunuyor...";
+        TreemapSummaryText = "⏳ Taranıyor...";
+        StatusMessage = $"Disk Treemap taranıyor: {TreemapCurrentPath}";
+
         _cts?.Dispose();
         _cts = new CancellationTokenSource();
-        ProgressPercent = 15;
-        StatusMessage = $"Disk Treemap haritası oluşturuluyor: {TreemapCurrentPath}";
+        CancellationToken token = _cts.Token;
+
+        _lastTreemapRawEntries = [];
+        TreemapNodes.Clear();
+
+        var progressReporter = new Progress<TreemapScanProgress>(p =>
+        {
+            if (token.IsCancellationRequested)
+                return;
+
+            if (p.TotalUnits > 0)
+            {
+                IsTreemapIndeterminate = false;
+                int pct = Math.Clamp((int)Math.Round(p.CompletedUnits * 100.0 / p.TotalUnits), 2, 99);
+                TreemapScanPercent = pct;
+                ProgressPercent = pct;
+            }
+            else
+            {
+                IsTreemapIndeterminate = true;
+            }
+
+            string elapsedStr = $"{p.Elapsed.TotalSeconds:F1}s";
+            string bytesStr = CleanerRule.FormatBytes(p.ScannedBytes);
+            TreemapScanStatusDetail = p.TotalUnits > 0
+                ? $"🔍 Taranıyor: %{TreemapScanPercent} ({p.CompletedUnits}/{p.TotalUnits} alt dal) • {p.ScannedFiles:N0} dosya • {bytesStr} • {elapsedStr}"
+                : $"🔍 Taranıyor: {p.ScannedFiles:N0} dosya • {bytesStr} • {elapsedStr}";
+            TreemapSummaryText = $"⏳ {bytesStr} ({p.ScannedFiles:N0} dosya)";
+            TreemapActiveScanPath = p.CurrentPath;
+
+            if (p.PartialEntries is { Count: > 0 })
+            {
+                _lastTreemapRawEntries = [.. p.PartialEntries];
+                var liveNodes = VisualDiskAndMediaService.ComputeTreemapLayout(p.PartialEntries, _treemapCanvasWidth, _treemapCanvasHeight);
+                TreemapNodes.Clear();
+                foreach (TreemapNodeItem n in liveNodes)
+                    TreemapNodes.Add(n);
+            }
+        });
 
         try
         {
-            var (rawEntries, nodes, totalBytes, scannedCount) =
-                await VisualDiskAndMediaService.AnalyzeTreemapFolderAsync(
-                    TreemapCurrentPath,
-                    _treemapCanvasWidth,
-                    _treemapCanvasHeight,
-                    _cts.Token);
+            TreemapAnalysisResult result = await VisualDiskAndMediaService.AnalyzeTreemapFolderAsync(
+                TreemapCurrentPath,
+                _treemapCanvasWidth,
+                _treemapCanvasHeight,
+                progressReporter,
+                forceRefresh,
+                token);
 
-            _lastTreemapRawEntries = rawEntries;
+            _lastTreemapRawEntries = result.RawEntries;
             TreemapNodes.Clear();
-            foreach (TreemapNodeItem n in nodes)
+            foreach (TreemapNodeItem n in result.Nodes)
                 TreemapNodes.Add(n);
 
-            TreemapSummaryText = $"{TreemapNodes.Count} blok • Toplam {CleanerRule.FormatBytes(totalBytes)} ({scannedCount:N0} öğe)";
+            IsTreemapIndeterminate = false;
+            TreemapScanPercent = 100;
             ProgressPercent = 100;
-            StatusMessage = $"Treemap hazır: {TreemapCurrentPath} ({CleanerRule.FormatBytes(totalBytes)})";
-            AddLog($"[TREEMAP] '{TreemapCurrentPath}' haritalandı ({CleanerRule.FormatBytes(totalBytes)}, {nodes.Count} blok).");
+
+            string timeBadge = result.UsedCache
+                ? "⚡ Önbellek (<0.1s)"
+                : $"⏱️ {result.Elapsed.TotalSeconds:F1}s";
+            TreemapSummaryText = $"{TreemapNodes.Count} blok • {CleanerRule.FormatBytes(result.TotalBytes)} • {result.ScannedFileCount:N0} dosya • {timeBadge}";
+            StatusMessage = $"Treemap hazır: {TreemapCurrentPath} ({CleanerRule.FormatBytes(result.TotalBytes)}, {timeBadge})";
+            AddLog($"[TREEMAP] '{TreemapCurrentPath}' haritalandı ({CleanerRule.FormatBytes(result.TotalBytes)}, {result.ScannedFileCount:N0} dosya, {timeBadge}).");
         }
         catch (OperationCanceledException)
         {
-            StatusMessage = "Treemap analizi kullanıcı tarafından iptal edildi.";
+            IsTreemapIndeterminate = false;
+            TreemapSummaryText = TreemapNodes.Count > 0
+                ? $"⏹ Kısmi Sonuç ({TreemapNodes.Count} blok)"
+                : "⏹ İptal edildi";
+            StatusMessage = "Treemap analizi durduruldu — şimdiye kadar bulunan bloklar ekranda tutuldu.";
+            AddLog("[TREEMAP] Tarama kullanıcı tarafından durduruldu.");
         }
         catch (Exception ex)
         {
@@ -5835,7 +5956,9 @@ public class MainViewModel : INotifyPropertyChanged
         }
         finally
         {
+            IsTreemapScanning = false;
             IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
