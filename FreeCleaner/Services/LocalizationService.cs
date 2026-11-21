@@ -1,0 +1,432 @@
+using System.Windows;
+
+namespace FreeCleaner.Services;
+
+public sealed record LanguageOption(string Code, string DisplayName);
+
+/// <summary>
+/// Manages live Turkish (tr-TR) and English (en-US) localization dictionaries via Application resources.
+/// </summary>
+public static class LocalizationService
+{
+    public static readonly IReadOnlyList<LanguageOption> AvailableLanguages =
+    [
+        new("tr-TR", "🇹🇷 Türkçe (TR)"),
+        new("en-US", "🇬🇧 English (EN)")
+    ];
+
+    public static string CurrentLanguage { get; private set; } = "tr-TR";
+
+    private static readonly Dictionary<string, string> TrStrings = new(StringComparer.Ordinal)
+    {
+        ["Loc_WindowTitle"] = "FreeCleaner Pro (.NET 10) - Ultra Sistem Bakım & Optimizasyon Paketi",
+        ["Loc_CmdPaletteBtn"] = "⌨️ Ctrl+K",
+        ["Loc_CmdPaletteTip"] = "Hızlı Komut Paleti (Ctrl+K)",
+        ["Loc_AdminElevateBtn"] = "🛡️ Yönetici",
+        ["Loc_GameModeBtn"] = "⚡ Oyun Modu",
+        ["Loc_RamBtn"] = "🧠 RAM",
+        ["Loc_ReportBtn"] = "📊 Rapor",
+        ["Loc_NavSearchPlaceholder"] = "Modül ara (SSD, Winget, AI, DNS)...",
+        ["Loc_ExpandAllBtn"] = "📂 Tümünü Aç",
+        ["Loc_CollapseAllBtn"] = "📁 Daralt",
+        ["Loc_QuickDashboardBtn"] = "🩺 Dashboard",
+        ["Loc_QuickLiveBtn"] = "📈 Canlı İzle",
+        ["Loc_CatFavorites"] = "⭐ Sabitlenen Favorilerim",
+        ["Loc_CatCleaning"] = "🧹 Temizlik & Disk Kurtarma (10)",
+        ["Loc_CatPerformance"] = "⚡ Performans, Açılış & Donanım (9)",
+        ["Loc_CatRepairWin11"] = "🛠️ Sistem Onarım & Windows 11 (10)",
+        ["Loc_CatNetwork"] = "🌐 Ağ, Wi-Fi & Güvenlik Duvarı (6)",
+        ["Loc_CatSecurity"] = "🛡️ Güvenlik, Gizlilik & Adli Analiz (10)",
+        ["Loc_CatDevAi"] = "💻 Geliştirici, AI & Verimlilik (13)",
+        ["Loc_SafetyBoxTitle"] = "Güvenli Silme Kalkanı",
+        ["Loc_SafetyCheckBox"] = "Geri Dönüşüm Kutusuna taşı",
+        ["Loc_OpenRecycleBinBtn"] = "Geri Dönüşüm Kutusunu Aç",
+        ["Loc_SystemDiskLabel"] = "SİSTEM DİSKİ",
+        ["Loc_RamLabel"] = "BELLEK (RAM)",
+        ["Loc_SummaryDetectedHeader"] = "TESPİT EDİLEN GEREKSİZ VERİ",
+        ["Loc_SummaryDetectedSuffix"] = "seçili dosya temizliğe hazır",
+        ["Loc_SummaryFreedHeader"] = "BU OTURUMDA KAZANILAN ALAN",
+        ["Loc_SummaryFreedSuffix"] = "öğe başarıyla temizlendi",
+        ["Loc_StopOperationBtn"] = "⏹ İşlemi Durdur",
+        ["Loc_LiveConsoleHeader"] = "CANLI TELEMETRİ & İŞLEM KONSOLU",
+        ["Loc_PalettePlaceholder"] = "Komut veya modül arayın (ör: ssd, ram, winget, ai, tema, exif)...",
+        ["Loc_PaletteFooterHint"] = "↑ ↓ Seç  •  Enter Aç / Çalıştır  •  Esc Kapat",
+
+        ["Loc_SettingsWhitelistTitle"] = "BEYAZ LİSTE (KORUNAN KLASÖRLER & İSTİSNALAR)",
+        ["Loc_SettingsWhitelistDesc"] = "Bu listedeki klasörler veya anahtar kelimeler hiçbir tarama ve temizleme işlemine dahil edilmez.",
+        ["Loc_SettingsAddBtn"] = "Ekle",
+        ["Loc_SettingsBrowseBtn"] = "Klasör Seç...",
+        ["Loc_SettingsRemoveBtn"] = "Kaldır",
+        ["Loc_SettingsRightHeader"] = "TEMA, DİL, GÜNCELLEME & OTOMASYON",
+        ["Loc_SettingsThemeLangTitle"] = "Görünüm, Tema & Dil Seçimi",
+        ["Loc_SettingsThemeLangDesc"] = "4 canlı tema (Fluent Light dahil) ve Türkçe / English dil seçenekleri arasında anında geçiş yapın.",
+        ["Loc_SettingsThemeLabel"] = "Tema:",
+        ["Loc_SettingsLangLabel"] = "Dil / Language:",
+        ["Loc_SettingsUpdateTitle"] = "Sürüm & GitHub Güncelleme Kontrolü",
+        ["Loc_SettingsUpdateDesc"] = "GitHub Releases üzerinden yeni taşınabilir (.exe) sürüm olup olmadığını tek tıkla denetleyin.",
+        ["Loc_SettingsCheckUpdateBtn"] = "🔄 Güncelleme Denetle",
+        ["Loc_SettingsOpenReleasesBtn"] = "🌐 GitHub Sürümleri",
+        ["Loc_SettingsAutoMonCheck"] = "Arka Plan Akıllı Çöp İzleyiciyi Etkinleştir",
+        ["Loc_SettingsAutoMonDesc"] = "Belirlenen boyut eşiği aşıldığında sistem tepsisinden otomatik uyarı verir.",
+        ["Loc_SettingsThresholdLabel"] = "Uyarı Eşiği (MB):",
+        ["Loc_SettingsTrayCheck"] = "Kapatırken Sistem Tepsisine (System Tray) küçült",
+        ["Loc_SettingsSchedCheck"] = "Zamanlanmış güvenli bakımı etkinleştir",
+        ["Loc_SettingsSchedDesc"] = "Yalnızca düşük riskli öğeleri tarar; temizleme öncesi mutlaka onay ister.",
+        ["Loc_SettingsIntervalLabel"] = "Çalışma aralığı:",
+        ["Loc_SettingsHoursSuffix"] = "saat",
+        ["Loc_SettingsInstallTaskBtn"] = "Windows Görevini Kur",
+        ["Loc_SettingsRemoveTaskBtn"] = "Görevi Kaldır",
+        ["Loc_SettingsReportTitle"] = "Detaylı Temizlik & Sistem Raporu",
+        ["Loc_SettingsReportDesc"] = "Sistem metriklerini, temizlik kurallarını ve işlem günlüklerini HTML ve JSON formatında Masaüstü klasörüne dışa aktarır.",
+        ["Loc_SettingsExportReportBtn"] = "HTML & JSON Raporu Oluştur",
+
+        ["Loc_DashHealthLabel"] = "PC SAĞLIK SKORU",
+        ["Loc_DashHeroTitle"] = "Tek Tıkla 100 Puanlık Sistem Bakımı & Sağlık Denetimi",
+        ["Loc_DashHealthBtn"] = "🩺 Tek Tıkla PC Sağlık Kontrolü",
+        ["Loc_DashCardCleanTitle"] = "🧹 Akıllı Temizlik",
+        ["Loc_DashCardCleanDesc"] = "Geçici dosyaları ve önbelleği tara",
+        ["Loc_DashCardLiveTitle"] = "📈 Canlı Performans",
+        ["Loc_DashCardLiveDesc"] = "CPU, RAM ve canlı ağ grafikleri",
+        ["Loc_DashCardWingetTitle"] = "📦 Program Güncelle",
+        ["Loc_DashCardWingetDesc"] = "Winget ile toplu güncelleme",
+        ["Loc_DashCardBenchTitle"] = "⚡ SSD / NVMe Testi",
+        ["Loc_DashCardBenchDesc"] = "Okuma & yazma hızını ölç",
+        ["Loc_DashColCategory"] = "Kategori",
+        ["Loc_DashColCheck"] = "Denetim Adımı",
+        ["Loc_DashColStatus"] = "Sonuç / Durum",
+        ["Loc_DashColDetails"] = "Ayrıntılar",
+
+        ["Loc_LiveTitle"] = "CANLI SİSTEM TELEMETRİ & AĞ HIZI GRAFİKLERİ (SPARKLINE MONİTÖR)",
+        ["Loc_LiveSubtitle"] = "Win32 GetSystemTimes CPU yükü, fiziksel bellek doluluğu ve aktif ağ arayüzü indirme/yükleme hızları saniyede bir güncellenir.",
+        ["Loc_LiveStreamBadge"] = "Canlı Akış (1s)",
+        ["Loc_LiveCpuLabel"] = "İŞLEMCİ (CPU)",
+        ["Loc_LiveRamLabel"] = "BELLEK (RAM)",
+        ["Loc_LiveNetDlLabel"] = "AĞ İNDİRME (DL)",
+        ["Loc_LiveNetUlLabel"] = "AĞ YÜKLEME (UL)",
+        ["Loc_LiveColPid"] = "PID",
+        ["Loc_LiveColProcess"] = "Uygulama / İşlem",
+        ["Loc_LiveColRam"] = "Bellek Kullanımı (RAM)",
+        ["Loc_LiveColThreads"] = "İş Parçacığı (Thread)",
+        ["Loc_LiveColPriority"] = "CPU Öncelik Sınıfı",
+
+        ["Loc_TreemapTitle"] = "ETKİLEŞİMLİ GÖRSEL DİSK HARİTASI (TREEMAP VISUALIZER)",
+        ["Loc_TreemapSubtitle"] = "Klasör ve dosyaların disk kaplama alanını orantılı renkli kutucuklarla görün; klasör kutusuna tıklayarak içine dalın.",
+        ["Loc_TreemapBrowseBtn"] = "📁 Klasör Seç",
+        ["Loc_TreemapUpBtn"] = "⬆️ Üst Klasör",
+        ["Loc_TreemapScanBtn"] = "🗺️ Haritayı Oluştur",
+        ["Loc_TreemapOpenFolderBtn"] = "🔍 Gezginde Aç",
+        ["Loc_TreemapEmptyHint"] = "Bir klasör seçip 'Haritayı Oluştur' butonuna tıklayın.",
+        ["Loc_TreemapColName"] = "Öğe Adı",
+        ["Loc_TreemapColType"] = "Tür",
+        ["Loc_TreemapColSize"] = "Boyut",
+        ["Loc_TreemapColShare"] = "Oran",
+        ["Loc_TreemapColPath"] = "Tam Yol",
+
+        ["Loc_ExifTitle"] = "FOTOĞRAF EXIF / GPS GİZLİLİK TEMİZLEYİCİ (METADATA SCRUBBER)",
+        ["Loc_ExifSubtitle"] = "JPEG/PNG/TIFF fotoğraflarınızdaki gömülü GPS konum koordinatlarını ve kamera/yazılım meta verilerini piksel kalitesini koruyarak temizler.",
+        ["Loc_ExifBrowseBtn"] = "📁 Fotoğraf Klasörü Seç",
+        ["Loc_ExifScanBtn"] = "🔍 Fotoğrafları Tara",
+        ["Loc_ExifScrubBtn"] = "🧹 Seçili Fotoğrafların EXIF / GPS Verilerini Temizle",
+        ["Loc_ExifSubfoldersCheck"] = "Alt klasörleri de tara",
+        ["Loc_ExifBackupCheck"] = "Temizlemeden önce orijinali yedekle (FreeCleaner_PhotoBackup)",
+        ["Loc_ExifOptimizeJpegCheck"] = "JPEG boyutunu akıllı optimize et (%88 kalite)",
+        ["Loc_ExifColSelect"] = "Seç",
+        ["Loc_ExifColFile"] = "Dosya Adı",
+        ["Loc_ExifColSize"] = "Boyut",
+        ["Loc_ExifColGps"] = "Gizlilik / GPS",
+        ["Loc_ExifColCamera"] = "Kamera / Cihaz",
+        ["Loc_ExifColDate"] = "Çekim Tarihi",
+        ["Loc_ExifColMeta"] = "Tespit Edilen Meta Veriler",
+        ["Loc_ExifColStatus"] = "İşlem Durumu"
+    };
+
+    private static readonly Dictionary<string, string> EnStrings = new(StringComparer.Ordinal)
+    {
+        ["Loc_WindowTitle"] = "FreeCleaner Pro (.NET 10) - Ultra System Maintenance & Optimization Suite",
+        ["Loc_CmdPaletteBtn"] = "⌨️ Ctrl+K",
+        ["Loc_CmdPaletteTip"] = "Quick Command Palette (Ctrl+K)",
+        ["Loc_AdminElevateBtn"] = "🛡️ Run Admin",
+        ["Loc_GameModeBtn"] = "⚡ Game Mode",
+        ["Loc_RamBtn"] = "🧠 RAM",
+        ["Loc_ReportBtn"] = "📊 Report",
+        ["Loc_NavSearchPlaceholder"] = "Search module (SSD, Winget, AI, DNS)...",
+        ["Loc_ExpandAllBtn"] = "📂 Expand All",
+        ["Loc_CollapseAllBtn"] = "📁 Collapse",
+        ["Loc_QuickDashboardBtn"] = "🩺 Dashboard",
+        ["Loc_QuickLiveBtn"] = "📈 Live Monitor",
+        ["Loc_CatFavorites"] = "⭐ Pinned Favorites",
+        ["Loc_CatCleaning"] = "🧹 Cleaning & Disk Recovery (10)",
+        ["Loc_CatPerformance"] = "⚡ Performance, Boot & Hardware (9)",
+        ["Loc_CatRepairWin11"] = "🛠️ System Repair & Windows 11 (10)",
+        ["Loc_CatNetwork"] = "🌐 Network, Wi-Fi & Firewall (6)",
+        ["Loc_CatSecurity"] = "🛡️ Security, Privacy & Forensics (10)",
+        ["Loc_CatDevAi"] = "💻 Developer, AI & Productivity (13)",
+        ["Loc_SafetyBoxTitle"] = "Safe Deletion Shield",
+        ["Loc_SafetyCheckBox"] = "Move deleted files to Recycle Bin",
+        ["Loc_OpenRecycleBinBtn"] = "Open Recycle Bin",
+        ["Loc_SystemDiskLabel"] = "SYSTEM DRIVE",
+        ["Loc_RamLabel"] = "MEMORY (RAM)",
+        ["Loc_SummaryDetectedHeader"] = "DETECTED RECLAIMABLE DATA",
+        ["Loc_SummaryDetectedSuffix"] = "selected files ready to clean",
+        ["Loc_SummaryFreedHeader"] = "SPACE RECLAIMED THIS SESSION",
+        ["Loc_SummaryFreedSuffix"] = "items cleaned successfully",
+        ["Loc_StopOperationBtn"] = "⏹ Stop Task",
+        ["Loc_LiveConsoleHeader"] = "LIVE TELEMETRY & OPERATION CONSOLE",
+        ["Loc_PalettePlaceholder"] = "Search commands or modules (e.g., ssd, ram, winget, ai, theme, exif)...",
+        ["Loc_PaletteFooterHint"] = "↑ ↓ Select  •  Enter Open / Run  •  Esc Close",
+
+        ["Loc_SettingsWhitelistTitle"] = "WHITELIST (PROTECTED FOLDERS & EXCLUSIONS)",
+        ["Loc_SettingsWhitelistDesc"] = "Folders or keywords in this list are excluded from all scans and cleanup operations.",
+        ["Loc_SettingsAddBtn"] = "Add",
+        ["Loc_SettingsBrowseBtn"] = "Browse...",
+        ["Loc_SettingsRemoveBtn"] = "Remove",
+        ["Loc_SettingsRightHeader"] = "THEME, LANGUAGE, UPDATES & AUTOMATION",
+        ["Loc_SettingsThemeLangTitle"] = "Appearance, Theme & Language",
+        ["Loc_SettingsThemeLangDesc"] = "Switch instantly between 4 live themes (including Fluent Light) and Türkçe / English UI.",
+        ["Loc_SettingsThemeLabel"] = "Theme:",
+        ["Loc_SettingsLangLabel"] = "Language / Dil:",
+        ["Loc_SettingsUpdateTitle"] = "Version & GitHub Release Checker",
+        ["Loc_SettingsUpdateDesc"] = "Check GitHub Releases with one click for newer portable (.exe) updates.",
+        ["Loc_SettingsCheckUpdateBtn"] = "🔄 Check for Updates",
+        ["Loc_SettingsOpenReleasesBtn"] = "🌐 GitHub Releases",
+        ["Loc_SettingsAutoMonCheck"] = "Enable Background Smart Junk Monitor",
+        ["Loc_SettingsAutoMonDesc"] = "Shows a system tray notification when accumulated junk exceeds the threshold.",
+        ["Loc_SettingsThresholdLabel"] = "Alert Threshold (MB):",
+        ["Loc_SettingsTrayCheck"] = "Minimize to System Tray on close",
+        ["Loc_SettingsSchedCheck"] = "Enable scheduled safe maintenance",
+        ["Loc_SettingsSchedDesc"] = "Scans low-risk items only and always requires confirmation before deleting.",
+        ["Loc_SettingsIntervalLabel"] = "Run interval:",
+        ["Loc_SettingsHoursSuffix"] = "hours",
+        ["Loc_SettingsInstallTaskBtn"] = "Install Windows Task",
+        ["Loc_SettingsRemoveTaskBtn"] = "Remove Task",
+        ["Loc_SettingsReportTitle"] = "Detailed Cleaning & System Report",
+        ["Loc_SettingsReportDesc"] = "Exports system metrics, rules, and activity logs in HTML and JSON formats to Desktop.",
+        ["Loc_SettingsExportReportBtn"] = "Export HTML & JSON Report",
+
+        ["Loc_DashHealthLabel"] = "PC HEALTH SCORE",
+        ["Loc_DashHeroTitle"] = "One-Click 100-Point System Maintenance & Health Audit",
+        ["Loc_DashHealthBtn"] = "🩺 Run 1-Click PC Health Check",
+        ["Loc_DashCardCleanTitle"] = "🧹 Smart Cleaner",
+        ["Loc_DashCardCleanDesc"] = "Scan temp files & system caches",
+        ["Loc_DashCardLiveTitle"] = "📈 Live Performance",
+        ["Loc_DashCardLiveDesc"] = "CPU, RAM & live network graphs",
+        ["Loc_DashCardWingetTitle"] = "📦 Update Software",
+        ["Loc_DashCardWingetDesc"] = "Bulk upgrade via Winget",
+        ["Loc_DashCardBenchTitle"] = "⚡ SSD / NVMe Bench",
+        ["Loc_DashCardBenchDesc"] = "Measure read & write speeds",
+        ["Loc_DashColCategory"] = "Category",
+        ["Loc_DashColCheck"] = "Audit Step",
+        ["Loc_DashColStatus"] = "Status / Result",
+        ["Loc_DashColDetails"] = "Details",
+
+        ["Loc_LiveTitle"] = "LIVE SYSTEM TELEMETRY & NETWORK SPARKLINE MONITOR",
+        ["Loc_LiveSubtitle"] = "Win32 GetSystemTimes CPU load, physical RAM usage, and active network download/upload speeds updated every second.",
+        ["Loc_LiveStreamBadge"] = "Live Stream (1s)",
+        ["Loc_LiveCpuLabel"] = "PROCESSOR (CPU)",
+        ["Loc_LiveRamLabel"] = "MEMORY (RAM)",
+        ["Loc_LiveNetDlLabel"] = "NET DOWNLOAD (DL)",
+        ["Loc_LiveNetUlLabel"] = "NET UPLOAD (UL)",
+        ["Loc_LiveColPid"] = "PID",
+        ["Loc_LiveColProcess"] = "Application / Process",
+        ["Loc_LiveColRam"] = "Memory Usage (RAM)",
+        ["Loc_LiveColThreads"] = "Threads",
+        ["Loc_LiveColPriority"] = "CPU Priority Class",
+
+        ["Loc_TreemapTitle"] = "INTERACTIVE VISUAL DISK SPACE MAP (TREEMAP VISUALIZER)",
+        ["Loc_TreemapSubtitle"] = "Inspect folder & file footprint with proportional color tiles; click any folder block to drill down.",
+        ["Loc_TreemapBrowseBtn"] = "📁 Select Folder",
+        ["Loc_TreemapUpBtn"] = "⬆️ Parent Folder",
+        ["Loc_TreemapScanBtn"] = "🗺️ Build Treemap",
+        ["Loc_TreemapOpenFolderBtn"] = "🔍 Open in Explorer",
+        ["Loc_TreemapEmptyHint"] = "Choose a folder and click 'Build Treemap' to visualize space usage.",
+        ["Loc_TreemapColName"] = "Item Name",
+        ["Loc_TreemapColType"] = "Type",
+        ["Loc_TreemapColSize"] = "Size",
+        ["Loc_TreemapColShare"] = "Share",
+        ["Loc_TreemapColPath"] = "Full Path",
+
+        ["Loc_ExifTitle"] = "PHOTO EXIF / GPS PRIVACY SCRUBBER & OPTIMIZER",
+        ["Loc_ExifSubtitle"] = "Scans JPEG/PNG/TIFF photos for embedded GPS coordinates, camera & software metadata and scrubs them cleanly while preserving pixels.",
+        ["Loc_ExifBrowseBtn"] = "📁 Select Photo Folder",
+        ["Loc_ExifScanBtn"] = "🔍 Scan Photos",
+        ["Loc_ExifScrubBtn"] = "🧹 Scrub Selected Photos (Remove EXIF / GPS)",
+        ["Loc_ExifSubfoldersCheck"] = "Include subfolders",
+        ["Loc_ExifBackupCheck"] = "Backup originals before scrubbing (FreeCleaner_PhotoBackup)",
+        ["Loc_ExifOptimizeJpegCheck"] = "Smart-optimize JPEG file size (88% quality)",
+        ["Loc_ExifColSelect"] = "Select",
+        ["Loc_ExifColFile"] = "File Name",
+        ["Loc_ExifColSize"] = "Size",
+        ["Loc_ExifColGps"] = "Privacy / GPS",
+        ["Loc_ExifColCamera"] = "Camera / Device",
+        ["Loc_ExifColDate"] = "Date Taken",
+        ["Loc_ExifColMeta"] = "Detected Metadata",
+        ["Loc_ExifColStatus"] = "Status"
+    };
+
+    public static IReadOnlyCollection<string> GetAllKeys(string? langCode)
+        => IsEnglish(langCode) ? EnStrings.Keys : TrStrings.Keys;
+
+    public static string NormalizeLanguageCode(string? languageCode)
+        => IsEnglish(languageCode) ? "en-US" : "tr-TR";
+
+    private static bool IsEnglish(string? languageCode)
+        => !string.IsNullOrWhiteSpace(languageCode) &&
+           (languageCode.StartsWith("en", StringComparison.OrdinalIgnoreCase) ||
+            languageCode.Contains("English", StringComparison.OrdinalIgnoreCase));
+
+    public static string Get(string key, string? langOverride = null)
+    {
+        bool useEn = IsEnglish(langOverride ?? CurrentLanguage);
+        Dictionary<string, string> dict = useEn ? EnStrings : TrStrings;
+        if (dict.TryGetValue(key, out string? value))
+            return value;
+        return TrStrings.TryGetValue(key, out string? fallback) ? fallback : key;
+    }
+
+    public static void ApplyLanguage(string? languageCode)
+    {
+        string normalized = NormalizeLanguageCode(languageCode);
+        CurrentLanguage = normalized;
+
+        ResourceDictionary? resources = Application.Current?.Resources;
+        if (resources is null)
+            return;
+
+        Dictionary<string, string> activeMap = IsEnglish(normalized) ? EnStrings : TrStrings;
+        foreach (KeyValuePair<string, string> kv in activeMap)
+        {
+            resources[kv.Key] = kv.Value;
+        }
+    }
+
+    public static string GetSectionTitle(string sectionKey, string? langOverride = null)
+    {
+        if (IsEnglish(langOverride ?? CurrentLanguage))
+        {
+            return sectionKey switch
+            {
+                "Dashboard" => "Overview (Dashboard) & 100-Point PC Health Check",
+                "LiveMonitor" => "Live CPU, RAM & Network Speed Monitor (Sparkline)",
+                "DiskTreemap" => "Interactive Visual Disk Map (Treemap Visualizer)",
+                "ExifScrubber" => "Photo EXIF / GPS Privacy Scrubber & Optimizer",
+                "All" => "Smart Cleaner & All Categories",
+                "System" => "Windows & System Cleaner (Temp, Logs, Recycle Bin)",
+                "Browsers" => "Web Browsers Cleaner (Chrome, Edge, Brave, Firefox)",
+                "Apps" => "Application & Developer Caches",
+                "Startup" => "Startup Applications Manager",
+                "Registry" => "Registry Scanner & Backup",
+                "DiskAnalyzer" => "Large & Duplicate File Finder",
+                "Uninstaller" => "Installed Apps & Orphan Folder Cleaner",
+                "Booster" => "RAM Optimizer, DNS & System Booster",
+                "DevCleaner" => "DevCleaner & Gamer (VS Debug/Retail, node_modules, Shaders)",
+                "Shredder" => "Secure File Shredder (DoD 5220.22-M) & Free Space Wiper",
+                "Privacy" => "Windows Privacy & Telemetry Shield",
+                "Network" => "Live TCP/UDP Connections & Hosts Manager",
+                "TasksAndTree" => "Task Scheduler & Folder Size Tree",
+                "Downloads" => "Downloads Assistant & Empty Folders",
+                "ContextMenu" => "Shell Context Menu Manager",
+                "Services" => "Windows Services Optimizer",
+                "SmartPower" => "Disk Health (S.M.A.R.T.), Battery & Power Plans",
+                "RepairCenter" => "System Repair Center (SFC, DISM, FontCache)",
+                "Unlocker" => "Locked File Unlocker (Restart Manager)",
+                "BrowserExtensions" => "Browser Extensions Auditor",
+                "DriversUpdates" => "Windows Updates (KB) & DriverStore",
+                "PathDoctor" => "Environment PATH & Broken Shortcuts Doctor",
+                "CrashLogs" => "BSOD Crash Dumps (.dmp) & Event Log Analyzer",
+                "WifiDns" => "Saved Wi-Fi Passwords & Live DNS Ping",
+                "PackageCaches" => "WSL2 / Docker VHDX & Global Package Caches",
+                "RestoreGodMode" => "System Restore Points & Windows God Mode",
+                "FileAssoc" => "File Associations (UserChoice) Doctor",
+                "PortHunter" => "Developer Port Hunter (Port Killer)",
+                "Bloatware" => "Windows 10/11 Preinstalled Appx Bloatware Remover",
+                "DiskBench" => "Live SSD / NVMe Read & Write Benchmark",
+                "HardwareSpecs" => "Hardware Inventory, BIOS & OEM License Key",
+                "UsbForensics" => "USB Storage History (USBSTOR Forensics)",
+                "ProcessSecurity" => "Running Process Digital Signature & SHA-256 Auditor",
+                "BatchRenamer" => "Batch File Renamer & Undo Center",
+                "NetworkAdapterDoctor" => "Network Adapter, IP/MAC & Winsock Doctor",
+                "FontManager" => "System & User Font Manager",
+                "ClipboardShield" => "Smart Clipboard Shield & Tracking URL Cleaner",
+                "AiModelCleaner" => "Local AI / LLM Model & Cache Hunter",
+                "FirewallBlocker" => "Windows Firewall Inspector & 1-Click Blocker",
+                "CryptoVault" => "AES-256-GCM File Vault (.fcvault) & Multi-Hash",
+                "Win11Tweaker" => "Windows 11 Tweaker & Explorer Booster",
+                "BitLocker" => "BitLocker Status & Mounted ISO/VHD Manager",
+                "WingetUpdater" => "Winget Bulk Software Updater",
+                "LanScanner" => "Local Network (LAN / Wi-Fi) Device Radar",
+                "SqliteOptimizer" => "Browser & IDE SQLite Vacuum Optimizer",
+                "CredentialSsh" => "Windows Credential Vault & SSH Key Auditor",
+                "ProcessPriority" => "Live CPU Process Priority & EcoQoS Manager",
+                "BootPerformance" => "Windows Boot Time & Startup Bottleneck Analyzer",
+                "DockerWsl" => "WSL2 Distro & Docker Container Cleaner",
+                "DefenderAuditor" => "Windows Defender Shield & Exclusion Auditor",
+                "MonitorGpu" => "Monitor EDID, Refresh Rate (Hz) & GPU Driver Reset",
+                "GitRepoCompressor" => "Git Repository (.git) Compressor (git gc)",
+                "Settings" => "Whitelist, Theme, Language, Updates & Reporting",
+                _ => "Smart Cleaner & All Categories"
+            };
+        }
+
+        return sectionKey switch
+        {
+            "Dashboard" => "Genel Bakış (Dashboard) & 100 Puanlık PC Sağlık Kontrolü",
+            "LiveMonitor" => "Canlı CPU, RAM & Ağ Hızı Telemetri Monitörü (Sparkline)",
+            "DiskTreemap" => "Etkileşimli Görsel Disk Haritası (Treemap Visualizer)",
+            "ExifScrubber" => "Fotoğraf EXIF / GPS Gizlilik Temizleyici & Optimizasyon",
+            "System" => "Sistem Temizleyici (Temp, Loglar & Geri Dönüşüm)",
+            "Browsers" => "Web Tarayıcıları (Chrome, Edge, Brave, Firefox)",
+            "Apps" => "Uygulama & Geliştirici Önbellekleri",
+            "Startup" => "Başlangıç (Startup) Yöneticisi",
+            "Registry" => "Kayıt Defteri (Registry) Taraması & Yedekleme",
+            "DiskAnalyzer" => "Büyük Dosya & Kopya (Duplicate) Bulucu",
+            "Uninstaller" => "Yüklü Programlar & Yetim Kalıntı Klasör Temizleyici",
+            "Booster" => "RAM Boşaltıcı, Ağ (DNS) & Sistem Hızlandırıcı",
+            "DevCleaner" => "DevCleaner & Gamer (VS Debug/Retail, node_modules, Shader)",
+            "Shredder" => "Güvenli Dosya Öğütücü (DoD 5220.22-M) & Boş Alan Silici",
+            "Privacy" => "Windows Gizlilik & Telemetri Kalkanı (MRU, JumpList, Pano)",
+            "Network" => "Canlı Ağ Bağlantıları (TCP/UDP) & Hosts Yöneticisi",
+            "TasksAndTree" => "Zamanlanmış Görevler (Task Scheduler) & Klasör Ağacı",
+            "Downloads" => "İndirilenler (Downloads) Asistanı & Boş Klasör Temizleyici",
+            "ContextMenu" => "Sağ Tık Bağlam Menüsü (Context Menu) Yöneticisi",
+            "Services" => "Windows Servisleri & Telemetri Optimizasyon Yöneticisi",
+            "SmartPower" => "Disk Sağlığı (S.M.A.R.T.), Pil Raporu & Oyun Modu",
+            "RepairCenter" => "Sistem Onarım Merkezi (SFC, DISM, FontCache & Windows.old)",
+            "Unlocker" => "Kilitli Dosya Çözücü (File Unlocker - Win32 Restart Manager)",
+            "BrowserExtensions" => "Tarayıcı Eklentileri (Extensions) Denetçisi",
+            "DriversUpdates" => "Windows Güncelleme Geçmişi (KB) & Sürücü Deposu (DriverStore)",
+            "PathDoctor" => "Ortam Değişkenleri (PATH) Doktoru & Kırık Kısayol (.lnk) Onarıcı",
+            "CrashLogs" => "Mavi Ekran (BSOD), Çökme Dökümleri (.dmp) & Olay Günlüğü Analizcisi",
+            "WifiDns" => "Kayıtlı Wi-Fi Şifre Görüntüleyici & Canlı DNS Ping Kıyaslayıcı",
+            "PackageCaches" => "WSL2 / Docker VHDX & Küresel Paket Önbelleği (NuGet, NPM, Pip, Gradle) Kurtarıcısı",
+            "RestoreGodMode" => "Sistem Geri Yükleme Noktası (Restore Point) & Windows God Mode Merkezi",
+            "FileAssoc" => "Dosya Uzantısı & Varsayılan Program (UserChoice) Doktoru",
+            "PortHunter" => "Geliştirici Port Avcısı (Port Killer - Hangi Portu Kim Kullanıyor?)",
+            "Bloatware" => "Windows 10/11 Önyüklü Bloatware (UWP Appx) Kaldırıcı",
+            "DiskBench" => "Canlı SSD / NVMe Disk Okuma & Yazma Hız Testi (Benchmark)",
+            "HardwareSpecs" => "Derin Donanım Envanteri, BIOS & OEM Windows Lisans Anahtarı",
+            "UsbForensics" => "USB Depolama Geçmişi (USBSTOR Adli Analiz) & İz Temizleyici",
+            "ProcessSecurity" => "Süreç & Dijital İmza Denetçisi (Unsigned Binary & SHA-256 Hunter)",
+            "BatchRenamer" => "Toplu Dosya Yeniden Adlandırıcı (PowerRename & Geri Alma Merkezi)",
+            "NetworkAdapterDoctor" => "Ağ Adaptörü, IP/MAC & TCP/IP Winsock Onarım Doktoru",
+            "FontManager" => "Sistem & Kullanıcı Font (Yazı Tipi) Yöneticisi ve Canlı Önizleme",
+            "ClipboardShield" => "Akıllı Pano (Clipboard) Kalkanı & Takip URL Temizleyici",
+            "AiModelCleaner" => "Yerel Yapay Zeka (AI / LLM) Model & Önbellek Avcısı (Ollama, HuggingFace, LM Studio)",
+            "FirewallBlocker" => "Windows Güvenlik Duvarı (Firewall) Denetçisi & Tek Tıkla Uygulama İnternet Kesici",
+            "CryptoVault" => "AES-256-GCM Dosya Şifreleme Kasası (.fcvault) & Çoklu Hash (MD5/SHA256/SHA512) Doğrulayıcı",
+            "Win11Tweaker" => "Windows 11 İnce Ayar (Ultimate Tweaker) & Explorer Hızlandırıcı",
+            "BitLocker" => "BitLocker Durum Denetçisi & Bağlı ISO / VHD Sanal Disk Yöneticisi",
+            "WingetUpdater" => "Winget Toplu Program Güncelleyici (One-Click Software Updater)",
+            "LanScanner" => "Yerel Ağ (LAN / Wi-Fi) Cihaz Radarı & ARP/Ping Tarayıcı",
+            "SqliteOptimizer" => "Tarayıcı & IDE SQLite Veritabanı Sıkıştırıcı (Zero-Data-Loss Optimizer)",
+            "CredentialSsh" => "Windows Kimlik Kasası (cmdkey) & SSH / Git Anahtar Denetçisi",
+            "ProcessPriority" => "Canlı CPU Önceliği (Process Priority) & Verimlilik Modu (EcoQoS) Yöneticisi",
+            "BootPerformance" => "Windows Açılış Süresi (Boot Time) & Önyükleme Darboğaz Analizcisi",
+            "DockerWsl" => "WSL2 Linux Dağıtım Yöneticisi & Docker Konteyner / İmaj Temizleyici",
+            "DefenderAuditor" => "Windows Defender Güvenlik Kalkanı & Gizli İstisna (ExclusionPath) Denetçisi",
+            "MonitorGpu" => "Monitör EDID, Yenileme Hızı (Hz) & Ekran Kartı (GPU) Sıfırlama Doktoru",
+            "GitRepoCompressor" => "Git Depoları (.git) Sıkıştırıcı (git gc) & Proje Durum Radarı",
+            "Settings" => "Beyaz Liste, Tema, Dil, Güncelleme & Raporlama",
+            _ => "Akıllı Temizlik & Tüm Kategoriler"
+        };
+    }
+}

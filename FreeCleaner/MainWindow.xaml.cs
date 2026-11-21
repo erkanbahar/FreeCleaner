@@ -7,6 +7,7 @@ using System.Windows.Input;
 using FreeCleaner.Models;
 using FreeCleaner.Services;
 using FreeCleaner.ViewModels;
+using FreeCleaner.Views;
 
 namespace FreeCleaner;
 
@@ -16,13 +17,39 @@ public partial class MainWindow : Window
     private Dictionary<Expander, bool>? _preSearchExpanderStates;
     private SystemTrayService? _trayService;
     private bool _forceExit;
+    private readonly LazyViewRegistry _lazyViews = new();
 
     public MainWindow()
     {
         InitializeComponent();
+        RegisterLazyViews();
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
         Closed += MainWindow_Closed;
+    }
+
+    private void RegisterLazyViews()
+    {
+        _lazyViews.Register("Dashboard", () => new DashboardView { DataContext = DataContext });
+        _lazyViews.Register("LiveMonitor", () => new LiveMonitorView { DataContext = DataContext });
+        _lazyViews.Register("DiskTreemap", () => new DiskTreemapView { DataContext = DataContext });
+        _lazyViews.Register("ExifScrubber", () => new ExifScrubberView { DataContext = DataContext });
+    }
+
+    private void SyncLazyModuleHost(string? sectionKey)
+    {
+        if (_lazyViews.HasView(sectionKey))
+        {
+            object? view = _lazyViews.GetOrCreate(sectionKey);
+            if (view is FrameworkElement fe && !ReferenceEquals(fe.DataContext, DataContext))
+                fe.DataContext = DataContext;
+            LazyModuleHost.Content = view;
+            LazyModuleHost.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            LazyModuleHost.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -57,6 +84,13 @@ public partial class MainWindow : Window
 
         if (DataContext is MainViewModel viewModel)
         {
+            SyncLazyModuleHost(viewModel.ActiveSection);
+            viewModel.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainViewModel.ActiveSection))
+                    SyncLazyModuleHost(viewModel.ActiveSection);
+            };
+
             viewModel.TrayNotificationRequested += (title, message, isWarning) =>
                 _trayService?.ShowNotification(title, message, isWarning);
         }

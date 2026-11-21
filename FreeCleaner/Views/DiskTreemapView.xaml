@@ -1,0 +1,260 @@
+<UserControl x:Class="FreeCleaner.Views.DiskTreemapView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Border Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" MinHeight="270"/>
+                <RowDefinition Height="165"/>
+            </Grid.RowDefinitions>
+
+            <!-- Row 0: Header & Summary Pill -->
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{DynamicResource Loc_TreemapTitle}"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="{DynamicResource Loc_TreemapSubtitle}"
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+                <Border Grid.Column="1"
+                        Background="{DynamicResource BgCardBrush}"
+                        BorderBrush="{DynamicResource AccentBlueBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12,6"
+                        VerticalAlignment="Center"
+                        Margin="12,0,0,0">
+                    <TextBlock Text="{Binding TreemapSummaryText}"
+                               FontSize="11.5"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource AccentBlueBrush}"/>
+                </Border>
+            </Grid>
+
+            <!-- Row 1: Path Bar & Controls -->
+            <Grid Grid.Row="1" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Text="{Binding TreemapCurrentPath, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource BgCardBrush}"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
+                         CaretBrush="{DynamicResource AccentBlueBrush}"
+                         BorderBrush="{DynamicResource BorderSubtleBrush}"
+                         Padding="10,7"
+                         FontSize="12.5"
+                         Margin="0,0,8,0"/>
+                <Button Grid.Column="1"
+                        Style="{StaticResource SubtleButtonStyle}"
+                        Content="{DynamicResource Loc_TreemapBrowseBtn}"
+                        Command="{Binding BrowseTreemapFolderCommand}"
+                        Margin="0,0,6,0"/>
+                <Button Grid.Column="2"
+                        Style="{StaticResource SubtleButtonStyle}"
+                        Content="{DynamicResource Loc_TreemapUpBtn}"
+                        Command="{Binding NavigateTreemapParentCommand}"
+                        Margin="0,0,6,0"/>
+                <Button Grid.Column="3"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Content="{DynamicResource Loc_TreemapScanBtn}"
+                        Command="{Binding AnalyzeTreemapCommand}"
+                        Margin="0,0,6,0"/>
+                <Button Grid.Column="4"
+                        Style="{StaticResource SubtleButtonStyle}"
+                        Content="{DynamicResource Loc_TreemapOpenFolderBtn}"
+                        Command="{Binding OpenTreemapCurrentFolderCommand}"/>
+            </Grid>
+
+            <!-- Row 2: Interactive Treemap Canvas -->
+            <Border x:Name="TreemapSurfaceBorder"
+                    Grid.Row="2"
+                    Background="{DynamicResource BgPrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    ClipToBounds="True"
+                    Margin="0,0,0,12"
+                    SizeChanged="TreemapSurface_SizeChanged">
+                <Grid>
+                    <TextBlock Text="{DynamicResource Loc_TreemapEmptyHint}"
+                               FontSize="13"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding TreemapNodes.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <ItemsControl ItemsSource="{Binding TreemapNodes}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <Canvas/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemContainerStyle>
+                            <Style TargetType="ContentPresenter">
+                                <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                            </Style>
+                        </ItemsControl.ItemContainerStyle>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Width="{Binding Width}"
+                                        Height="{Binding Height}"
+                                        Background="{Binding FillHex, Converter={StaticResource HexToBrush}}"
+                                        CornerRadius="6"
+                                        BorderBrush="#44FFFFFF"
+                                        BorderThickness="1"
+                                        Cursor="Hand"
+                                        ToolTip="{Binding ToolTipText}"
+                                        MouseLeftButtonUp="TreemapTile_MouseLeftButtonUp">
+                                    <Border.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="📂 Klasöre Gir (Drill Down)" Click="DrillDownMenuItem_Click"/>
+                                            <MenuItem Header="🔍 Dosya Gezgininde Göster" Click="OpenExplorerMenuItem_Click"/>
+                                        </ContextMenu>
+                                    </Border.ContextMenu>
+                                    <Grid ClipToBounds="True" Margin="6,4">
+                                        <StackPanel VerticalAlignment="Center"
+                                                    Visibility="{Binding ShowDetailedLabel, Converter={StaticResource BoolToVis}}">
+                                            <TextBlock Text="{Binding Name}"
+                                                       Foreground="White"
+                                                       FontWeight="Bold"
+                                                       FontSize="12"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Foreground="#E2E8F0" FontSize="10.5" Margin="0,2,0,0">
+                                                <Run Text="{Binding FormattedSize, Mode=OneWay}"/>
+                                                <Run Text=" ("/>
+                                                <Run Text="{Binding PercentText, Mode=OneWay}"/>
+                                                <Run Text=")"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Name}"
+                                                   Foreground="White"
+                                                   FontWeight="SemiBold"
+                                                   FontSize="10.5"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding ShowDetailedLabel}" Value="False"/>
+                                                                <Condition Binding="{Binding ShowCompactLabel}" Value="True"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Grid>
+            </Border>
+
+            <!-- Row 3: Compact Detail Table -->
+            <DataGrid Grid.Row="3"
+                      ItemsSource="{Binding TreemapNodes}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="30">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Binding="{Binding Name}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_TreemapColName}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding TypeBadge}" Width="110">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_TreemapColType}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedSize}" Width="115">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_TreemapColSize}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PercentText}" Width="80">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_TreemapColShare}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FullPath}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_TreemapColPath}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="115">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <Button Style="{StaticResource SubtleButtonStyle}"
+                                            Content="📂"
+                                            Padding="7,2"
+                                            FontSize="11"
+                                            Margin="0,0,4,0"
+                                            ToolTip="İçine Gir (Klasör)"
+                                            Command="{Binding DataContext.DrillDownTreemapNodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                    <Button Style="{StaticResource SubtleButtonStyle}"
+                                            Content="🔍"
+                                            Padding="7,2"
+                                            FontSize="11"
+                                            ToolTip="Dosya Gezgininde Aç"
+                                            Command="{Binding DataContext.OpenTreemapNodeInExplorerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

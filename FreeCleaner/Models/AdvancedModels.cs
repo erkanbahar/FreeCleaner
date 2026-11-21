@@ -1199,3 +1199,80 @@ public class LiveProcessMetricItem
     public required int Threads { get; init; }
     public required string PriorityText { get; init; }
 }
+
+
+// ==================== 11TH GENERATION INTERACTIVE DISK TREEMAP & EXIF PRIVACY SCRUBBER MODELS ====================
+
+public class TreemapNodeItem
+{
+    public required string Name { get; init; }
+    public required string FullPath { get; init; }
+    public required long SizeBytes { get; init; }
+    public required bool IsDirectory { get; init; }
+    public required double X { get; init; }
+    public required double Y { get; init; }
+    public required double Width { get; init; }
+    public required double Height { get; init; }
+    public required string FillHex { get; init; }
+    public required double SharePercent { get; init; }
+
+    public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
+    public string PercentText => $"{SharePercent:F1}%";
+    public string TypeBadge => IsDirectory ? "📁 Klasör" : "📄 Dosya";
+    public bool ShowDetailedLabel => Width >= 88 && Height >= 40;
+    public bool ShowCompactLabel => Width >= 48 && Height >= 22;
+    public string ToolTipText => $"{TypeBadge}: {Name}\nBoyut: {FormattedSize} ({PercentText})\nYol: {FullPath}";
+}
+
+public class PhotoMetadataItem : INotifyPropertyChanged
+{
+    private bool _isSelected = true;
+    private string _statusText = "⏳ Taranıyor / Hazır";
+
+    public required string FileName { get; init; }
+    public required string FullPath { get; init; }
+    public required long SizeBytes { get; init; }
+    public required bool HasGpsData { get; init; }
+    public required string CameraInfo { get; init; }
+    public required string DateTaken { get; init; }
+    public required string MetadataSummary { get; init; }
+    public required int TagCount { get; init; }
+
+    public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
+
+    public string GpsBadge => HasGpsData
+        ? "📍 GPS VAR (Risk)"
+        : TagCount > 0
+            ? $"📷 EXIF Var ({TagCount})"
+            : "✅ Temiz";
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string StatusText
+    {
+        get => _statusText;
+        set
+        {
+            if (_statusText != value)
+            {
+                _statusText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+}

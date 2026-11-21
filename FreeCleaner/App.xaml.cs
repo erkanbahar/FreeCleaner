@@ -13,6 +13,10 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        var startupConfig = Services.ExclusionAndSettingsService.Load();
+        Services.LocalizationService.ApplyLanguage(startupConfig.SelectedLanguage);
+        Services.ThemeManagerService.ApplyTheme(startupConfig.SelectedTheme);
+
         var window = new MainWindow();
         MainWindow = window;
         window.Show();

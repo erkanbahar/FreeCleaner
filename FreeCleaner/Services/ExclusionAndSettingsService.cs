@@ -21,6 +21,7 @@ public class CleanerConfigData
     public List<string> SelectedRuleIds { get; set; } = [];
     public List<string> FavoriteSections { get; set; } = ["Dashboard", "All", "LiveMonitor", "DiskBench", "WingetUpdater"];
     public string SelectedTheme { get; set; } = "ObsidianNeon";
+    public string SelectedLanguage { get; set; } = "tr-TR";
 }
 
 public static class ExclusionAndSettingsService

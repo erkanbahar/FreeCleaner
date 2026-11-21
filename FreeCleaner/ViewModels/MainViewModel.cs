@@ -43,6 +43,19 @@ public class MainViewModel : INotifyPropertyChanged
 
     private string _activeSection = "Dashboard";
     private string _selectedTheme = "ObsidianNeon";
+    private string _selectedLanguage = "tr-TR";
+    private string _updateStatusText = $"Mevcut sürüm: v{AppUpdateService.CurrentVersion} (Güncelleme kontrolü hazır)";
+    private string _latestReleaseUrl = AppUpdateService.ReleasesPageUrl;
+    private string _treemapCurrentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    private string _treemapSummaryText = "Bir klasör seçip 'Haritayı Oluştur' butonuna tıklayın.";
+    private List<RawTreemapEntry> _lastTreemapRawEntries = [];
+    private double _treemapCanvasWidth = 920;
+    private double _treemapCanvasHeight = 340;
+    private string _exifScanFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+    private bool _exifIncludeSubfolders = true;
+    private bool _exifCreateBackup = true;
+    private bool _exifOptimizeJpeg;
+    private string _exifSummaryText = "Fotoğraf klasörü taraması bekleniyor.";
     private int _healthScore = 100;
     private string _healthGradeBadge = "🌟 Hazır";
     private string _healthAdviceText = "Tek tıkla tüm sistemin sağlık kontrolünü, gereksiz dosya taramasını ve bellek optimizasyonunu başlatın.";
@@ -174,6 +187,8 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<NavShortcutItem> FavoriteNavItems { get; } = [];
     public ObservableCollection<LiveProcessMetricItem> LiveTopProcesses { get; } = [];
     public ObservableCollection<NavShortcutItem> AllModuleCatalog { get; } = [];
+    public ObservableCollection<TreemapNodeItem> TreemapNodes { get; } = [];
+    public ObservableCollection<PhotoMetadataItem> PhotoMetadataItems { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -189,6 +204,8 @@ public class MainViewModel : INotifyPropertyChanged
     public string[] AvailableRenameCaseModes { get; } = ["Değiştirme (Olduğu Gibi)", "küçük harf (lowercase)", "BÜYÜK HARF (UPPERCASE)", "Baş Harfler Büyük (Title Case)"];
     public string[] AvailableRiskFilters { get; } = ["Tümü", "Düşük", "Orta", "Yüksek"];
     public string[] AvailableThemes => ThemeManagerService.AvailableThemes;
+    public IReadOnlyList<LanguageOption> AvailableLanguages => LocalizationService.AvailableLanguages;
+    public string AppVersionDisplay => $"v{AppUpdateService.CurrentVersion} • .NET 10";
 
     public event Action<string, string, bool>? TrayNotificationRequested;
 
@@ -407,9 +424,25 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand ToggleCurrentFavoriteCommand { get; }
     public ICommand ApplyThemeCommand { get; }
 
+    // 11th Gen Disk Treemap, Photo EXIF/GPS Scrubber & App Update Commands
+    public ICommand BrowseTreemapFolderCommand { get; }
+    public ICommand AnalyzeTreemapCommand { get; }
+    public ICommand NavigateTreemapParentCommand { get; }
+    public ICommand DrillDownTreemapNodeCommand { get; }
+    public ICommand OpenTreemapNodeInExplorerCommand { get; }
+    public ICommand OpenTreemapCurrentFolderCommand { get; }
+    public ICommand BrowseExifFolderCommand { get; }
+    public ICommand ScanPhotosExifCommand { get; }
+    public ICommand ScrubSelectedPhotosCommand { get; }
+    public ICommand OpenPhotoLocationCommand { get; }
+    public ICommand CheckForUpdatesCommand { get; }
+    public ICommand OpenLatestReleasePageCommand { get; }
+
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
-    public string AdminStatusBadge => IsAdmin ? "Yönetici Modu (Admin)" : "Standart Kullanıcı Modu";
+    public string AdminStatusBadge => LocalizationService.NormalizeLanguageCode(_selectedLanguage) == "en-US"
+        ? (IsAdmin ? "Administrator Mode" : "Standard User Mode")
+        : (IsAdmin ? "Yönetici Modu (Admin)" : "Standart Kullanıcı Modu");
 
     public MainViewModel()
     {
@@ -433,6 +466,7 @@ public class MainViewModel : INotifyPropertyChanged
         _selectedTheme = ThemeManagerService.AvailableThemes.Contains(savedConfig.SelectedTheme, StringComparer.OrdinalIgnoreCase)
             ? savedConfig.SelectedTheme
             : "ObsidianNeon";
+        _selectedLanguage = LocalizationService.NormalizeLanguageCode(savedConfig.SelectedLanguage);
         _lastScheduledMaintenanceUtc = DateTime.UtcNow;
         LoadActivityLogs();
 
@@ -820,6 +854,37 @@ public class MainViewModel : INotifyPropertyChanged
                 SelectedTheme = themeKey;
         });
 
+        // 11th Gen Disk Treemap, Photo EXIF/GPS Scrubber & App Update Commands
+        BrowseTreemapFolderCommand = new RelayCommand(_ => BrowseTreemapFolder(), _ => !IsBusy);
+        AnalyzeTreemapCommand = new RelayCommand(async _ => await LoadTreemapAsync(), _ => !IsBusy);
+        NavigateTreemapParentCommand = new RelayCommand(async _ => await NavigateTreemapParentAsync(), _ => !IsBusy);
+        DrillDownTreemapNodeCommand = new RelayCommand(async param =>
+        {
+            if (param is TreemapNodeItem node && node.IsDirectory && System.IO.Directory.Exists(node.FullPath))
+            {
+                TreemapCurrentPath = node.FullPath;
+                await LoadTreemapAsync();
+            }
+        }, param => !IsBusy && param is TreemapNodeItem { IsDirectory: true });
+        OpenTreemapNodeInExplorerCommand = new RelayCommand(param =>
+        {
+            if (param is TreemapNodeItem node)
+                OpenExplorerPath(node.FullPath);
+        });
+        OpenTreemapCurrentFolderCommand = new RelayCommand(_ => OpenExplorerPath(TreemapCurrentPath));
+
+        BrowseExifFolderCommand = new RelayCommand(_ => BrowseExifFolder(), _ => !IsBusy);
+        ScanPhotosExifCommand = new RelayCommand(async _ => await LoadPhotoMetadataAsync(), _ => !IsBusy);
+        ScrubSelectedPhotosCommand = new RelayCommand(async _ => await ScrubSelectedPhotosAsync(), _ => !IsBusy && PhotoMetadataItems.Any(p => p.IsSelected));
+        OpenPhotoLocationCommand = new RelayCommand(param =>
+        {
+            if (param is PhotoMetadataItem photo)
+                OpenExplorerPath(photo.FullPath);
+        });
+
+        CheckForUpdatesCommand = new RelayCommand(async _ => await CheckForUpdatesAsync(), _ => !IsBusy);
+        OpenLatestReleasePageCommand = new RelayCommand(_ => OpenUrlSafe(_latestReleaseUrl));
+
         _liveTelemetryTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(1)
@@ -839,9 +904,10 @@ public class MainViewModel : INotifyPropertyChanged
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();
 
+        LocalizationService.ApplyLanguage(_selectedLanguage);
         ThemeManagerService.ApplyTheme(_selectedTheme);
         UpdateHealthScoreSummary(0, StartupItems.Count);
-        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Dashboard, Sistem Tepsisi, Ctrl+K Paleti, Canlı Telemetri & 53 Modül hazır.");
+        AddLog("FreeCleaner Pro (.NET 10) başlatıldı: Dashboard, Disk Treemap, EXIF Temizleyici, Canlı Telemetri & 55 Modül hazır.");
     }
 
     public SystemMetricsSnapshot SystemMetrics
@@ -921,6 +987,8 @@ public class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(IsDefenderAuditorSection));
                 OnPropertyChanged(nameof(IsMonitorGpuSection));
                 OnPropertyChanged(nameof(IsGitRepoCompressorSection));
+                OnPropertyChanged(nameof(IsDiskTreemapSection));
+                OnPropertyChanged(nameof(IsExifScrubberSection));
                 OnPropertyChanged(nameof(IsSettingsSection));
                 OnPropertyChanged(nameof(SectionTitle));
 
@@ -1018,6 +1086,8 @@ public class MainViewModel : INotifyPropertyChanged
                     _ = LoadMonitorsAndGpuAsync();
                 else if (_activeSection == "GitRepoCompressor" && GitRepoItems.Count == 0)
                     _ = LoadGitReposAsync();
+                else if (_activeSection == "DiskTreemap" && TreemapNodes.Count == 0)
+                    _ = LoadTreemapAsync();
 
                 if (_activeSection == "LiveMonitor")
                 {
@@ -1038,6 +1108,8 @@ public class MainViewModel : INotifyPropertyChanged
 
     public bool IsDashboardSection => ActiveSection == "Dashboard";
     public bool IsLiveMonitorSection => ActiveSection == "LiveMonitor";
+    public bool IsDiskTreemapSection => ActiveSection == "DiskTreemap";
+    public bool IsExifScrubberSection => ActiveSection == "ExifScrubber";
     public bool IsAllSection => ActiveSection == "All";
     public bool IsSystemSection => ActiveSection == "System";
     public bool IsBrowsersSection => ActiveSection == "Browsers";
@@ -1095,65 +1167,7 @@ public class MainViewModel : INotifyPropertyChanged
     public bool IsGitRepoCompressorSection => ActiveSection == "GitRepoCompressor";
     public bool IsSettingsSection => ActiveSection == "Settings";
 
-    public string SectionTitle => ActiveSection switch
-    {
-        "Dashboard" => "Genel Bakış (Dashboard) & 100 Puanlık PC Sağlık Kontrolü",
-        "LiveMonitor" => "Canlı CPU, RAM & Ağ Hızı Telemetri Monitörü (Sparkline)",
-        "System" => "Sistem Temizleyici (Temp, Loglar & Geri Dönüşüm)",
-        "Browsers" => "Web Tarayıcıları (Chrome, Edge, Brave, Firefox)",
-        "Apps" => "Uygulama & Geliştirici Önbellekleri",
-        "Startup" => "Başlangıç (Startup) Yöneticisi",
-        "Registry" => "Kayıt Defteri (Registry) Taraması & Yedekleme",
-        "DiskAnalyzer" => "Büyük Dosya & Kopya (Duplicate) Bulucu",
-        "Uninstaller" => "Yüklü Programlar & Yetim Kalıntı Klasör Temizleyici",
-        "Booster" => "RAM Boşaltıcı, Ağ (DNS) & Sistem Hızlandırıcı",
-        "DevCleaner" => "DevCleaner & Gamer (VS Debug/Retail, node_modules, Shader)",
-        "Shredder" => "Güvenli Dosya Öğütücü (DoD 5220.22-M) & Boş Alan Silici",
-        "Privacy" => "Windows Gizlilik & Telemetri Kalkanı (MRU, JumpList, Pano)",
-        "Network" => "Canlı Ağ Bağlantıları (TCP/UDP) & Hosts Yöneticisi",
-        "TasksAndTree" => "Zamanlanmış Görevler (Task Scheduler) & Klasör Ağacı",
-        "Downloads" => "İndirilenler (Downloads) Asistanı & Boş Klasör Temizleyici",
-        "ContextMenu" => "Sağ Tık Bağlam Menüsü (Context Menu) Yöneticisi",
-        "Services" => "Windows Servisleri & Telemetri Optimizasyon Yöneticisi",
-        "SmartPower" => "Disk Sağlığı (S.M.A.R.T.), Pil Raporu & Oyun Modu",
-        "RepairCenter" => "Sistem Onarım Merkezi (SFC, DISM, FontCache & Windows.old)",
-        "Unlocker" => "Kilitli Dosya Çözücü (File Unlocker - Win32 Restart Manager)",
-        "BrowserExtensions" => "Tarayıcı Eklentileri (Extensions) Denetçisi",
-        "DriversUpdates" => "Windows Güncelleme Geçmişi (KB) & Sürücü Deposu (DriverStore)",
-        "PathDoctor" => "Ortam Değişkenleri (PATH) Doktoru & Kırık Kısayol (.lnk) Onarıcı",
-        "CrashLogs" => "Mavi Ekran (BSOD), Çökme Dökümleri (.dmp) & Olay Günlüğü Analizcisi",
-        "WifiDns" => "Kayıtlı Wi-Fi Şifre Görüntüleyici & Canlı DNS Ping Kıyaslayıcı",
-        "PackageCaches" => "WSL2 / Docker VHDX & Küresel Paket Önbelleği (NuGet, NPM, Pip, Gradle) Kurtarıcısı",
-        "RestoreGodMode" => "Sistem Geri Yükleme Noktası (Restore Point) & Windows God Mode Merkezi",
-        "FileAssoc" => "Dosya Uzantısı & Varsayılan Program (UserChoice) Doktoru",
-        "PortHunter" => "Geliştirici Port Avcısı (Port Killer - Hangi Portu Kim Kullanıyor?)",
-        "Bloatware" => "Windows 10/11 Önyüklü Bloatware (UWP Appx) Kaldırıcı",
-        "DiskBench" => "Canlı SSD / NVMe Disk Okuma & Yazma Hız Testi (Benchmark)",
-        "HardwareSpecs" => "Derin Donanım Envanteri, BIOS & OEM Windows Lisans Anahtarı",
-        "UsbForensics" => "USB Depolama Geçmişi (USBSTOR Adli Analiz) & İz Temizleyici",
-        "ProcessSecurity" => "Süreç & Dijital İmza Denetçisi (Unsigned Binary & SHA-256 Hunter)",
-        "BatchRenamer" => "Toplu Dosya Yeniden Adlandırıcı (PowerRename & Geri Alma Merkezi)",
-        "NetworkAdapterDoctor" => "Ağ Adaptörü, IP/MAC & TCP/IP Winsock Onarım Doktoru",
-        "FontManager" => "Sistem & Kullanıcı Font (Yazı Tipi) Yöneticisi ve Canlı Önizleme",
-        "ClipboardShield" => "Akıllı Pano (Clipboard) Kalkanı & Takip URL Temizleyici",
-        "AiModelCleaner" => "Yerel Yapay Zeka (AI / LLM) Model & Önbellek Avcısı (Ollama, HuggingFace, LM Studio)",
-        "FirewallBlocker" => "Windows Güvenlik Duvarı (Firewall) Denetçisi & Tek Tıkla Uygulama İnternet Kesici",
-        "CryptoVault" => "AES-256-GCM Dosya Şifreleme Kasası (.fcvault) & Çoklu Hash (MD5/SHA256/SHA512) Doğrulayıcı",
-        "Win11Tweaker" => "Windows 11 İnce Ayar (Ultimate Tweaker) & Explorer Hızlandırıcı",
-        "BitLocker" => "BitLocker Durum Denetçisi & Bağlı ISO / VHD Sanal Disk Yöneticisi",
-        "WingetUpdater" => "Winget Toplu Program Güncelleyici (One-Click Software Updater)",
-        "LanScanner" => "Yerel Ağ (LAN / Wi-Fi) Cihaz Radarı & ARP/Ping Tarayıcı",
-        "SqliteOptimizer" => "Tarayıcı & IDE SQLite Veritabanı Sıkıştırıcı (Zero-Data-Loss Optimizer)",
-        "CredentialSsh" => "Windows Kimlik Kasası (cmdkey) & SSH / Git Anahtar Denetçisi",
-        "ProcessPriority" => "Canlı CPU Önceliği (Process Priority) & Verimlilik Modu (EcoQoS) Yöneticisi",
-        "BootPerformance" => "Windows Açılış Süresi (Boot Time) & Önyükleme Darboğaz Analizcisi",
-        "DockerWsl" => "WSL2 Linux Dağıtım Yöneticisi & Docker Konteyner / İmaj Temizleyici",
-        "DefenderAuditor" => "Windows Defender Güvenlik Kalkanı & Gizli İstisna (ExclusionPath) Denetçisi",
-        "MonitorGpu" => "Monitör EDID, Yenileme Hızı (Hz) & Ekran Kartı (GPU) Sıfırlama Doktoru",
-        "GitRepoCompressor" => "Git Depoları (.git) Sıkıştırıcı (git gc) & Proje Durum Radarı",
-        "Settings" => "Beyaz Liste (İstisnalar), Otomasyon & Raporlama",
-        _ => "Akıllı Temizlik & Tüm Kategoriler"
-    };
+    public string SectionTitle => LocalizationService.GetSectionTitle(ActiveSection, _selectedLanguage);
 
     public string SearchFilter
     {
@@ -2298,7 +2312,8 @@ public class MainViewModel : INotifyPropertyChanged
             ScheduledMaintenanceIntervalHours = ScheduledMaintenanceIntervalHours,
             SelectedRuleIds = AllRules.Where(rule => rule.IsSelected).Select(rule => rule.Id).ToList(),
             FavoriteSections = _favoriteSectionKeys.ToList(),
-            SelectedTheme = SelectedTheme
+            SelectedTheme = SelectedTheme,
+            SelectedLanguage = SelectedLanguage
         });
     }
 
@@ -5183,6 +5198,15 @@ public class MainViewModel : INotifyPropertyChanged
                     UseShellExecute = true
                 });
             }
+            else if (Directory.Exists(fullPath))
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = $"\"{fullPath}\"",
+                    UseShellExecute = true
+                });
+            }
             else
             {
                 string? dir = Path.GetDirectoryName(fullPath);
@@ -5356,7 +5380,9 @@ public class MainViewModel : INotifyPropertyChanged
 
     public bool IsCurrentSectionFavorite => _favoriteSectionKeys.Contains(ActiveSection, StringComparer.OrdinalIgnoreCase);
 
-    public string FavoriteButtonText => IsCurrentSectionFavorite ? "★ Favorilerde" : "☆ Favoriye Ekle";
+    public string FavoriteButtonText => LocalizationService.NormalizeLanguageCode(_selectedLanguage) == "en-US"
+        ? (IsCurrentSectionFavorite ? "★ Pinned" : "☆ Pin Favorite")
+        : (IsCurrentSectionFavorite ? "★ Favorilerde" : "☆ Favoriye Ekle");
 
     public void ExecuteCommandPaletteShortcut(NavShortcutItem item)
     {
@@ -5379,6 +5405,11 @@ public class MainViewModel : INotifyPropertyChanged
             case "CMD:FlushDns":
                 if (FlushDnsCommand.CanExecute(null))
                     FlushDnsCommand.Execute(null);
+                break;
+            case "CMD:CheckUpdate":
+                ActiveSection = "Settings";
+                if (CheckForUpdatesCommand.CanExecute(null))
+                    CheckForUpdatesCommand.Execute(null);
                 break;
             default:
                 ActiveSection = item.SectionKey;
@@ -5570,9 +5601,11 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("CMD:Analyze", "🔍 Hızlı Eylem: Akıllı Gereksiz Dosya Analizini Başlat", "\uE721", "Hızlı Komut", "analiz tara temizlik cop");
         AddEntry("CMD:OptimizeRam", "🧠 Hızlı Eylem: RAM Belleğini Şimdi Boşalt", "\uE945", "Hızlı Komut", "ram bellek bosalt memory boost");
         AddEntry("CMD:FlushDns", "🌐 Hızlı Eylem: DNS Önbelleğini Temizle (flushdns)", "\uE701", "Hızlı Komut", "dns flush ip yenile");
+        AddEntry("CMD:CheckUpdate", "🔄 Hızlı Eylem: Yeni Sürüm Kontrol Et (GitHub Releases)", "\uE895", "Hızlı Komut", "guncelleme update version release github");
 
-        // All 53 Modules
+        // All 55 Modules
         AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "\uE80F", "Temizlik & Bakış", "dashboard ana sayfa saglik skoru");
+        AddEntry("DiskTreemap", "🗺️ Görsel Disk Haritası (Treemap Visualizer)", "\uE8A9", "Temizlik & Disk", "treemap harita disk gorsel boyut klasor");
         AddEntry("LiveMonitor", "Canlı CPU, RAM & Ağ Grafikleri", "\uE9D9", "Performans & Donanım", "canli grafik cpu ram ag hizi monitor sparkline");
         AddEntry("All", "Akıllı Temizlik (Tümü)", "\uE770", "Temizlik & Disk", "temizlik cop temp gecici");
         AddEntry("System", "Windows & Sistem Temizliği", "\uE7F8", "Temizlik & Disk", "windows temp log recycle bin");
@@ -5607,6 +5640,7 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("FirewallBlocker", "Firewall & Uygulama İnternet Kesici", "\uE72E", "Ağ & Firewall", "firewall guvenlik duvari engel");
         AddEntry("PortHunter", "Geliştirici Port Avcısı (Port Killer)", "\uE968", "Ağ & Firewall", "port 3000 8080 5000 pid kill");
         AddEntry("DefenderAuditor", "Windows Defender & İstisna Denetçisi", "\uE83D", "Güvenlik & Gizlilik", "defender antivirus tarama exclusion");
+        AddEntry("ExifScrubber", "📸 Fotoğraf EXIF / GPS Gizlilik Temizleyici", "\uE722", "Güvenlik & Gizlilik", "exif gps fotograf resim gizlilik metadata scrubber optimize");
         AddEntry("ProcessSecurity", "Süreç & Dijital İmza Denetçisi", "\uEA18", "Güvenlik & Gizlilik", "imza x509 sha256 unsigned process");
         AddEntry("CryptoVault", "AES-256 Dosya Kasası & Çoklu Hash", "\uE8D7", "Güvenlik & Gizlilik", "aes256 sifrele fcvault md5 sha256 sha512");
         AddEntry("Privacy", "Windows Gizlilik & Telemetri Kalkanı", "\uE72E", "Güvenlik & Gizlilik", "gizlilik mru jumplist telemetri");
@@ -5627,7 +5661,360 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("TasksAndTree", "Zamanlanmış Görevler & Klasör Ağacı", "\uE823", "Geliştirici & AI", "task scheduler klasor boyutu");
         AddEntry("BrowserExtensions", "Tarayıcı Eklentileri Denetçisi", "\uEA86", "Geliştirici & AI", "extension eklenti chrome edge");
         AddEntry("DriversUpdates", "KB Güncellemeler & Sürücü Deposu", "\uE777", "Geliştirici & AI", "hotfix kb driverstore pnputil");
-        AddEntry("Settings", "Tema, Beyaz Liste, Tepsi & Raporlar", "\uE713", "Ayarlar & Tema", "tema theme tray sistem tepsisi whitelist ayarlar rapor");
+        AddEntry("Settings", "Tema, Dil, Güncelleme, Beyaz Liste & Raporlar", "\uE713", "Ayarlar & Tema", "tema theme dil language tr en guncelle update tray sistem tepsisi whitelist ayarlar rapor");
+    }
+
+    // ==================== 18. DISK TREEMAP, EXIF SCRUBBER, LANGUAGE SWITCHER & APP UPDATE CHECKER ====================
+
+    public string SelectedLanguage
+    {
+        get => _selectedLanguage;
+        set
+        {
+            string normalized = LocalizationService.NormalizeLanguageCode(value);
+            if (_selectedLanguage != normalized)
+            {
+                _selectedLanguage = normalized;
+                LocalizationService.ApplyLanguage(_selectedLanguage);
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(SectionTitle));
+                OnPropertyChanged(nameof(AdminStatusBadge));
+                OnPropertyChanged(nameof(FavoriteButtonText));
+                SaveCurrentSettings();
+                StatusMessage = _selectedLanguage == "en-US"
+                    ? "Language switched to English (en-US)."
+                    : "Uygulama dili Türkçe (tr-TR) olarak güncellendi.";
+                AddLog($"[DİL / LANGUAGE] Arayüz dili '{_selectedLanguage}' olarak değiştirildi.");
+            }
+        }
+    }
+
+    public string UpdateStatusText
+    {
+        get => _updateStatusText;
+        set { if (_updateStatusText != value) { _updateStatusText = value; OnPropertyChanged(); } }
+    }
+
+    public string TreemapCurrentPath
+    {
+        get => _treemapCurrentPath;
+        set { if (_treemapCurrentPath != value) { _treemapCurrentPath = value; OnPropertyChanged(); } }
+    }
+
+    public string TreemapSummaryText
+    {
+        get => _treemapSummaryText;
+        set { if (_treemapSummaryText != value) { _treemapSummaryText = value; OnPropertyChanged(); } }
+    }
+
+    public string ExifScanFolderPath
+    {
+        get => _exifScanFolderPath;
+        set { if (_exifScanFolderPath != value) { _exifScanFolderPath = value; OnPropertyChanged(); } }
+    }
+
+    public bool ExifIncludeSubfolders
+    {
+        get => _exifIncludeSubfolders;
+        set { if (_exifIncludeSubfolders != value) { _exifIncludeSubfolders = value; OnPropertyChanged(); } }
+    }
+
+    public bool ExifCreateBackup
+    {
+        get => _exifCreateBackup;
+        set { if (_exifCreateBackup != value) { _exifCreateBackup = value; OnPropertyChanged(); } }
+    }
+
+    public bool ExifOptimizeJpeg
+    {
+        get => _exifOptimizeJpeg;
+        set { if (_exifOptimizeJpeg != value) { _exifOptimizeJpeg = value; OnPropertyChanged(); } }
+    }
+
+    public string ExifSummaryText
+    {
+        get => _exifSummaryText;
+        set { if (_exifSummaryText != value) { _exifSummaryText = value; OnPropertyChanged(); } }
+    }
+
+    public void UpdateTreemapViewport(double width, double height)
+    {
+        if (width <= 32 || height <= 32)
+            return;
+
+        if (Math.Abs(_treemapCanvasWidth - width) < 2.0 && Math.Abs(_treemapCanvasHeight - height) < 2.0)
+            return;
+
+        _treemapCanvasWidth = width;
+        _treemapCanvasHeight = height;
+
+        if (_lastTreemapRawEntries.Count == 0)
+            return;
+
+        var recomputed = VisualDiskAndMediaService.ComputeTreemapLayout(_lastTreemapRawEntries, width, height);
+        TreemapNodes.Clear();
+        foreach (TreemapNodeItem node in recomputed)
+            TreemapNodes.Add(node);
+    }
+
+    private void BrowseTreemapFolder()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Görsel Disk Haritası (Treemap) İçin Klasör Seçin",
+            InitialDirectory = Directory.Exists(TreemapCurrentPath)
+                ? TreemapCurrentPath
+                : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+        };
+
+        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
+        {
+            TreemapCurrentPath = dlg.FolderName;
+            _ = LoadTreemapAsync();
+        }
+    }
+
+    private async Task NavigateTreemapParentAsync()
+    {
+        if (string.IsNullOrWhiteSpace(TreemapCurrentPath))
+            return;
+
+        DirectoryInfo? parent = Directory.GetParent(TreemapCurrentPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        if (parent is null || !parent.Exists)
+        {
+            StatusMessage = "Zaten sürücü kök dizinindesiniz.";
+            return;
+        }
+
+        TreemapCurrentPath = parent.FullName;
+        await LoadTreemapAsync();
+    }
+
+    private async Task LoadTreemapAsync()
+    {
+        if (IsBusy) return;
+        if (string.IsNullOrWhiteSpace(TreemapCurrentPath) || !Directory.Exists(TreemapCurrentPath))
+        {
+            StatusMessage = "Geçerli bir klasör yolu seçin.";
+            return;
+        }
+
+        IsBusy = true;
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        ProgressPercent = 15;
+        StatusMessage = $"Disk Treemap haritası oluşturuluyor: {TreemapCurrentPath}";
+
+        try
+        {
+            var (rawEntries, nodes, totalBytes, scannedCount) =
+                await VisualDiskAndMediaService.AnalyzeTreemapFolderAsync(
+                    TreemapCurrentPath,
+                    _treemapCanvasWidth,
+                    _treemapCanvasHeight,
+                    _cts.Token);
+
+            _lastTreemapRawEntries = rawEntries;
+            TreemapNodes.Clear();
+            foreach (TreemapNodeItem n in nodes)
+                TreemapNodes.Add(n);
+
+            TreemapSummaryText = $"{TreemapNodes.Count} blok • Toplam {CleanerRule.FormatBytes(totalBytes)} ({scannedCount:N0} öğe)";
+            ProgressPercent = 100;
+            StatusMessage = $"Treemap hazır: {TreemapCurrentPath} ({CleanerRule.FormatBytes(totalBytes)})";
+            AddLog($"[TREEMAP] '{TreemapCurrentPath}' haritalandı ({CleanerRule.FormatBytes(totalBytes)}, {nodes.Count} blok).");
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Treemap analizi kullanıcı tarafından iptal edildi.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Treemap hatası: {ex.Message}";
+            AddLog($"[HATA] Disk Treemap analizi başarısız: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void BrowseExifFolder()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "EXIF / GPS Gizlilik Taraması Yapılacak Fotoğraf Klasörünü Seçin",
+            InitialDirectory = Directory.Exists(ExifScanFolderPath)
+                ? ExifScanFolderPath
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+        };
+
+        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
+        {
+            ExifScanFolderPath = dlg.FolderName;
+            _ = LoadPhotoMetadataAsync();
+        }
+    }
+
+    private async Task LoadPhotoMetadataAsync()
+    {
+        if (IsBusy) return;
+        if (string.IsNullOrWhiteSpace(ExifScanFolderPath) || !Directory.Exists(ExifScanFolderPath))
+        {
+            StatusMessage = "Geçerli bir fotoğraf klasörü seçin.";
+            return;
+        }
+
+        IsBusy = true;
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        ProgressPercent = 15;
+        StatusMessage = $"Fotoğraf EXIF/GPS verileri taranıyor: {ExifScanFolderPath}";
+
+        try
+        {
+            var photos = await VisualDiskAndMediaService.ScanPhotoMetadataAsync(
+                ExifScanFolderPath,
+                ExifIncludeSubfolders,
+                _cts.Token);
+
+            PhotoMetadataItems.Clear();
+            foreach (PhotoMetadataItem item in photos)
+                PhotoMetadataItems.Add(item);
+
+            int gpsCount = photos.Count(p => p.HasGpsData);
+            int metaCount = photos.Count(p => p.TagCount > 0);
+            ExifSummaryText = $"{photos.Count:N0} fotoğraf • {gpsCount} GPS riski • {metaCount} EXIF etiketli";
+            ProgressPercent = 100;
+            StatusMessage = $"Fotoğraf taraması tamamlandı: {photos.Count:N0} dosya ({gpsCount} GPS verili).";
+            AddLog($"[EXIF TARAMA] '{ExifScanFolderPath}' içinde {photos.Count} fotoğraf incelendi ({gpsCount} GPS koordinatlı).");
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "EXIF taraması iptal edildi.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"EXIF tarama hatası: {ex.Message}";
+            AddLog($"[HATA] Fotoğraf EXIF taraması başarısız: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ScrubSelectedPhotosAsync()
+    {
+        if (IsBusy) return;
+
+        var targets = PhotoMetadataItems.Where(p => p.IsSelected).ToList();
+        if (targets.Count == 0)
+        {
+            StatusMessage = "Temizlenecek fotoğraf seçilmedi.";
+            return;
+        }
+
+        IsBusy = true;
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        long totalSaved = 0;
+        int cleanedCount = 0;
+        int totalTagsRemoved = 0;
+
+        try
+        {
+            for (int i = 0; i < targets.Count; i++)
+            {
+                _cts.Token.ThrowIfCancellationRequested();
+                PhotoMetadataItem item = targets[i];
+                ProgressPercent = (int)Math.Round((i + 1) * 100.0 / targets.Count);
+                StatusMessage = $"Temizleniyor ({i + 1}/{targets.Count}): {item.FileName}";
+
+                var (ok, saved, removedTags, _) = await VisualDiskAndMediaService.ScrubPhotoMetadataAsync(
+                    item,
+                    ExifCreateBackup,
+                    ExifOptimizeJpeg,
+                    jpegQuality: 88,
+                    _cts.Token);
+
+                if (ok)
+                {
+                    cleanedCount++;
+                    totalSaved += saved;
+                    totalTagsRemoved += removedTags;
+                }
+            }
+
+            if (totalSaved > 0)
+                LastFreedBytes += totalSaved;
+
+            LastDeletedFiles += cleanedCount;
+
+            string summary = $"{cleanedCount}/{targets.Count} fotoğraf EXIF/GPS verilerinden temizlendi ({totalTagsRemoved} etiket silindi, {CleanerRule.FormatBytes(totalSaved)} tasarruf).";
+            ExifSummaryText = summary;
+            StatusMessage = summary;
+            AddLog($"[EXIF SCRUBBER] {summary}");
+            TrayNotificationRequested?.Invoke("FreeCleaner Pro — EXIF/GPS Temizliği", summary, false);
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "EXIF temizleme işlemi iptal edildi.";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        UpdateStatusText = "GitHub Releases kontrol ediliyor...";
+        StatusMessage = "GitHub üzerinden yeni sürüm kontrol ediliyor...";
+
+        try
+        {
+            UpdateCheckResult result = await AppUpdateService.CheckForUpdatesAsync();
+            _latestReleaseUrl = result.ReleaseUrl;
+            UpdateStatusText = result.StatusMessage;
+            StatusMessage = result.StatusMessage;
+            AddLog($"[GÜNCELLEME] {result.StatusMessage}");
+
+            if (result.IsUpdateAvailable)
+            {
+                TrayNotificationRequested?.Invoke("FreeCleaner Pro — Güncelleme Mevcut", result.StatusMessage, false);
+                var ask = MessageBox.Show(
+                    $"{result.StatusMessage}\n\nGitHub Releases indirme sayfasını tarayıcıda açmak ister misiniz?",
+                    "Yeni Sürüm Mevcut",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information);
+                if (ask == MessageBoxResult.Yes)
+                    OpenUrlSafe(result.ReleaseUrl);
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void OpenUrlSafe(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Bağlantı açılamadı: {ex.Message}";
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
