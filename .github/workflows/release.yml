@@ -43,11 +43,12 @@ jobs:
             -p:TreatWarningsAsErrors=true `
             --output release_out
 
-      - name: Package Portable Zip Archives (Standard & USB Mode)
+      - name: Package Portable Archives & Windows Setup Installer
         shell: pwsh
         run: |
           $tag = $env:GITHUB_REF_NAME
-          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v4.3.0" }
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v4.4.0" }
+          $ver = $tag.TrimStart('v', 'V')
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           New-Item -ItemType Directory -Force -Path release_usb | Out-Null
 
@@ -59,13 +60,32 @@ jobs:
           $usbZipPath = "dist/FreeCleaner-Portable-USB-win-x64-$tag.zip"
           Compress-Archive -Path "release_usb/FreeCleaner.exe","release_usb/portable.flag" -DestinationPath $usbZipPath -Force
 
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress | Out-Null
+          }
+          $setupOut = "dist/FreeCleaner-Setup-win-x64-$tag.exe"
+          if (Test-Path $iscc) {
+            & $iscc "/DMyAppVersion=$ver" "/DSourceExe=..\release_out\FreeCleaner.exe" "/DOutputDirPath=..\dist" "/O..\dist" "installer\FreeCleaner.iss"
+            $builtSetup = Get-ChildItem "dist/FreeCleaner-Setup-win-x64-*.exe" | Select-Object -First 1
+            if ($builtSetup -and $builtSetup.FullName -ne (Join-Path (Resolve-Path "dist").Path (Split-Path -Leaf $setupOut))) {
+              Move-Item -Path $builtSetup.FullName -Destination $setupOut -Force
+            }
+          }
+
           $exeHash = (Get-FileHash -Path "release_out/FreeCleaner.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
           $zipHash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
           $usbZipHash = (Get-FileHash -Path $usbZipPath -Algorithm SHA256).Hash.ToLowerInvariant()
           $zipName = [System.IO.Path]::GetFileName($zipPath)
           $usbZipName = [System.IO.Path]::GetFileName($usbZipPath)
-          @("$exeHash  FreeCleaner.exe", "$zipHash  $zipName", "$usbZipHash  $usbZipName") | Set-Content -Path "dist/SHA256SUMS.txt" -Encoding UTF8
-          Write-Host "Packaged portable archives & SHA256SUMS: $zipPath, $usbZipPath"
+          $sums = @("$exeHash  FreeCleaner.exe", "$zipHash  $zipName", "$usbZipHash  $usbZipName")
+          if (Test-Path $setupOut) {
+            $setupHash = (Get-FileHash -Path $setupOut -Algorithm SHA256).Hash.ToLowerInvariant()
+            $setupName = [System.IO.Path]::GetFileName($setupOut)
+            $sums += "$setupHash  $setupName"
+          }
+          $sums | Set-Content -Path "dist/SHA256SUMS.txt" -Encoding UTF8
+          Write-Host "Packaged portable archives, setup installer & SHA256SUMS"
 
       - name: Upload Artifacts & Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -74,5 +94,6 @@ jobs:
           files: |
             dist/FreeCleaner-Portable-win-x64-*.zip
             dist/FreeCleaner-Portable-USB-win-x64-*.zip
+            dist/FreeCleaner-Setup-win-x64-*.exe
             dist/SHA256SUMS.txt
             release_out/FreeCleaner.exe

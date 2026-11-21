@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="WINDOWS GÜVENLİK DUVARI (FIREWALL) DENETÇİSİ &amp; UYGULAMA İNTERNET KESİCİ"
+                    <TextBlock Text="{DynamicResource Loc_M_FwTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Seçtiğiniz herhangi bir .exe programının gelen/giden internet bağlantısını tek tıkla Güvenlik Duvarı üzerinden engeller veya engeli kaldırır."
+                    <TextBlock Text="{DynamicResource Loc_M_FwSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,17 +27,17 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="⛔ .EXE Seç ve İnternetini Kes (Block)"
+                            Content="{DynamicResource Loc_M_FwBlockExeBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding BrowseAndBlockExeFirewallCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="🔓 Seçili Engelleri Kaldır (İnterneti Aç)"
+                            Content="{DynamicResource Loc_M_FwUnblockBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding RemoveSelectedFirewallRulesCommand}"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Kuralları Yenile"
+                            Content="{DynamicResource Loc_M_FwRefreshBtn}"
                             Padding="12,7"
                             Command="{Binding RefreshFirewallRulesCommand}"/>
                 </StackPanel>
@@ -57,12 +57,36 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Kural Adı" Binding="{Binding RuleName}" IsReadOnly="True" Width="250"/>
-                    <DataGridTextColumn Header="Yön" Binding="{Binding Direction}" IsReadOnly="True" Width="175"/>
-                    <DataGridTextColumn Header="Durum" Binding="{Binding ActionBadge}" IsReadOnly="True" Width="195"/>
-                    <DataGridTextColumn Header="Profil" Binding="{Binding ProfileText}" IsReadOnly="True" Width="125"/>
-                    <DataGridTextColumn Header="Hedef Program (.exe) Yolu" Binding="{Binding ProgramPath}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding RuleName}" IsReadOnly="True" Width="250">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_FwRuleCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Direction}" IsReadOnly="True" Width="175">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_FwDirCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ActionBadge}" IsReadOnly="True" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProfileText}" IsReadOnly="True" Width="125">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ExtProfCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProgramPath}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_FwPathCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

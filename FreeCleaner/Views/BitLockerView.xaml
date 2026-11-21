@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="BITLOCKER ŞİFRELEME DENETÇİSİ &amp; BAĞLI ISO / VHD SANAL DİSK YÖNETİCİSİ"
+                    <TextBlock Text="{DynamicResource Loc_M_BitTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Tüm disk bölümlerinin BitLocker koruma durumunu gösterir; ISO, VHD ve VHDX sanal disk imajlarını bağlar (Mount) veya sistemden ayırır (Dismount)."
+                    <TextBlock Text="{DynamicResource Loc_M_BitSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,12 +27,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="💿 ISO / VHD / VHDX Seç ve Bağla (Mount)"
+                            Content="{DynamicResource Loc_M_BitMountBtn}"
                             Padding="14,7"
                             Margin="0,0,8,0"
                             Command="{Binding BrowseAndMountDiskImageCommand}"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Birimleri &amp; BitLocker Durumunu Yenile"
+                            Content="{DynamicResource Loc_M_BitRefreshBtn}"
                             Padding="14,7"
                             Command="{Binding RefreshVolumesAndBitLockerCommand}"/>
                 </StackPanel>
@@ -53,17 +53,44 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Birim" Binding="{Binding DriveRoot}" Width="75"/>
-                    <DataGridTextColumn Header="Birim Etiketi" Binding="{Binding VolumeLabel}" Width="160"/>
-                    <DataGridTextColumn Header="Dosya Sistemi &amp; Tür" Binding="{Binding FileSystemAndType}" Width="190"/>
-                    <DataGridTextColumn Header="BitLocker &amp; Güvenlik Durumu" Binding="{Binding BitLockerStatus}" Width="240"/>
-                    <DataGridTextColumn Header="Kapasite Özeti" Binding="{Binding CapacitySummary}" Width="210"/>
-                    <DataGridTextColumn Header="Fiziksel / Sanal İmaj Kaynağı" Binding="{Binding BackingImagePath}" Width="*"/>
-                    <DataGridTemplateColumn Header="Sanal Disk" Width="130">
+                    <DataGridTextColumn Binding="{Binding DriveRoot}" Width="75">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BitVolCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding VolumeLabel}" Width="160">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BitLabelCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FileSystemAndType}" Width="190">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BitFsCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding BitLockerStatus}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BitProtCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding CapacitySummary}" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BitCapCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding BackingImagePath}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BitSourceCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="130">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BitMountCol}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource DangerButtonStyle}"
-                                        Content="Ayır (Dismount)"
+                                        Content="{DynamicResource Loc_M_BitDismountBtn}"
                                         Padding="8,3"
                                         FontSize="11"
                                         Command="{Binding DataContext.DismountVolumeItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

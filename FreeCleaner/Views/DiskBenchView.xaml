@@ -15,11 +15,11 @@
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                <TextBlock Text="CANLI SSD / NVME DİSK OKUMA &amp; YAZMA HIZ TESTİ (DISK BENCHMARK)"
+                <TextBlock Text="{DynamicResource Loc_M_BenchTitle}"
                            FontSize="13"
                            FontWeight="Bold"
                            Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <TextBlock Text="Listeden test etmek istediğiniz SSD / NVMe sürücüyü ve veri bloğu boyutunu seçin; önbelleksiz (WriteThrough) gerçek okuma ve yazma hızını ölçün."
+                <TextBlock Text="{DynamicResource Loc_M_BenchSub}"
                            FontSize="11.5"
                            Foreground="{DynamicResource TextMutedBrush}"
                            Margin="0,3,0,0"/>
@@ -43,7 +43,7 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0"
-                               Text="SSD / Sürücü Seçin:"
+                               Text="{DynamicResource Loc_M_BenchDriveLabel}"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource TextPrimaryBrush}"
@@ -59,7 +59,7 @@
                               Margin="0,0,14,0"/>
 
                     <TextBlock Grid.Column="2"
-                               Text="Test Bloğu (MB):"
+                               Text="{DynamicResource Loc_M_BenchBlockLabel}"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource TextSecondaryBrush}"
@@ -75,14 +75,14 @@
 
                     <Button Grid.Column="4"
                             Style="{StaticResource SecondaryButtonStyle}"
-                            Content="🔄 Diskleri Yenile"
+                            Content="{DynamicResource Loc_M_BenchRefreshBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding RefreshBenchmarkDrivesCommand}"/>
 
                     <Button Grid.Column="5"
                             Style="{StaticResource CleanButtonStyle}"
-                            Content="🚀 Seçili SSD Hız Testini Başlat"
+                            Content="{DynamicResource Loc_M_BenchStartBtn}"
                             Padding="16,7"
                             Command="{Binding RunDiskBenchmarkCommand}"/>
                 </Grid>
@@ -103,12 +103,36 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Test Zamanı" Binding="{Binding TestedAt}" Width="145"/>
-                    <DataGridTextColumn Header="Sürücü" Binding="{Binding DriveName}" Width="85"/>
-                    <DataGridTextColumn Header="Test Bloğu (MB)" Binding="{Binding TestBlockSizeMb}" Width="115"/>
-                    <DataGridTextColumn Header="Yazma Hızı (Sequential Write)" Binding="{Binding WriteFormatted}" Width="195"/>
-                    <DataGridTextColumn Header="Okuma Hızı (Sequential Read)" Binding="{Binding ReadFormatted}" Width="195"/>
-                    <DataGridTextColumn Header="Performans Sınıfı" Binding="{Binding PerformanceGrade}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding TestedAt}" Width="145">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BenchTimeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding DriveName}" Width="85">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BenchDriveCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding TestBlockSizeMb}" Width="115">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BenchBlockCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding WriteFormatted}" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BenchWriteCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ReadFormatted}" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BenchReadCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PerformanceGrade}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BenchClassCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

@@ -24,7 +24,8 @@ public sealed record CliLaunchAction(
     bool DryRun = false,
     string? ReportJsonPath = null,
     CleaningProfileKind? Profile = null,
-    bool ExitWhenFinished = false);
+    bool ExitWhenFinished = false,
+    string? CustomProfileName = null);
 
 public sealed record CliCategoryBreakdownItem(string Category, int FileCount, long Bytes);
 
@@ -71,6 +72,7 @@ public static class ShellIntegrationAndProfilesService
         string? reportJsonPath = null;
         CleaningProfileKind? profile = null;
         bool exitWhenFinished = false;
+        string? customProfileName = null;
 
         for (int i = 0; i < args.Count; i++)
         {
@@ -118,7 +120,15 @@ public static class ShellIntegrationAndProfilesService
                 }
 
                 if (Enum.TryParse<CleaningProfileKind>(rawProfile, ignoreCase: true, out CleaningProfileKind parsedProfile))
+                {
                     profile = parsedProfile;
+                    customProfileName = null;
+                }
+                else if (!string.IsNullOrWhiteSpace(rawProfile))
+                {
+                    customProfileName = rawProfile;
+                    profile = null;
+                }
                 continue;
             }
 
@@ -176,7 +186,8 @@ public static class ShellIntegrationAndProfilesService
             dryRun,
             reportJsonPath,
             profile,
-            exitWhenFinished);
+            exitWhenFinished,
+            customProfileName);
     }
 
     public static string WriteCliAutomationReportJson(string outputPath, CliAutomationReport report)
@@ -448,10 +459,36 @@ public static class ShellIntegrationAndProfilesService
         config.ExcludedPaths ??= [];
         config.SelectedRuleIds ??= [];
         config.FavoriteSections ??= ["Dashboard", "All", "LiveMonitor", "DiskBench", "WingetUpdater"];
+        config.CustomProfiles ??= [];
         config.SelectedLanguage = LocalizationService.NormalizeLanguageCode(config.SelectedLanguage);
         if (string.IsNullOrWhiteSpace(config.SelectedTheme))
             config.SelectedTheme = "ObsidianNeon";
 
         return config;
+    }
+
+    public static (int SelectedCount, string ProfileDescription) ApplyCustomProfileToRules(
+        IEnumerable<CleanerRule> rules,
+        CustomCleaningProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        ArgumentNullException.ThrowIfNull(profile);
+
+        HashSet<string> ruleIdSet = (profile.RuleIds ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        int selectedCount = 0;
+        foreach (CleanerRule rule in rules)
+        {
+            bool match = ruleIdSet.Contains(rule.Id);
+            rule.IsSelected = match;
+            if (match)
+                selectedCount++;
+        }
+
+        bool isEn = LocalizationService.NormalizeLanguageCode(LocalizationService.CurrentLanguage) == "en-US";
+        string desc = isEn
+            ? $"⭐ Applied custom profile '{profile.Name}' ({selectedCount} rules selected)."
+            : $"⭐ '{profile.Name}' özel profili uygulandı ({selectedCount} kural seçildi).";
+
+        return (selectedCount, desc);
     }
 }

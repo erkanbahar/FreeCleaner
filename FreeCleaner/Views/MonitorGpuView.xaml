@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="MONİTÖR EDID, YENİLEME HIZI (HZ) &amp; EKRAN KARTI (GPU) SIFIRLAMA DOKTORU"
+                    <TextBlock Text="{DynamicResource Loc_M_MonTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Bağlı ekranların EDID model/seri numarasını ve aktif Hz değerini denetler; tek tıkla GPU görüntü sürücüsünü yeniden başlatır."
+                    <TextBlock Text="{DynamicResource Loc_M_MonSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,18 +27,18 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="🖥️ Ekran &amp; Hz Bilgilerini Yenile"
+                            Content="{DynamicResource Loc_M_MonScanBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanMonitorsAndGpuCommand}"/>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                            Content="🎨 ClearType Metin Ayarı"
+                            Content="{DynamicResource Loc_M_MonClearTypeBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding LaunchSystemToolCommand}"
                             CommandParameter="cttune.exe"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="⚡ GPU Sürücüsünü Yeniden Başlat (Admin)"
+                            Content="{DynamicResource Loc_M_GpuResetBtn}"
                             Padding="13,7"
                             Command="{Binding RestartGpuDriverCommand}"/>
                 </StackPanel>
@@ -59,11 +59,31 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Ekran / GPU Adı" Binding="{Binding DisplayName}" Width="245"/>
-                    <DataGridTextColumn Header="Çözünürlük &amp; Bit" Binding="{Binding ResolutionAndDepth}" Width="180"/>
-                    <DataGridTextColumn Header="Yenileme Hızı (Hz) / Üretim" Binding="{Binding RefreshRateInfo}" Width="210"/>
-                    <DataGridTextColumn Header="EDID Seri No / Sürücü" Binding="{Binding EdidAndDriverInfo}" Width="245"/>
-                    <DataGridTextColumn Header="Durum &amp; Optimizasyon" Binding="{Binding OptimizationBadge}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding DisplayName}" Width="245">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_MonNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ResolutionAndDepth}" Width="180">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_MonResCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding RefreshRateInfo}" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_MonHzCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding EdidAndDriverInfo}" Width="245">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_MonEdidCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding OptimizationBadge}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_MonStateCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

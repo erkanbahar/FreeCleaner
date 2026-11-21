@@ -1,0 +1,21 @@
+PackageIdentifier: ErkanBahar.FreeCleanerPro
+PackageVersion: 4.4.0
+PackageLocale: en-US
+Publisher: Erkan Bahar
+PublisherUrl: https://github.com/erkanbahar/FreeCleaner
+PublisherSupportUrl: https://github.com/erkanbahar/FreeCleaner/issues
+PackageName: FreeCleaner Pro
+PackageUrl: https://github.com/erkanbahar/FreeCleaner
+License: MIT
+ShortDescription: 57-module Windows 10/11 system cleaner, disk treemap visualizer, privacy & developer maintenance suite (.NET 10 WPF).
+Moniker: freecleaner
+Tags:
+  - cleaner
+  - disk-analyzer
+  - maintenance
+  - privacy
+  - system-utility
+  - windows
+ReleaseNotesUrl: https://github.com/erkanbahar/FreeCleaner/releases/tag/v4.4.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

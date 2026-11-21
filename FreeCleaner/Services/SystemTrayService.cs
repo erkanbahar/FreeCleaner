@@ -11,6 +11,12 @@ public sealed class SystemTrayService : IDisposable
 {
     private readonly Forms.NotifyIcon _notifyIcon;
     private readonly Forms.ContextMenuStrip _menu;
+    private readonly Forms.ToolStripItem _showItem;
+    private readonly Forms.ToolStripItem _ramItem;
+    private readonly Forms.ToolStripItem _healthItem;
+    private readonly Forms.ToolStripItem _analyzeItem;
+    private readonly Forms.ToolStripItem _exitItem;
+    private string _languageCode = LocalizationService.CurrentLanguage;
     private bool _disposed;
 
     public SystemTrayService(
@@ -22,17 +28,17 @@ public sealed class SystemTrayService : IDisposable
         Action? balloonClickedAction = null)
     {
         _menu = new Forms.ContextMenuStrip();
-        _menu.Items.Add("🖥️ FreeCleaner Pro'yu Göster", null, (_, _) => InvokeOnUi(showWindowAction));
+        _showItem = _menu.Items.Add(LocalizationService.Get("Loc_TrayShow", _languageCode), null, (_, _) => InvokeOnUi(showWindowAction));
         _menu.Items.Add(new Forms.ToolStripSeparator());
-        _menu.Items.Add("🧠 Hızlı RAM Boşalt", null, (_, _) => InvokeOnUi(optimizeRamAction));
-        _menu.Items.Add("🩺 Tek Tıkla Sağlık Kontrolü", null, (_, _) => InvokeOnUi(runHealthCheckAction));
-        _menu.Items.Add("🔍 Akıllı Temizlik Analizi", null, (_, _) => InvokeOnUi(analyzeJunkAction));
+        _ramItem = _menu.Items.Add(LocalizationService.Get("Loc_TrayOptimizeRam", _languageCode), null, (_, _) => InvokeOnUi(optimizeRamAction));
+        _healthItem = _menu.Items.Add(LocalizationService.Get("Loc_TrayHealthCheck", _languageCode), null, (_, _) => InvokeOnUi(runHealthCheckAction));
+        _analyzeItem = _menu.Items.Add(LocalizationService.Get("Loc_TrayAnalyzeJunk", _languageCode), null, (_, _) => InvokeOnUi(analyzeJunkAction));
         _menu.Items.Add(new Forms.ToolStripSeparator());
-        _menu.Items.Add("🚪 Çıkış", null, (_, _) => InvokeOnUi(exitAppAction));
+        _exitItem = _menu.Items.Add(LocalizationService.Get("Loc_TrayExit", _languageCode), null, (_, _) => InvokeOnUi(exitAppAction));
 
         _notifyIcon = new Forms.NotifyIcon
         {
-            Text = "FreeCleaner Pro (.NET 10) — Sistem Bakım & Güvenlik",
+            Text = LocalizationService.Get("Loc_TrayDefaultTip", _languageCode),
             Icon = LoadTrayIcon(),
             ContextMenuStrip = _menu,
             Visible = true
@@ -41,6 +47,31 @@ public sealed class SystemTrayService : IDisposable
         _notifyIcon.DoubleClick += (_, _) => InvokeOnUi(showWindowAction);
         if (balloonClickedAction is not null)
             _notifyIcon.BalloonTipClicked += (_, _) => InvokeOnUi(balloonClickedAction);
+    }
+
+    public void RefreshLanguage(string? languageCode = null)
+    {
+        if (_disposed)
+            return;
+
+        _languageCode = LocalizationService.NormalizeLanguageCode(languageCode ?? LocalizationService.CurrentLanguage);
+        InvokeOnUi(() =>
+        {
+            if (_disposed)
+                return;
+
+            _showItem.Text = LocalizationService.Get("Loc_TrayShow", _languageCode);
+            _ramItem.Text = LocalizationService.Get("Loc_TrayOptimizeRam", _languageCode);
+            _healthItem.Text = LocalizationService.Get("Loc_TrayHealthCheck", _languageCode);
+            _analyzeItem.Text = LocalizationService.Get("Loc_TrayAnalyzeJunk", _languageCode);
+            _exitItem.Text = LocalizationService.Get("Loc_TrayExit", _languageCode);
+            try
+            {
+                string defaultTip = LocalizationService.Get("Loc_TrayDefaultTip", _languageCode);
+                _notifyIcon.Text = defaultTip.Length > 63 ? defaultTip[..63] : defaultTip;
+            }
+            catch { }
+        });
     }
 
     public void ShowNotification(string title, string message, bool isWarning = false)
@@ -56,13 +87,17 @@ public sealed class SystemTrayService : IDisposable
         catch { }
     }
 
-    public static string FormatTrayTooltip(double cpuPercent, double ramPercent, double freeDiskGb)
+    public static string FormatTrayTooltip(double cpuPercent, double ramPercent, double freeDiskGb, string? languageCode = null)
     {
         double clampedCpu = Math.Clamp(cpuPercent, 0, 100);
         double clampedRam = Math.Clamp(ramPercent, 0, 100);
         double safeFreeGb = Math.Max(0, freeDiskGb);
 
-        string formatted = $"FreeCleaner | CPU %{clampedCpu:F0} | RAM %{clampedRam:F0} | Boş {safeFreeGb:F0}GB";
+        bool isEn = LocalizationService.NormalizeLanguageCode(languageCode ?? LocalizationService.CurrentLanguage) == "en-US";
+        string formatted = isEn
+            ? $"FreeCleaner | CPU {clampedCpu:F0}% | RAM {clampedRam:F0}% | Free {safeFreeGb:F0}GB"
+            : $"FreeCleaner | CPU %{clampedCpu:F0} | RAM %{clampedRam:F0} | Boş {safeFreeGb:F0}GB";
+
         if (formatted.Length > 63)
             formatted = formatted[..63];
 
@@ -74,7 +109,7 @@ public sealed class SystemTrayService : IDisposable
         if (_disposed)
             return;
 
-        string tooltip = FormatTrayTooltip(cpuPercent, ramPercent, freeDiskGb);
+        string tooltip = FormatTrayTooltip(cpuPercent, ramPercent, freeDiskGb, _languageCode);
         InvokeOnUi(() =>
         {
             if (!_disposed)

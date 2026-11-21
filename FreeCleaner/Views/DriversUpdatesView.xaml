@@ -15,18 +15,18 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="WINDOWS GÜNCELLEMELERİ (HOTFIX KB) &amp; SÜRÜCÜ DEPOSU (DRIVERSTORE)"
+                    <TextBlock Text="{DynamicResource Loc_M_DrvTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Yüklü Windows güvenlik/özellik yamalarını (KB) ve 3. parti OEM sürücü paketlerini (pnputil) tek listede denetler."
+                    <TextBlock Text="{DynamicResource Loc_M_DrvSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Content="Güncelleme &amp; Sürücü Listesini Yenile"
+                        Content="{DynamicResource Loc_M_DrvRefreshBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
@@ -48,11 +48,31 @@
                       BorderThickness="1"
                       RowHeight="34">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" Width="165"/>
-                    <DataGridTextColumn Header="Kimlik (KB / INF)" Binding="{Binding Identifier}" Width="135"/>
-                    <DataGridTextColumn Header="Sağlayıcı / Tür" Binding="{Binding ProviderOrType}" Width="210"/>
-                    <DataGridTextColumn Header="Tarih / Sürüm" Binding="{Binding DateOrVersion}" Width="160"/>
-                    <DataGridTextColumn Header="Ayrıntılar &amp; Sınıf" Binding="{Binding Details}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding Category}" Width="165">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColCategory}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Identifier}" Width="135">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DrvIdCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProviderOrType}" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DrvProvCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding DateOrVersion}" Width="160">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DrvVerCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Details}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DrvDetailsCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

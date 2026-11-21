@@ -6,6 +6,14 @@
 
 ## English
 
+### [4.4.0] - 2026-11-22
+#### Added & Improved
+- **100% Bilingual 57/57 Modular Views & Dynamic System Tray**: Localized all remaining 35 Lazy Views via `LocalizationService.cs` (**57 / 57 Views** verified with full TR/EN key parity and zero hardcoded Turkish XAML attributes), and updated `SystemTrayService` (`RefreshLanguage`, `FormatTrayTooltip`, minimize-to-tray balloon) to switch between Turkish (`Boş`) and English (`Free`) dynamically without restarting.
+- **Custom Cleaning Profiles & First-Run Quick Setup Wizard**: Users can now save, apply, and delete custom rule presets (`CustomCleaningProfile`) directly inside `CleanerView.xaml`, invoke them via `Ctrl+K` Command Palette (`CMD:CustomProfile:<Name>`), or launch via CLI (`--profile <CustomName>`). Added a first-run `OnboardingOverlay` (Language, Theme, Recycle Bin safety, Portable Mode) in `MainWindow.xaml` (preserved skipped on pre-v4.4 upgrades, re-openable anytime from `SettingsView.xaml`).
+- **Window Placement Memory, Power-User Shortcuts & Accessibility**: Added `WindowPlacementService` (`WindowLeft`, `WindowTop`, `WindowWidth`, `WindowHeight`, `WindowMaximized`) with virtual-screen multi-monitor clamping, added global shortcuts (`Ctrl+F` search focus, `Ctrl+,` Settings, `Ctrl+1..6` quick jumps to Dashboard/Cleaner/Treemap/LiveMonitor/Winget/Settings, `F5` active section refresh, `Esc`), and added `AutomationProperties.Name` + localized tooltips across core window controls.
+- **Windows Setup Installer (`installer/FreeCleaner.iss`), Winget 1.6 Manifests & Release Pipeline**: Added an Inno Setup 6 installer script (EN + TR languages, per-user or admin override, optional Desktop shortcut and `portable.flag`), created Winget `1.6.0` manifest templates (`installer/winget/ErkanBahar.FreeCleanerPro*.yaml`), and extended `.github/workflows/release.yml` to build `FreeCleaner-Setup-win-x64-$tag.exe`, append its hash to `SHA256SUMS.txt`, and attach it to GitHub Releases.
+- **Modular Models Split & Expanded Coverage (`64` Tests | `29.62%` Line / `20.91%` Branch Coverage)**: Split the monolithic `AdvancedModels.cs` into four domain model files (`SystemAndHardwareModels.cs`, `SecurityAndPrivacyModels.cs`, `NetworkAndStorageModels.cs`, `DeveloperAndMediaModels.cs`), extracted testable `NinthGenWingetAndNetworkSuiteService.ParseWingetUpgradeOutput`, and added `V44UpgradesTests.cs` (bringing the suite from `52` to `64` passing unit tests under `-p:TreatWarningsAsErrors=true`, raising Cobertura coverage from `23.66%` / `18.89%` to `29.62%` line / `20.91%` branch coverage).
+
 ### [4.3.0] - 2026-11-21
 #### Added & Improved
 - **Single-Source Version Metadata & Release Pipeline Polish**: `AppUpdateService.CurrentVersion` now derives dynamically from the assembly version (`4.3.0`), upgraded `SQLitePCLRaw.lib.e_sqlite3` to stable `2.1.14`, added `-IncludePortableFlag` & SHA-256 printout to `scripts/Publish-Portable.ps1`, and updated `.github/workflows/release.yml` to build with `-p:TreatWarningsAsErrors=true` and publish both Standard and pre-flagged **USB Portable** `.zip` archives.
@@ -44,6 +52,14 @@
 ---
 
 ## Türkçe
+
+### [4.4.0] - 2026-11-22
+#### Eklenenler ve İyileştirmeler
+- **57 / 57 Görünümlerde %100 Çift Dilli Arayüz & Dinamik Sistem Tepsisi**: Kalan tüm 35 modüler görünüm `LocalizationService.cs` üzerinden çift dilli hale getirildi (**57 / 57 View** tam TR/EN anahtar denkliği ve sıfır sabit Türkçe XAML özniteliğiyle doğrulandı); `SystemTrayService` (`RefreshLanguage`, `FormatTrayTooltip` içindeki `Boş` / `Free` göstergesi ve tepsi küçültme bildirimi) dil değişiminde yeniden başlatmaya gerek kalmadan anında güncellenir.
+- **Özel Temizlik Profilleri (Custom Profiles) & İlk Kurulum Sihirbazı (Onboarding)**: Kullanıcılar `CleanerView.xaml` içinden kendi kural seçimleriyle özel profil (`CustomCleaningProfile`) kaydedebilir, uygulayabilir, silebilir ve `Ctrl+K` Komut Paleti veya `--profile <OzelProfilAdi>` CLI bayrağıyla çağırabilir. İlk çalıştırmada Dil, Tema, Geri Dönüşüm Kutusu ve Taşınabilir Mod seçimlerini sunan `OnboardingOverlay` eklendi (eski sürümden yükseltmelerde otomatik atlanır, `SettingsView.xaml` içinden istenildiğinde yeniden açılabilir).
+- **Pencere Konum Belleği, Klavye Kısayolları & Erişilebilirlik**: Çoklu monitör sanal ekran sınırlarına (`ClampToVirtualScreen`) göre pencere konumu/boyutu/tam ekran durumunu geri yükleyen `WindowPlacementService` eklendi; `Ctrl+F` (arama odağı), `Ctrl+,` (Ayarlar), `Ctrl+1..6` (hızlı modül geçişleri), `F5` (aktif modülü yenile) ve `Esc` kısayolları ile ana pencere kontrollerine `AutomationProperties.Name` erişilebilirlik etiketleri eklendi.
+- **Windows Setup Kurulumu (`installer/FreeCleaner.iss`), Winget 1.6 Manifestleri & Release Hattı**: EN/TR dil destekli, isteğe bağlı Masaüstü kısayolu ve `portable.flag` seçenekli Inno Setup 6 kurulum betiği ile Winget `1.6.0` manifest şablonları (`installer/winget/ErkanBahar.FreeCleanerPro*.yaml`) eklendi; `.github/workflows/release.yml` ise `FreeCleaner-Setup-win-x64-$tag.exe` kurulum dosyasını derleyip `SHA256SUMS.txt` ile GitHub Releases'a yükleyecek şekilde genişletildi.
+- **Modüler Model Ayrıştırması & Genişletilmiş Test Kapsamı (`64` Test | `%29.62` Satır / `%20.91` Dal Kapsamı)**: Monolitik `AdvancedModels.cs` dosyası 4 alan dosyasına (`SystemAndHardwareModels.cs`, `SecurityAndPrivacyModels.cs`, `NetworkAndStorageModels.cs`, `DeveloperAndMediaModels.cs`) bölündü; `ParseWingetUpgradeOutput` test edilebilir hale getirildi ve `V44UpgradesTests.cs` ile test sayısı `52`'den `64`'e çıkarılarak Cobertura kapsamı `%23.66` / `%18.89` seviyesinden `%29.62` satır / `%20.91` dal kapsamına yükseltildi.
 
 ### [4.3.0] - 2026-11-21
 #### Eklenenler ve İyileştirmeler

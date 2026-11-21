@@ -156,9 +156,205 @@ public partial class MainViewModel
                 SelectOrganizerPreset("Downloads");
                 break;
             default:
+                if (item.SectionKey.StartsWith("CMD:CustomProfile:", StringComparison.Ordinal))
+                {
+                    string profName = item.SectionKey["CMD:CustomProfile:".Length..];
+                    CustomCleaningProfile? match = CustomProfiles.FirstOrDefault(p =>
+                        p.Name.Equals(profName, StringComparison.OrdinalIgnoreCase));
+                    if (match is not null)
+                    {
+                        ActiveSection = "All";
+                        ExecuteApplyCustomProfile(match);
+                    }
+                    break;
+                }
+
                 ActiveSection = item.SectionKey;
                 break;
         }
+    }
+
+    public bool HasCompletedOnboarding
+    {
+        get => _hasCompletedOnboarding;
+        set
+        {
+            if (_hasCompletedOnboarding != value)
+            {
+                _hasCompletedOnboarding = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ShowOnboardingOverlay));
+            }
+        }
+    }
+
+    public bool ShowOnboardingOverlay => !_hasCompletedOnboarding;
+
+    public string NewCustomProfileName
+    {
+        get => _newCustomProfileName;
+        set
+        {
+            string trimmed = value ?? string.Empty;
+            if (_newCustomProfileName != trimmed)
+            {
+                _newCustomProfileName = trimmed;
+                OnPropertyChanged();
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    public CustomCleaningProfile? SelectedCustomProfile
+    {
+        get => _selectedCustomProfile;
+        set
+        {
+            if (!ReferenceEquals(_selectedCustomProfile, value))
+            {
+                _selectedCustomProfile = value;
+                OnPropertyChanged();
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+    }
+
+    public void SaveWindowBounds(WindowBoundsState bounds)
+    {
+        ArgumentNullException.ThrowIfNull(bounds);
+        _windowLeft = bounds.Left;
+        _windowTop = bounds.Top;
+        _windowWidth = bounds.Width;
+        _windowHeight = bounds.Height;
+        _windowMaximized = bounds.IsMaximized;
+        SaveCurrentSettings();
+    }
+
+    public void RefreshActiveSection()
+    {
+        if (IsBusy)
+            return;
+
+        ICommand? cmd = ActiveSection switch
+        {
+            "Dashboard" => RunOneClickHealthCheckCommand,
+            "All" or "System" or "Browsers" or "Apps" => AnalyzeCommand,
+            "DiskTreemap" => AnalyzeTreemapCommand,
+            "DeepSpaceRecovery" => ScanDeepSpaceCommand,
+            "SimilarPhotos" => ScanSimilarPhotosCommand,
+            "ExifScrubber" => ScanPhotosExifCommand,
+            "Startup" => RefreshStartupCommand,
+            "Registry" => ScanRegistryCommand,
+            "Uninstaller" => RefreshInstalledAppsCommand,
+            "Booster" => RefreshTopProcessesCommand,
+            "Privacy" => ScanPrivacyTracesCommand,
+            "Network" => RefreshConnectionsCommand,
+            "WingetUpdater" => ScanWingetUpgradesCommand,
+            "PackageCaches" => ScanPackageCachesCommand,
+            "AiModelCleaner" => ScanAiModelCachesCommand,
+            "Bloatware" => ScanAppxBloatwareCommand,
+            "Downloads" => ScanOldInstallersCommand,
+            "Services" => RefreshServicesCommand,
+            "PortHunter" => ScanListeningPortsCommand,
+            "GitRepoCompressor" => ScanGitReposCommand,
+            "DockerWsl" => ScanDockerAndWslCommand,
+            "DefenderAuditor" => ScanDefenderAuditCommand,
+            "BootPerformance" => ScanBootPerformanceCommand,
+            "MonitorGpu" => ScanMonitorsAndGpuCommand,
+            _ => null
+        };
+
+        if (cmd is not null && cmd.CanExecute(null))
+            cmd.Execute(null);
+        else
+        {
+            RefreshSystemMetrics();
+            RefreshStorageForecast();
+        }
+    }
+
+    private void ExecuteSaveCustomProfile()
+    {
+        string name = NewCustomProfileName.Trim();
+        if (string.IsNullOrWhiteSpace(name))
+            return;
+
+        List<string> selectedIds = AllRules.Where(r => r.IsSelected).Select(r => r.Id).ToList();
+        if (selectedIds.Count == 0)
+        {
+            StatusMessage = "Özel profil kaydetmek için en az 1 temizlik kuralı seçin.";
+            return;
+        }
+
+        int existingIdx = -1;
+        for (int i = 0; i < CustomProfiles.Count; i++)
+        {
+            if (CustomProfiles[i].Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+            {
+                existingIdx = i;
+                break;
+            }
+        }
+
+        var profile = new CustomCleaningProfile { Name = name, RuleIds = selectedIds };
+        if (existingIdx >= 0)
+            CustomProfiles[existingIdx] = profile;
+        else
+            CustomProfiles.Add(profile);
+
+        SelectedCustomProfile = profile;
+        NewCustomProfileName = string.Empty;
+        PopulateModuleCatalog();
+        SaveCurrentSettings();
+
+        StatusMessage = $"⭐ Özel profil kaydedildi: '{name}' ({selectedIds.Count} kural).";
+        AddLog($"[ÖZEL PROFİL] '{name}' ({selectedIds.Count} kural) kaydedildi.");
+    }
+
+    private void ExecuteApplySelectedCustomProfile()
+    {
+        if (SelectedCustomProfile is not null)
+            ExecuteApplyCustomProfile(SelectedCustomProfile);
+    }
+
+    private void ExecuteApplyCustomProfile(CustomCleaningProfile profile)
+    {
+        _suppressRuleWarningPrompt = true;
+        try
+        {
+            var (_, desc) = ShellIntegrationAndProfilesService.ApplyCustomProfileToRules(AllRules, profile);
+            var selectedIds = AllRules
+                .Where(r => r.IsSelected)
+                .Select(r => r.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in DiscoveredFiles)
+                file.IsSelected = selectedIds.Contains(file.RuleId);
+
+            RecalculateSelectedTotals();
+            SaveCurrentSettings();
+            StatusMessage = desc;
+            AddLog($"[ÖZEL PROFİL] {desc}");
+        }
+        finally
+        {
+            _suppressRuleWarningPrompt = false;
+        }
+    }
+
+    private void ExecuteDeleteSelectedCustomProfile()
+    {
+        if (SelectedCustomProfile is null)
+            return;
+
+        string removedName = SelectedCustomProfile.Name;
+        CustomProfiles.Remove(SelectedCustomProfile);
+        SelectedCustomProfile = CustomProfiles.FirstOrDefault();
+        PopulateModuleCatalog();
+        SaveCurrentSettings();
+
+        StatusMessage = $"Özel profil silindi: '{removedName}'.";
+        AddLog($"[ÖZEL PROFİL] '{removedName}' silindi.");
     }
 
     private void ToggleCurrentSectionFavorite()
@@ -371,6 +567,20 @@ public partial class MainViewModel
         AddEntry("CMD:ExportSettings", "📤 Hızlı Eylem: Ayar Profilini JSON Olarak Dışa Aktar", "📤 Quick Action: Export Settings Profile (JSON)", "\uE74E", TrCmd, EnCmd, "ayar yedek export import json profil settings");
         AddEntry("CMD:ExportSupportBundle", "📦 Hızlı Eylem: Teşhis Destek Paketi (.zip) Oluştur", "📦 Quick Action: Export Diagnostic Support Bundle (.zip)", "\uE7B8", TrCmd, EnCmd, "destek teshis zip support bundle diagnostic report");
         AddEntry("CMD:OrganizeDownloads", "🗂️ Hızlı Eylem: İndirilenler Klasörünü Düzenle (Önizleme)", "🗂️ Quick Action: Organize Downloads Folder (Preview)", "\uE8F4", TrCmd, EnCmd, "indirilenler downloads duzenle organize sort undo");
+
+        foreach (CustomCleaningProfile custom in CustomProfiles)
+        {
+            if (string.IsNullOrWhiteSpace(custom.Name))
+                continue;
+            AddEntry(
+                $"CMD:CustomProfile:{custom.Name}",
+                $"⭐ Özel Profil: {custom.Name} ({custom.RuleIds.Count} kural)",
+                $"⭐ Custom Profile: {custom.Name} ({custom.RuleIds.Count} rules)",
+                "\uEA18",
+                TrCmd,
+                EnCmd,
+                $"custom ozel profil {custom.Name}");
+        }
 
         // All 57 Modules
         AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "Overview (Dashboard) & Health Score", "\uE80F", TrClean, EnClean, "dashboard ana sayfa overview saglik skoru gecmis lifetime forecast");

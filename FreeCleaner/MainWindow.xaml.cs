@@ -18,11 +18,15 @@ public partial class MainWindow : Window
     private SystemTrayService? _trayService;
     private bool _forceExit;
     private bool _startMinimizedToTray;
+    private bool _restoreMaximizedOnLoad;
     private readonly LazyViewRegistry _lazyViews = new();
 
     public MainWindow()
     {
         InitializeComponent();
+        CleanerConfigData startupConfig = ExclusionAndSettingsService.Load();
+        WindowPlacementService.ApplySavedBounds(this, startupConfig, skipMaximized: true);
+        _restoreMaximizedOnLoad = startupConfig.WindowMaximized;
         RegisterLazyViews();
         SourceInitialized += (_, _) => ApplyDwmThemePolish();
         Loaded += MainWindow_Loaded;
@@ -166,6 +170,7 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel viewModel)
         {
             ApplyDwmThemePolish();
+            _trayService.RefreshLanguage(viewModel.SelectedLanguage);
             SyncLazyModuleHost(viewModel.ActiveSection);
             viewModel.PropertyChanged += (_, args) =>
             {
@@ -173,6 +178,8 @@ public partial class MainWindow : Window
                     SyncLazyModuleHost(viewModel.ActiveSection);
                 else if (args.PropertyName == nameof(MainViewModel.SelectedTheme))
                     ApplyDwmThemePolish();
+                else if (args.PropertyName == nameof(MainViewModel.SelectedLanguage))
+                    _trayService?.RefreshLanguage(viewModel.SelectedLanguage);
             };
 
             viewModel.TrayNotificationRequested += (title, message, isWarning) =>
@@ -191,18 +198,28 @@ public partial class MainWindow : Window
                 Opacity = 1;
                 ShowInTaskbar = true;
             }
+            else if (_restoreMaximizedOnLoad)
+            {
+                _restoreMaximizedOnLoad = false;
+                WindowState = WindowState.Maximized;
+            }
         }
     }
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
     {
-        if (!_forceExit && DataContext is MainViewModel vm && vm.MinimizeToTrayOnClose)
+        if (DataContext is MainViewModel vm)
         {
-            e.Cancel = true;
-            Hide();
-            _trayService?.ShowNotification(
-                "FreeCleaner Pro Arka Planda Çalışıyor",
-                "Uygulama sağ alt sistem tepsisine küçültüldü. Açmak için ikona çift tıklayın.");
+            vm.SaveWindowBounds(WindowPlacementService.CaptureBounds(this));
+
+            if (!_forceExit && vm.MinimizeToTrayOnClose)
+            {
+                e.Cancel = true;
+                Hide();
+                _trayService?.ShowNotification(
+                    LocalizationService.Get("Loc_TrayMinimizedTitle", vm.SelectedLanguage),
+                    LocalizationService.Get("Loc_TrayMinimizedBody", vm.SelectedLanguage));
+            }
         }
     }
 
@@ -241,12 +258,70 @@ public partial class MainWindow : Window
 
     private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.K && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        if (e.Key == Key.Escape &&
+            DataContext is MainViewModel onboardingVm &&
+            onboardingVm.ShowOnboardingOverlay &&
+            onboardingVm.CompleteOnboardingCommand.CanExecute(null))
         {
-            if (CommandPaletteOverlay.Visibility == Visibility.Visible)
+            onboardingVm.CompleteOnboardingCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
+        if ((Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            if (e.Key == Key.K)
+            {
+                if (CommandPaletteOverlay.Visibility == Visibility.Visible)
+                    CloseCommandPalette();
+                else
+                    OpenCommandPalette();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.F)
+            {
                 CloseCommandPalette();
-            else
-                OpenCommandPalette();
+                NavSearchTextBox.Focus();
+                NavSearchTextBox.SelectAll();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Key == Key.OemComma && DataContext is MainViewModel settingsVm)
+            {
+                CloseCommandPalette();
+                settingsVm.ActiveSection = "Settings";
+                e.Handled = true;
+                return;
+            }
+
+            string? quickSection = e.Key switch
+            {
+                Key.D1 => "Dashboard",
+                Key.D2 => "All",
+                Key.D3 => "DiskTreemap",
+                Key.D4 => "LiveMonitor",
+                Key.D5 => "WingetUpdater",
+                Key.D6 => "Settings",
+                _ => null
+            };
+            if (quickSection is not null && DataContext is MainViewModel quickVm)
+            {
+                CloseCommandPalette();
+                quickVm.ActiveSection = quickSection;
+                e.Handled = true;
+                return;
+            }
+        }
+
+        if (e.Key == Key.F5 &&
+            Keyboard.Modifiers == ModifierKeys.None &&
+            CommandPaletteOverlay.Visibility != Visibility.Visible &&
+            DataContext is MainViewModel refreshVm)
+        {
+            refreshVm.RefreshActiveSection();
             e.Handled = true;
             return;
         }

@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="MAVİ EKRAN (BSOD), UYGULAMA ÇÖKMELERİ &amp; OLAY GÜNLÜĞÜ (EVENTLOG) ANALİZCİSİ"
+                    <TextBlock Text="{DynamicResource Loc_M_CrashTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Windows Olay Günlüğü'ndeki son çökme/kritik hata kayıtlarını (AppCrash 1000, Kernel-Power 41, BugCheck) ve Minidump (.dmp) dosyalarını listeler."
+                    <TextBlock Text="{DynamicResource Loc_M_CrashSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,12 +27,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Olay Günlüğü &amp; Çökmeleri Tara"
+                            Content="{DynamicResource Loc_M_CrashScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanCrashLogsCommand}"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="Çökme Dökümlerini (.dmp) Temizle"
+                            Content="{DynamicResource Loc_M_CrashCleanBtn}"
                             Padding="12,7"
                             Command="{Binding CleanCrashDumpsCommand}"/>
                 </StackPanel>
@@ -53,11 +53,31 @@
                       BorderThickness="1"
                       RowHeight="34">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Tarih / Saat" Binding="{Binding Timestamp}" Width="145"/>
-                    <DataGridTextColumn Header="Hata / Çökme Türü" Binding="{Binding EventType}" Width="230"/>
-                    <DataGridTextColumn Header="Kaynak / Uygulama" Binding="{Binding SourceOrApp}" Width="170"/>
-                    <DataGridTextColumn Header="Event ID / Boyut" Binding="{Binding EventIdOrSize}" Width="115"/>
-                    <DataGridTextColumn Header="Hata Özeti / Ayrıntı" Binding="{Binding MessageSummary}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding Timestamp}" Width="145">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CrashTimeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding EventType}" Width="230">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CrashTypeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SourceOrApp}" Width="170">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CrashSourceCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding EventIdOrSize}" Width="115">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CrashIdCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding MessageSummary}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CrashSummaryCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

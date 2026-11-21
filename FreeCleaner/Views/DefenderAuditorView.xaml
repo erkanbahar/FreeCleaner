@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="WINDOWS DEFENDER GÜVENLİK KALKANI &amp; GİZLİ İSTİSNA (EXCLUSION) DENETÇİSİ"
+                    <TextBlock Text="{DynamicResource Loc_M_DefTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Gerçek Zamanlı Koruma, Tamper Protection, virüs imza sürümü ve Defender'ın taramadığı gizli istisna klasörlerini (ExclusionPath) denetler."
+                    <TextBlock Text="{DynamicResource Loc_M_DefSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,17 +27,17 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="🔍 Defender Durumunu Denetle"
+                            Content="{DynamicResource Loc_M_DefScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanDefenderAuditCommand}"/>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                            Content="🔄 Virüs İmzalarını Güncelle"
+                            Content="{DynamicResource Loc_M_DefUpdateBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding UpdateDefenderSignaturesCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="🛡️ Hızlı Tarama Başlat (QuickScan)"
+                            Content="{DynamicResource Loc_M_DefQuickScanBtn}"
                             Padding="13,7"
                             Command="{Binding RunDefenderQuickScanCommand}"/>
                 </StackPanel>
@@ -58,10 +58,26 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Denetim Kategorisi" Binding="{Binding AuditCategory}" Width="225"/>
-                    <DataGridTextColumn Header="Kalkan / İstisna Yolu" Binding="{Binding SettingOrExclusionName}" Width="310"/>
-                    <DataGridTextColumn Header="Güvenlik Durumu" Binding="{Binding StatusBadge}" Width="210"/>
-                    <DataGridTextColumn Header="Açıklama &amp; Güvenlik Notu" Binding="{Binding SecurityNotes}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding AuditCategory}" Width="225">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DefCatCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SettingOrExclusionName}" Width="310">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DefTargetCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding StatusBadge}" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DefStateCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SecurityNotes}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DefDescCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

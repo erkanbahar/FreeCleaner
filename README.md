@@ -1,10 +1,10 @@
-# FreeCleaner Pro v4.3 (.NET 10 WPF)
+# FreeCleaner Pro v4.4 (.NET 10 WPF)
 
 [![FreeCleaner .NET 10 CI](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--windows-512BD4?logo=dotnet)
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011%20(x64)-0078D6?logo=windows)
 ![Modules](https://img.shields.io/badge/Modules-57%20Tools-10B981)
-![Tests](https://img.shields.io/badge/Tests-52%20Passing-22C55E)
+![Tests](https://img.shields.io/badge/Tests-64%20Passing-22C55E)
 ![Language](https://img.shields.io/badge/Language-English%20%7C%20T%C3%BCrk%C3%A7e-38BDF8)
 
 > 🌐 **Language / Dil:** [English](#english) • [Türkçe](#türkçe) • 📋 [Changelog](CHANGELOG.md)
@@ -19,7 +19,7 @@
 
 - **🔁 Single-Instance & Named Pipe IPC Bridge (`Mutex` + `NamedPipeServerStream`):** Prevents duplicate tray/window launches; secondary invocations (including Windows Explorer right-click actions) forward CLI arguments immediately to the running primary window and restore it to front.
 - **🖱️ Windows Explorer Right-Click Menu (`HKCU`), Silent Tray Auto-Start (`--minimized`) & CLI:** Install/remove cascading Explorer context-menu shortcuts under `HKCU` without Administrator rights, or enable Windows startup directly to System Tray via `--minimized`.
-- **🛡️ 4 One-Click Smart Cleaning Profiles & JSON Backup:** Instantly apply **Safe Daily**, **Developer Deep**, **Gamer Boost**, or **Max Privacy** rule presets from the Cleaner toolbar or `Ctrl+K` palette, and export/import portable `.json` settings profiles (`ExcludedPaths`, rules, theme, language, pinned tools).
+- **🛡️ Built-In & User-Defined Cleaning Profiles + First-Run Setup Wizard:** Instantly apply **Safe Daily**, **Developer Deep**, **Gamer Boost**, or **Max Privacy** presets, save/apply/delete your own **Custom Cleaning Profiles** (`CustomCleaningProfile`) from Smart Cleaner, `Ctrl+K`, or CLI (`--profile <CustomName>`), and configure Language, Theme, Recycle Bin safety, and Portable Mode on first launch (re-openable from Settings) alongside portable `.json` settings backup/restore.
 - **🔗 Zero-Data-Loss NTFS Hardlink Deduplicator:** Merges byte-for-byte identical duplicate files (`CreateHardLinkW` + `GetFileInformationByHandle` inode checks + full SHA-256 verification + same-NTFS-volume safety guard + atomic swap/rollback) so disk space is reclaimed while keeping every file path accessible.
 - **📈 Disk Snapshot Diff ("Where Did My Disk Space Go?"):** Saves lightweight Treemap snapshots (`%LocalAppData%\FreeCleaner\snapshots`) and computes per-folder `+GB` growth deltas (`ComputeGrowthDiff`) between scans.
 - **🔒 Smart Browser / VM Process Lock Guard:** Detects active browsers (`Chrome`, `Edge`, `Brave`, `Firefox`, `Discord`, `Steam`, `VS Code`) before cleanup and `Claude Desktop` / `Docker` / `WSL2` before `.vhdx` compaction, offering a safe **Close & Continue / Skip / Cancel** prompt.
@@ -34,8 +34,8 @@
 - **💾 Deep Windows Space Recovery & VHDX Compactor:** Manages `hiberfil.sys` (`powercfg`), `WinSxS` (`DISM`), lossless `CompactOS`, `NVIDIA/AMD` installer caches, and one-click DiskPart `compact vdisk` for WSL2 / Docker / Claude VM `.vhdx` virtual disks.
 - **🖼️ Perceptual Similar Photo Finder (`dHash`), 📸 EXIF Scrubber & 🗂️ Smart Folder Organizer:** Clusters burst photos with 64-bit `dHash`, strips GPS/EXIF metadata pixel-safely, and organizes Downloads / Desktop folders with one-click Undo.
 - **📈 Live CPU / RAM & Network Sparkline Monitor:** 1-second Win32 `GetSystemTimes` + `NetworkInterface` telemetry with sparkline charts and top-10 memory consumers.
-- **⌨️ Bilingual `Ctrl+K` Command Palette, 4 Live Themes & Complete EN/TR Core UI:** Live switching across `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix`, and `FluentLight` themes and full `en-US` / `tr-TR` translation across all sidebar modules, palette actions, and all 22 core modular Views.
-- **🚀 100% Modular Architecture (`57 Lazy Views` / `60 Section Keys`) & Cohesive `partial MainViewModel` Split:** Every module view instantiates on demand via `LazyViewRegistry` (zero inline view blocks in `MainWindow.xaml`), backed by modular ViewModel files (`CoreTools`, `SystemTools`, `WindowsTools`, `HardwareAndForensics`, `SecurityAndTweaks`, `DevOpsAndNetwork`, `Dashboard`, `NextGen`, `PowerSuite`), `.gitattributes`/`.editorconfig` hygiene, and CI `XPlat Code Coverage` + `-p:TreatWarningsAsErrors=true`.
+- **⌨️ 100% Bilingual 57/57 Views, Dynamic System Tray & Power-User Shortcuts:** Live switching across `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix`, and `FluentLight` themes plus full `en-US` / `tr-TR` translation across **all 57/57 Lazy Views**, sidebar modules, `Ctrl+K` Command Palette, and System Tray menu/tooltip (`Free` vs `Boş`). Includes multi-monitor-clamped **Window Placement Memory** (`WindowPlacementService`), keyboard shortcuts (`Ctrl+K`, `Ctrl+F`, `Ctrl+,`, `Ctrl+1..6`, `F5`, `Esc`), and `AutomationProperties.Name` accessibility labels.
+- **📦 Windows Setup Installer (`Inno Setup 6`), Winget Manifests & Modular Models Architecture:** Every module view instantiates on demand via `LazyViewRegistry` (zero inline view blocks in `MainWindow.xaml`), paired with modular domain models (`SystemAndHardwareModels`, `SecurityAndPrivacyModels`, `NetworkAndStorageModels`, `DeveloperAndMediaModels`), `installer/FreeCleaner.iss`, `installer/winget/` (`1.6.0` templates), `64` passing unit tests (`29.62%` line / `20.91%` branch Cobertura coverage), and CI `-p:TreatWarningsAsErrors=true`.
 
 ### All Modules (6 Categories • 57 Tools)
 
@@ -119,7 +119,7 @@
 | `--health-check` | Runs the 100-Point Health Check on Dashboard |
 | `--scheduled-maintenance` | Executes headless/auto scheduled cleanup and closes on completion |
 | `--dry-run` | Analyzes cleanup rules safely without deleting any files |
-| `--profile <SafeDaily\|DeveloperDeep\|GamerBoost\|MaxPrivacy>` | Applies a preset cleaning profile on launch |
+| `--profile <SafeDaily\|DeveloperDeep\|GamerBoost\|MaxPrivacy\|CustomName>` | Applies a built-in preset or user-defined custom profile on launch |
 | `--report-json "<path>"` | Exports the structured JSON scan breakdown (`CliAutomationReport`) |
 | `--exit` / `--headless` | Exits cleanly right after CLI automation finishes |
 | `--minimized` / `--tray` | Starts silently minimized directly to System Tray |
@@ -127,8 +127,12 @@
 | Shortcut | Action |
 | :--- | :--- |
 | `Ctrl + K` | Open / Close Quick Command & Module Palette |
+| `Ctrl + F` | Focus Module Navigation Search box |
+| `Ctrl + ,` | Open Settings (Whitelist, Theme, Language, Updates) |
+| `Ctrl + 1` .. `Ctrl + 6` | Quick jump: Dashboard / Cleaner / Treemap / Live Monitor / Winget / Settings |
+| `F5` | Refresh or re-analyze active module |
 | `↑` / `↓` + `Enter` | Select and run a module or profile in Command Palette |
-| `Esc` | Close Command Palette |
+| `Esc` | Close First-Run Setup Overlay or Command Palette |
 
 ### Build, Test & Portable Release
 
@@ -136,7 +140,7 @@
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### CLI Build & Unit Tests (52 Tests + Coverage)
+#### CLI Build & Unit Tests (64 Tests + Coverage)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
@@ -144,13 +148,15 @@ dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release -
 dotnet run --project FreeCleaner/FreeCleaner.csproj
 ```
 
-#### Single-File Portable `.exe`
+#### Single-File Portable `.exe` & Windows Installer (`Setup .exe`)
 ```powershell
 .\scripts\Publish-Portable.ps1
 # Optional pre-flagged USB portable output:
 .\scripts\Publish-Portable.ps1 -IncludePortableFlag
+# Optional Inno Setup 6 Windows Installer (dist/FreeCleaner-Setup-win-x64-v4.4.0.exe):
+ISCC.exe /DMyAppVersion=4.4.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
 ```
-Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag v4.3.0 && git push origin v4.3.0`) triggers `.github/workflows/release.yml` to verify tests, build with warnings-as-errors, and publish both Standard and USB (`portable.flag`) archives + `SHA256SUMS.txt` on GitHub Releases.
+Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag v4.4.0 && git push origin v4.4.0`) triggers `.github/workflows/release.yml` to verify tests, build with warnings-as-errors, and publish Standard Portable `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe` installer, `FreeCleaner.exe`, and `SHA256SUMS.txt` on GitHub Releases (`installer/winget/` contains Winget `1.6.0` manifest templates).
 
 ---
 
@@ -164,7 +170,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 
 - **🔁 Tek Örnek (Single-Instance) & Named Pipe IPC Köprüsü:** Uygulama sistem tepsisinde açıkken ikinci bir kopya açılmasını önler; Gezgin sağ tık veya CLI üzerinden gelen parametreleri mevcut pencereye iletip uygulamayı anında öne getirir.
 - **🖱️ Windows Gezgini Sağ Tık Menüsü (`HKCU`), Sessiz Başlatma (`--minimized`) & CLI:** Yönetici izni olmadan `HKCU` altında sağ tık menüsü kurup kaldırır veya Windows başlangıcında `--minimized` ile doğrudan sistem tepsisine gizli başlatır.
-- **🛡️ Tek Tıkla 4 Akıllı Temizlik Profili & JSON Ayar Yedekleme:** Temizlik araç çubuğundan veya `Ctrl+K` paletinden **Güvenli Günlük**, **Geliştirici**, **Oyuncu** ve **Maksimum Gizlilik** profillerini tek tıkla uygular; dışlama listesi, kural seçimleri, tema, dil ve sabitlenen modülleri `.json` olarak dışa/içe aktarır.
+- **🛡️ Hazır & Kullanıcı Tanımlı Özel Temizlik Profilleri + İlk Kurulum Sihirbazı:** **Güvenli Günlük**, **Geliştirici**, **Oyuncu** ve **Maksimum Gizlilik** önayarlarının yanı sıra Akıllı Temizlik içinden kendi **Özel Temizlik Profillerinizi** (`CustomCleaningProfile`) kaydedin, uygulayın, silin veya `Ctrl+K` / `--profile <OzelAd>` ile çalıştırın; ilk açılışta Dil, Tema, Geri Dönüşüm ve Taşınabilir Mod kurulumunu tamamlayın (Ayarlar'dan yeniden açılabilir) ve dışlama listesi, kural seçimleri, tema, dil ve sabitlenen modülleri `.json` ile yedekleyin.
 - **🔗 Sıfır Veri Kayıplı NTFS Hardlink Birleştirici:** Aynı NTFS sürücüsündeki birebir kopya dosyaları (`CreateHardLinkW` + `GetFileInformationByHandle` inode kontrolü + tam SHA-256 doğrulaması + atomik geri alma koruması) tek fiziksel bloğa bağlayarak disk alanı açarken tüm dosya yollarını yerinde korur.
 - **📈 Klasör Boyutu Anlık Görüntü Karşılaştırması (Disk Snapshot Diff):** Treemap taramalarını hafif anlık görüntüler (`%LocalAppData%\FreeCleaner\snapshots`) olarak kaydeder; önceki taramaya göre en çok büyüyen klasörleri (`+GB` artış) listeler.
 - **🔒 Akıllı Süreç Kilit Koruması (Process Lock Guard):** Temizlik öncesinde açık tarayıcı/uygulamaları (`Chrome`, `Edge`, `Brave`, `Firefox`, `Discord`, `Steam`, `VS Code`), `.vhdx` sıkıştırma öncesinde ise `Claude Desktop` / `Docker` / `WSL2` süreçlerini algılayıp güvenli kapatma seçeneği sunar.
@@ -179,8 +185,8 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **💾 Dev Windows Sistem Alanı Kurtarıcısı & VHDX Sıkıştırıcı:** Hazırda bekletmeyi kapatma/yarıya indirme (`powercfg`), bileşen deposu temizliği (`DISM`), kayıpsız `CompactOS` sıkıştırma, `NVIDIA/AMD` sürücü artıkları ve WSL2/Docker/Claude VM `.vhdx` sanal diskleri için tek tıkla DiskPart `compact vdisk` desteği sunar.
 - **🖼️ Benzer Fotoğraf Bulucu (`dHash`), 📸 EXIF Temizleyici & 🗂️ Akıllı Klasör Düzenleyici:** 64-bit `dHash` ile seri fotoğrafları kümeleyip en kalitelisini korur, EXIF/GPS metaverilerini siler ve İndirilenler / Masaüstü klasörlerini önizleme + tek tıkla Geri Al (Undo) ile düzenler.
 - **📈 Canlı CPU / RAM & Ağ Hızı Sparkline Monitörü:** Win32 `GetSystemTimes` + `NetworkInterface` üzerinden saniyede bir güncellenen gerçek zamanlı sparkline grafikler ve en çok bellek kullanan ilk 10 işlem tablosu.
-- **⌨️ Çift Dilli `Ctrl+K` Komut Paleti, 4 Canlı Tema & Tam TR/EN Çekirdek Arayüz:** Dil değiştirildiğinde tüm sol menü, sabitlenen favoriler, Komut Paleti ve tüm 22 çekirdek modüler ekran `tr-TR` / `en-US` arasında anında çevrilir; `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix` ve `FluentLight` temaları canlı geçiş destekler.
-- **🚀 %100 Modüler `57 Lazy View` / `60 Ekran Anahtarı` & `partial MainViewModel` Yapısı:** Tüm ekranlar `LazyViewRegistry` ile talep üzerine yüklenir (`MainWindow.xaml` içinde satır içi görünüm kalmamıştır); ViewModel konu bazlı parçalara (`CoreTools`, `SystemTools`, `WindowsTools`, `HardwareAndForensics`, `SecurityAndTweaks`, `DevOpsAndNetwork`, `Dashboard`, `NextGen`, `PowerSuite`) ayrılmıştır; `.gitattributes`/`.editorconfig` ile CI `XPlat Code Coverage` + `-p:TreatWarningsAsErrors=true` uygulanır.
+- **⌨️ 57/57 Görünümlerde %100 Çift Dilli Arayüz, Dinamik Sistem Tepsisi & Klavye Kısayolları:** `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix` ve `FluentLight` temaları ile tüm sol menü, Komut Paleti, **57/57 modüler Lazy View** ve Sistem Tepsisi menüsü/ipucu (`Boş` / `Free`) `tr-TR` ve `en-US` arasında anında çevrilir. Çoklu monitör sınırlarına güvenli **Pencere Konum Belleği** (`WindowPlacementService`), klavye kısayolları (`Ctrl+K`, `Ctrl+F`, `Ctrl+,`, `Ctrl+1..6`, `F5`, `Esc`) ve `AutomationProperties.Name` erişilebilirlik etiketleri içerir.
+- **📦 Windows Setup Kurulumu (`Inno Setup 6`), Winget Manifestleri & Modüler Mimari:** Tüm ekranlar `LazyViewRegistry` ile talep üzerine yüklenir (`MainWindow.xaml` içinde satır içi görünüm kalmamıştır); ViewModel parçaları ve alan bazlı model dosyaları (`SystemAndHardwareModels`, `SecurityAndPrivacyModels`, `NetworkAndStorageModels`, `DeveloperAndMediaModels`), `installer/FreeCleaner.iss`, `installer/winget/` (`1.6.0` manifestleri), **64 başarılı birim testi** (`%29.62` satır / `%20.91` dal Cobertura kapsamı) ve CI `-p:TreatWarningsAsErrors=true` ile korunur.
 
 ### Tüm Modüller (6 Kategori • 57 Araç)
 
@@ -264,7 +270,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 | `--health-check` | Dashboard üzerinde 100 puanlık Sistem Sağlık Kontrolü başlatır |
 | `--scheduled-maintenance` | Zamanlanmış otomatik bakımı çalıştırıp tamamlanınca kapatır |
 | `--dry-run` | Hiçbir dosya silmeden kuralları güvenli şekilde analiz eder |
-| `--profile <SafeDaily\|DeveloperDeep\|GamerBoost\|MaxPrivacy>` | Açılışta belirtilen temizlik profilini uygular |
+| `--profile <SafeDaily\|DeveloperDeep\|GamerBoost\|MaxPrivacy\|OzelAd>` | Açılışta yerleşik veya kullanıcı tanımlı temizlik profilini uygular |
 | `--report-json "<yol>"` | Tarama özetini yapılandırılmış JSON (`CliAutomationReport`) olarak yazar |
 | `--exit` / `--headless` | CLI otomasyonu bitince uygulamayı otomatik kapatır |
 | `--minimized` / `--tray` | Pencere göstermeden doğrudan Sistem Tepsisinde sessiz başlatır |
@@ -272,8 +278,12 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 | Kısayol | İşlev |
 | :--- | :--- |
 | `Ctrl + K` | Hızlı Komut & Modül Paletini Aç / Kapat |
+| `Ctrl + F` | Sol Menü Modül Arama Kutusuna Odaklan |
+| `Ctrl + ,` | Ayarlar Ekranını Aç (Beyaz Liste, Tema, Dil, Güncelleme) |
+| `Ctrl + 1` .. `Ctrl + 6` | Hızlı Geçiş: Dashboard / Temizleyici / Treemap / Canlı İzle / Winget / Ayarlar |
+| `F5` | Aktif Modülü Yenile / Yeniden Tara |
 | `↑` / `↓` + `Enter` | Komut Paletinde Modül veya Profil Seç ve Çalıştır |
-| `Esc` | Komut Paletini Kapat |
+| `Esc` | İlk Kurulum Ekranını veya Komut Paletini Kapat |
 
 ### Kurulum, Derleme & Taşınabilir Sürüm (`.exe`)
 
@@ -281,7 +291,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### Komut Satırı ile Derleme & Test (52 Test + Kapsam)
+#### Komut Satırı ile Derleme & Test (64 Test + Kapsam)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
@@ -289,10 +299,12 @@ dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release -
 dotnet run --project FreeCleaner/FreeCleaner.csproj
 ```
 
-#### Tek Dosya Taşınabilir `.exe` Yayınlama
+#### Tek Dosya Taşınabilir `.exe` & Windows Setup Kurulumu
 ```powershell
 .\scripts\Publish-Portable.ps1
 # İsteğe bağlı hazır USB taşınabilir mod (portable.flag) üretimi:
 .\scripts\Publish-Portable.ps1 -IncludePortableFlag
+# İsteğe bağlı Inno Setup 6 Windows Kurulum Dosyası (dist/FreeCleaner-Setup-win-x64-v4.4.0.exe):
+ISCC.exe /DMyAppVersion=4.4.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
 ```
-Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.3.0 && git push origin v4.3.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp hem Standart hem USB (`portable.flag`) `.zip` arşivlerini ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar.
+Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.4.0 && git push origin v4.4.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp Standart Taşınabilir `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe` kurulum paketi, `FreeCleaner.exe` ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar (`installer/winget/` klasöründe Winget `1.6.0` manifest şablonları bulunur).

@@ -15,18 +15,18 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="YEREL AĞ (LAN / WI-FI) CİHAZ RADARI &amp; İZİNSİZ CİHAZ AVCISI"
+                    <TextBlock Text="{DynamicResource Loc_M_LanTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Ağınıza bağlı tüm cihazları paralel Ping taraması ve ARP tablosu ile keşfeder; IP, MAC adresi, üretici türü ve gecikme süresini listeler."
+                    <TextBlock Text="{DynamicResource Loc_M_LanSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Content="📡 Yerel Ağı Şimdi Tara (Ping &amp; ARP Sweep)"
+                        Content="{DynamicResource Loc_M_LanScanBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
@@ -48,12 +48,36 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Cihaz Rolü / Durum" Binding="{Binding DeviceRoleBadge}" Width="210"/>
-                    <DataGridTextColumn Header="IPv4 Adresi" Binding="{Binding IpAddress}" Width="145"/>
-                    <DataGridTextColumn Header="Fiziksel Adres (MAC)" Binding="{Binding MacAddress}" Width="165"/>
-                    <DataGridTextColumn Header="Cihaz Adı / Host" Binding="{Binding Hostname}" Width="180"/>
-                    <DataGridTextColumn Header="Yanıt Süresi (Ping)" Binding="{Binding PingStatus}" Width="135"/>
-                    <DataGridTextColumn Header="MAC / Donanım Sınıfı" Binding="{Binding VendorName}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding DeviceRoleBadge}" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_LanRoleCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding IpAddress}" Width="145">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_LanIpCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding MacAddress}" Width="165">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_LanMacCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Hostname}" Width="180">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_LanHostCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PingStatus}" Width="135">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_LanPingCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding VendorName}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_LanVendorCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

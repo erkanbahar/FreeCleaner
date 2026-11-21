@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="WSL2 LINUX DAĞITIM YÖNETİCİSİ &amp; DOCKER KONTEYNER / İMAJ TEMİZLEYİCİ"
+                    <TextBlock Text="{DynamicResource Loc_M_DockerTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Yüklü WSL2 dağıtımlarını ve Docker konteynerlerini listeler; tek tıkla VmmemWSL RAM'ini kurtarır (wsl --shutdown) veya Docker prune yapar."
+                    <TextBlock Text="{DynamicResource Loc_M_DockerSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,17 +27,17 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="🔄 Listeyi Yenile"
+                            Content="{DynamicResource Loc_M_RefreshListEmojiBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanDockerAndWslCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="🛑 WSL2 Motorunu Kapat &amp; RAM Kurtar"
+                            Content="{DynamicResource Loc_M_DockerShutdownWslBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding ShutdownWslCommand}"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="🐳 Docker System Prune (-f)"
+                            Content="{DynamicResource Loc_M_DockerPruneBtn}"
                             Padding="13,7"
                             Command="{Binding PruneDockerSystemCommand}"/>
                 </StackPanel>
@@ -58,11 +58,31 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Platform" Binding="{Binding PlatformType}" Width="195"/>
-                    <DataGridTextColumn Header="Dağıtım / Konteyner Adı" Binding="{Binding NameOrTag}" Width="240"/>
-                    <DataGridTextColumn Header="Durum" Binding="{Binding StateOrStatus}" Width="190"/>
-                    <DataGridTextColumn Header="Sürüm / Boyut" Binding="{Binding VersionOrSize}" Width="160"/>
-                    <DataGridTextColumn Header="Ayrıntılar" Binding="{Binding Details}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding PlatformType}" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DockerPlatCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding NameOrTag}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DockerNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding StateOrStatus}" Width="190">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding VersionOrSize}" Width="160">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DockerSizeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Details}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_DetailsCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

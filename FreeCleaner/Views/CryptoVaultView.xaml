@@ -16,11 +16,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,10">
                 <StackPanel>
-                    <TextBlock Text="AES-256-GCM DOSYA ŞİFRELEME KASASI (.FCVAULT) &amp; ÇOKLU HASH DOĞRULAYICI"
+                    <TextBlock Text="{DynamicResource Loc_M_CryptoTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Dosyalarınızı PBKDF2 (100.000 İterasyon) + AES-256-GCM ile şifreler/çözer ve aynı anda MD5, SHA-1, SHA-256, SHA-512 bütünlük doğrulaması yapar."
+                    <TextBlock Text="{DynamicResource Loc_M_CryptoSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -36,7 +36,7 @@
                     Margin="0,0,0,10">
                 <StackPanel>
                     <WrapPanel VerticalAlignment="Center" Margin="0,0,0,8">
-                        <TextBlock Text="Hedef Dosya:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{DynamicResource Loc_M_CryptoFileLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBox Text="{Binding VaultTargetFilePath, UpdateSourceTrigger=PropertyChanged}"
                                  Width="380"
                                  Padding="8,5"
@@ -45,18 +45,18 @@
                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
                                  Margin="0,0,8,0"/>
                         <Button Style="{StaticResource SecondaryButtonStyle}"
-                                Content="Dosya Seç..."
+                                Content="{DynamicResource Loc_M_CryptoPickBtn}"
                                 Padding="12,5"
                                 Margin="0,0,10,0"
                                 Command="{Binding BrowseVaultTargetFileCommand}"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="#️⃣ Çoklu Hash Hesapla &amp; Doğrula"
+                                Content="{DynamicResource Loc_M_CryptoHashBtn}"
                                 Padding="14,5"
                                 Command="{Binding ComputeMultiHashesCommand}"/>
                     </WrapPanel>
 
                     <WrapPanel VerticalAlignment="Center">
-                        <TextBlock Text="Kasa Parolası (AES-256):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="{DynamicResource Loc_M_CryptoPassLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBox Text="{Binding VaultPasswordInput, UpdateSourceTrigger=PropertyChanged}"
                                  Width="175"
                                  Padding="7,5"
@@ -65,17 +65,17 @@
                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
                                  Margin="0,0,8,0"/>
                         <Button Style="{StaticResource CleanButtonStyle}"
-                                Content="🔒 AES-256 Şifrele (.fcvault)"
+                                Content="{DynamicResource Loc_M_CryptoEncBtn}"
                                 Padding="12,5"
                                 Margin="0,0,8,0"
                                 Command="{Binding EncryptVaultFileCommand}"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="🔓 .fcvault Şifresini Çöz"
+                                Content="{DynamicResource Loc_M_CryptoDecBtn}"
                                 Padding="12,5"
                                 Margin="0,0,16,0"
                                 Command="{Binding DecryptVaultFileCommand}"/>
 
-                        <TextBlock Text="Beklenen Hash (İsteğe Bağlı):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="{DynamicResource Loc_M_CryptoExpectedLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBox Text="{Binding ExpectedHashInput, UpdateSourceTrigger=PropertyChanged}"
                                  Width="210"
                                  Padding="7,5"
@@ -101,15 +101,34 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Algoritma / İşlem" Binding="{Binding AlgorithmOrOperation}" Width="185"/>
-                    <DataGridTextColumn Header="Dosya Adı" Binding="{Binding FileName}" Width="190"/>
-                    <DataGridTextColumn Header="Kriptografik Hash / Çıktı Dosyası" Binding="{Binding HashOrOutputValue}" Width="*"/>
-                    <DataGridTextColumn Header="Doğrulama Durumu" Binding="{Binding VerificationStatus}" Width="245"/>
-                    <DataGridTemplateColumn Header="Kopyala" Width="105">
+                    <DataGridTextColumn Binding="{Binding AlgorithmOrOperation}" Width="185">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CryptoAlgoCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FileName}" Width="190">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DiskColFileName}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding HashOrOutputValue}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CryptoOutCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding VerificationStatus}" Width="245">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CryptoVerifyCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="105">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CredCopyCol}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource SecondaryButtonStyle}"
-                                        Content="Kopyala"
+                                        Content="{DynamicResource Loc_M_CredCopyCol}"
                                         Padding="8,3"
                                         FontSize="11"
                                         Command="{Binding DataContext.CopyHashValueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

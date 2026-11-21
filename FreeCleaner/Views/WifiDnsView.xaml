@@ -15,18 +15,18 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="KAYITLI WI-FI ŞİFRELERİ &amp; CANLI DNS PİNG KIYASLAYICI"
+                    <TextBlock Text="{DynamicResource Loc_M_WifiTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Bilgisayarda kayıtlı tüm Wi-Fi ağlarının açık şifrelerini (netsh wlan key=clear) çözer ve küresel DNS sunucularına canlı Ping (ms) testi yapar."
+                    <TextBlock Text="{DynamicResource Loc_M_WifiSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Content="Wi-Fi Şifrelerini &amp; DNS Hızlarını Yenile"
+                        Content="{DynamicResource Loc_M_WifiRefreshBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
@@ -48,11 +48,31 @@
                       BorderThickness="1"
                       RowHeight="35">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Kategori" Binding="{Binding ItemCategory}" Width="180"/>
-                    <DataGridTextColumn Header="Wi-Fi Ağı (SSID) / DNS Adı" Binding="{Binding NameOrSsid}" Width="240"/>
-                    <DataGridTextColumn Header="Güvenlik / IP Adresi" Binding="{Binding SecurityOrIp}" Width="165"/>
-                    <DataGridTextColumn Header="Kayıtlı Şifre / Ping (ms)" Binding="{Binding PasswordOrLatency}" Width="240"/>
-                    <DataGridTextColumn Header="Durum / Öneri" Binding="{Binding StatusBadge}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding ItemCategory}" Width="180">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColCategory}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding NameOrSsid}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_WifiSsidCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SecurityOrIp}" Width="165">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_WifiSecCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PasswordOrLatency}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_WifiValCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding StatusBadge}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_WifiStateCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

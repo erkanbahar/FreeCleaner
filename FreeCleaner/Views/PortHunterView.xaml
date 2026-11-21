@@ -15,11 +15,11 @@
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                <TextBlock Text="GELİŞTİRİCİ PORT AVCISI (PORT KILLER — HANGİ PORTU KİM KULLANIYOR?)"
+                <TextBlock Text="{DynamicResource Loc_M_PortTitle}"
                            FontSize="13"
                            FontWeight="Bold"
                            Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <TextBlock Text="'Address already in use' hatası veren portları (3000, 5000, 5173, 8080, 5432 vb.) filtreleyin ve o portu tutan işlemi tek tıkla sonlandırın."
+                <TextBlock Text="{DynamicResource Loc_M_PortSub}"
                            FontSize="11.5"
                            Foreground="{DynamicResource TextMutedBrush}"
                            Margin="0,3,0,0"/>
@@ -34,7 +34,7 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0"
-                           Text="Port veya İşlem Ara (ör. 5000, node):"
+                           Text="{DynamicResource Loc_M_PortFilterLabel}"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            Margin="0,0,10,0"/>
@@ -51,7 +51,7 @@
 
                 <Button Grid.Column="2"
                         Style="{StaticResource PrimaryButtonStyle}"
-                        Content="Portları Filtrele / Yenile"
+                        Content="{DynamicResource Loc_M_PortScanBtn}"
                         Padding="14,7"
                         Command="{Binding ScanListeningPortsCommand}"/>
             </Grid>
@@ -71,17 +71,44 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Port No" Binding="{Binding PortNumber}" Width="95"/>
-                    <DataGridTextColumn Header="Protokol" Binding="{Binding Protocol}" Width="80"/>
-                    <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="85"/>
-                    <DataGridTextColumn Header="İşlem Adı" Binding="{Binding ProcessName}" Width="195"/>
-                    <DataGridTextColumn Header="Yerel IP Adresi" Binding="{Binding LocalAddress}" Width="155"/>
-                    <DataGridTextColumn Header="Port Türü / Etiket" Binding="{Binding PortBadge}" Width="*"/>
-                    <DataGridTemplateColumn Header="Portu Boşalt" Width="155">
+                    <DataGridTextColumn Binding="{Binding PortNumber}" Width="95">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PortNoCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Protocol}" Width="80">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_NetColProto}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProcessId}" Width="85">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_LiveColPid}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProcessName}" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ProcNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding LocalAddress}" Width="155">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PortIpCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PortBadge}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PortLabelCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="155">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PortFreeCol}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource DangerButtonStyle}"
-                                        Content="Portu Kapat (Kill)"
+                                        Content="{DynamicResource Loc_M_PortKillBtn}"
                                         Padding="8,4"
                                         Command="{Binding DataContext.KillPortProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                         CommandParameter="{Binding}"/>

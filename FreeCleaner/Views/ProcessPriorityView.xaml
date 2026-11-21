@@ -15,18 +15,18 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="CANLI CPU ÖNCELİĞİ (PROCESS PRIORITY) &amp; VERİMLİLİK MODU (ECOQOS) YÖNETİCİSİ"
+                    <TextBlock Text="{DynamicResource Loc_M_PrioTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Oyun ve IDE'lere Yüksek Öncelik (High Boost) verirken arka planda sistemi yoran işlemleri Düşük / Eco Moduna (Idle) alır."
+                    <TextBlock Text="{DynamicResource Loc_M_PrioSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Content="🔄 İşlem Listesini Yenile"
+                        Content="{DynamicResource Loc_M_PrioRefreshBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
@@ -48,32 +48,59 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="70"/>
-                    <DataGridTextColumn Header="İşlem Adı" Binding="{Binding ProcessName}" Width="190"/>
-                    <DataGridTextColumn Header="Mevcut CPU Önceliği" Binding="{Binding PriorityBadge}" Width="240"/>
-                    <DataGridTextColumn Header="İş Parçacığı (Thread)" Binding="{Binding ThreadCount}" Width="135"/>
-                    <DataGridTextColumn Header="Bellek (RAM)" Binding="{Binding RamFormatted}" Width="115"/>
-                    <DataGridTextColumn Header="CPU Süresi" Binding="{Binding CpuTimeFormatted}" Width="105"/>
-                    <DataGridTemplateColumn Header="Hızlı Öncelik Değiştir" Width="*">
+                    <DataGridTextColumn Binding="{Binding ProcessId}" Width="70">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_LiveColPid}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProcessName}" Width="190">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ProcNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PriorityBadge}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PrioCurrCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ThreadCount}" Width="135">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_LiveColThreads}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding RamFormatted}" Width="115">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PrioRamCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding CpuTimeFormatted}" Width="105">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PrioCpuCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="*">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PrioQuickCol}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                                            Content="⚡ Yüksek (Boost)"
+                                            Content="{DynamicResource Loc_M_PrioHighBtn}"
                                             Padding="8,3"
                                             FontSize="11"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.SetProcessHighPriorityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                                            Content="🟢 Normal"
+                                            Content="{DynamicResource Loc_M_PrioNormBtn}"
                                             Padding="8,3"
                                             FontSize="11"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.SetProcessNormalPriorityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource CleanButtonStyle}"
-                                            Content="🍃 Eco / Düşük"
+                                            Content="{DynamicResource Loc_M_PrioEcoBtn}"
                                             Padding="8,3"
                                             FontSize="11"
                                             Command="{Binding DataContext.SetProcessEcoPriorityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

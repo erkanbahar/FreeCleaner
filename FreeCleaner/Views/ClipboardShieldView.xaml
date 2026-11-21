@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="AKILLI PANO (CLIPBOARD) KALKANI &amp; REKLAM TAKİP URL TEMİZLEYİCİ"
+                    <TextBlock Text="{DynamicResource Loc_M_ClipTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Panodaki bağlantılardan izleme parametrelerini (utm_source, fbclid, gclid, si) temizler ve açık API Anahtarı / IBAN verilerini denetler."
+                    <TextBlock Text="{DynamicResource Loc_M_ClipSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,12 +27,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="🔍 Panoyu Şimdi Denetle &amp; Analiz Et"
+                            Content="{DynamicResource Loc_M_ClipScanBtn}"
                             Padding="14,7"
                             Margin="0,0,8,0"
                             Command="{Binding InspectClipboardNowCommand}"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="🧹 Panoyu Tamamen Sıfırla"
+                            Content="{DynamicResource Loc_M_ClipClearBtn}"
                             Padding="14,7"
                             Command="{Binding ClearClipboardNowCommand}"/>
                 </StackPanel>
@@ -53,16 +53,39 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Saat" Binding="{Binding CapturedAt}" Width="85"/>
-                    <DataGridTextColumn Header="Veri Türü &amp; Risk" Binding="{Binding CategoryBadge}" Width="230"/>
-                    <DataGridTextColumn Header="Pano İçeriği (Önizleme)" Binding="{Binding OriginalPreview}" Width="240"/>
-                    <DataGridTextColumn Header="Arındırılmış / Temiz İçerik" Binding="{Binding SanitizedContent}" Width="240"/>
-                    <DataGridTextColumn Header="Güvenlik Analizi" Binding="{Binding SecurityAdvice}" Width="*"/>
-                    <DataGridTemplateColumn Header="Eylem" Width="150">
+                    <DataGridTextColumn Binding="{Binding CapturedAt}" Width="85">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ClipTimeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding CategoryBadge}" Width="230">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ClipRiskCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding OriginalPreview}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ClipOrigCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SanitizedContent}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ClipCleanCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SecurityAdvice}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ClipSecCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="150">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ClipActionCol}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource CleanButtonStyle}"
-                                        Content="Temizini Kopyala"
+                                        Content="{DynamicResource Loc_M_ClipCopyBtn}"
                                         Padding="8,3"
                                         FontSize="11"
                                         Command="{Binding DataContext.ApplySanitizedClipboardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

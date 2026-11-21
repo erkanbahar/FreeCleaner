@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="ORTAM DEĞİŞKENİ (PATH) DOKTORU &amp; KIRIK KISAYOL (.LNK) TEMİZLEYİCİ"
+                    <TextBlock Text="{DynamicResource Loc_M_PathTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Kullanıcı/Sistem PATH içindeki silinmiş veya tekrarlanan klasörleri ve Masaüstü/Başlat Menüsü üzerindeki bozuk (.lnk) kısayolları onarır."
+                    <TextBlock Text="{DynamicResource Loc_M_PathSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,12 +27,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="PATH &amp; Kısayolları Tara"
+                            Content="{DynamicResource Loc_M_PathScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanPathAndShortcutsCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="Seçili Sorunları Onar &amp; Temizle"
+                            Content="{DynamicResource Loc_M_PathFixBtn}"
                             Padding="12,7"
                             Command="{Binding FixPathAndShortcutsCommand}"/>
                 </StackPanel>
@@ -52,11 +52,31 @@
                       BorderThickness="1"
                       RowHeight="34">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Onar" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Sorun Türü" Binding="{Binding IssueType}" IsReadOnly="True" Width="175"/>
-                    <DataGridTextColumn Header="Kapsam" Binding="{Binding Scope}" IsReadOnly="True" Width="135"/>
-                    <DataGridTextColumn Header="Kayıt / Kısayol Dosyası" Binding="{Binding PathOrShortcutFile}" IsReadOnly="True" Width="280"/>
-                    <DataGridTextColumn Header="Eksik Hedef / Açıklama" Binding="{Binding MissingTarget}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_FixCol}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding IssueType}" IsReadOnly="True" Width="175">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PathTypeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Scope}" IsReadOnly="True" Width="135">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PathScopeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PathOrShortcutFile}" IsReadOnly="True" Width="280">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PathFileCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding MissingTarget}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_PathDescCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

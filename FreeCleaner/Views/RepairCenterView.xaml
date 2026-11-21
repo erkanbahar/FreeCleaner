@@ -8,7 +8,7 @@
             CornerRadius="12"
             Padding="18">
         <StackPanel>
-            <TextBlock Text="WINDOWS SİSTEM ONARIM &amp; DERİN BAKIM MERKEZİ"
+            <TextBlock Text="{DynamicResource Loc_M_RepairTitle}"
                        FontSize="14"
                        FontWeight="Bold"
                        Foreground="{DynamicResource TextPrimaryBrush}"
@@ -30,14 +30,14 @@
                 <!-- Card 1: DISM Component Store Check -->
                 <Border Grid.Column="0" Background="{DynamicResource BgCardBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="10" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="1. DISM Bileşen Deposu Denetimi" FontWeight="Bold" FontSize="13.5"/>
-                        <TextBlock Text="Windows görüntü bileşen deposunda (WinSxS) bozulma olup olmadığını denetler (DISM /Online /Cleanup-Image /CheckHealth)."
+                        <TextBlock Text="{DynamicResource Loc_M_RepairDismTitle}" FontWeight="Bold" FontSize="13.5"/>
+                        <TextBlock Text="{DynamicResource Loc_M_RepairDismDesc}"
                                    FontSize="11.5"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,14"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="DISM CheckHealth Çalıştır"
+                                Content="{DynamicResource Loc_M_RepairDismBtn}"
                                 Command="{Binding RunDismCheckCommand}"/>
                     </StackPanel>
                 </Border>
@@ -45,14 +45,14 @@
                 <!-- Card 2: SFC /SCANNOW -->
                 <Border Grid.Column="2" Background="{DynamicResource BgCardBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="10" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="2. Sistem Dosyası Denetleyicisi (SFC)" FontWeight="Bold" FontSize="13.5"/>
-                        <TextBlock Text="Eksik veya bozuk Windows sistem DLL/EXE dosyalarını tarar ve onarır (Yönetici Komut İstemi üzerinde sfc /scannow başlatır)."
+                        <TextBlock Text="{DynamicResource Loc_M_RepairSfcTitle}" FontWeight="Bold" FontSize="13.5"/>
+                        <TextBlock Text="{DynamicResource Loc_M_RepairSfcDesc}"
                                    FontSize="11.5"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,14"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="Yönetici SFC /SCANNOW Başlat"
+                                Content="{DynamicResource Loc_M_RepairSfcBtn}"
                                 Command="{Binding LaunchSfcScannowCommand}"/>
                     </StackPanel>
                 </Border>
@@ -60,14 +60,14 @@
                 <!-- Card 3: FontCache & Windows.old -->
                 <Border Grid.Column="4" Background="{DynamicResource BgCardBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="10" Padding="16">
                     <StackPanel>
-                        <TextBlock Text="3. Yazı Tipi Önbelleği (FontCache) Sıfırlama" FontWeight="Bold" FontSize="13.5"/>
-                        <TextBlock Text="Bozulmuş Windows yazı tipi önbellek dosyalarını (FontCache*.dat) temizleyerek uygulama açılış ve metin çizim sorunlarını giderir."
+                        <TextBlock Text="{DynamicResource Loc_M_RepairFontTitle}" FontWeight="Bold" FontSize="13.5"/>
+                        <TextBlock Text="{DynamicResource Loc_M_RepairFontDesc}"
                                    FontSize="11.5"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,14"/>
                         <Button Style="{StaticResource CleanButtonStyle}"
-                                Content="FontCache Önbelleğini Temizle"
+                                Content="{DynamicResource Loc_M_RepairFontBtn}"
                                 Command="{Binding CleanFontAndWindowsOldCommand}"/>
                     </StackPanel>
                 </Border>

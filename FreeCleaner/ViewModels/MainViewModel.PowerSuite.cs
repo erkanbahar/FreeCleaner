@@ -370,7 +370,14 @@ public partial class MainViewModel
             SelectedLanguage = SelectedLanguage,
             ProactiveStorageAlertsEnabled = ProactiveStorageAlertsEnabled,
             StorageAlertThresholdDays = StorageAlertThresholdDays,
-            LastStorageForecastAlertDate = _lastStorageForecastAlertDate
+            LastStorageForecastAlertDate = _lastStorageForecastAlertDate,
+            WindowLeft = _windowLeft,
+            WindowTop = _windowTop,
+            WindowWidth = _windowWidth,
+            WindowHeight = _windowHeight,
+            WindowMaximized = _windowMaximized,
+            HasCompletedOnboarding = _hasCompletedOnboarding,
+            CustomProfiles = CustomProfiles.ToList()
         };
     }
 
@@ -488,6 +495,16 @@ public partial class MainViewModel
             _lastStorageForecastAlertDate = imported.LastStorageForecastAlertDate ?? string.Empty;
             OnPropertyChanged(nameof(ProactiveStorageAlertsEnabled));
             OnPropertyChanged(nameof(StorageAlertThresholdDays));
+
+            CustomProfiles.Clear();
+            foreach (CustomCleaningProfile cp in imported.CustomProfiles ?? [])
+            {
+                if (!string.IsNullOrWhiteSpace(cp.Name))
+                    CustomProfiles.Add(cp);
+            }
+            SelectedCustomProfile = CustomProfiles.FirstOrDefault();
+            PopulateModuleCatalog();
+            RebuildFavoriteNavItems();
 
             if (imported.SelectedRuleIds.Count > 0)
             {
@@ -610,6 +627,13 @@ public partial class MainViewModel
     {
         if (action.Profile is CleaningProfileKind profile)
             ExecuteApplyCleaningProfile(profile);
+        else if (!string.IsNullOrWhiteSpace(action.CustomProfileName))
+        {
+            CustomCleaningProfile? match = CustomProfiles.FirstOrDefault(p =>
+                p.Name.Equals(action.CustomProfileName, StringComparison.OrdinalIgnoreCase));
+            if (match is not null)
+                ExecuteApplyCustomProfile(match);
+        }
 
         switch (action.Kind)
         {
@@ -685,7 +709,7 @@ public partial class MainViewModel
             var report = new CliAutomationReport(
                 GeneratedUtc: DateTime.UtcNow,
                 AppVersion: AppUpdateService.CurrentVersion,
-                Profile: action.Profile?.ToString() ?? "ActiveSelection",
+                Profile: action.Profile?.ToString() ?? action.CustomProfileName ?? "ActiveSelection",
                 DryRun: true,
                 TotalFiles: scanned.Count,
                 TotalBytes: totalBytes,

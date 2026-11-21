@@ -3,6 +3,12 @@ using System.Text.Json;
 
 namespace FreeCleaner.Services;
 
+public sealed class CustomCleaningProfile
+{
+    public string Name { get; set; } = string.Empty;
+    public List<string> RuleIds { get; set; } = [];
+}
+
 public class CleanerConfigData
 {
     public List<string> ExcludedPaths { get; set; } =
@@ -25,6 +31,13 @@ public class CleanerConfigData
     public bool ProactiveStorageAlertsEnabled { get; set; } = true;
     public int StorageAlertThresholdDays { get; set; } = 15;
     public string LastStorageForecastAlertDate { get; set; } = string.Empty;
+    public double? WindowLeft { get; set; }
+    public double? WindowTop { get; set; }
+    public double? WindowWidth { get; set; }
+    public double? WindowHeight { get; set; }
+    public bool WindowMaximized { get; set; }
+    public bool HasCompletedOnboarding { get; set; }
+    public List<CustomCleaningProfile> CustomProfiles { get; set; } = [];
 }
 
 public static class ExclusionAndSettingsService
@@ -42,7 +55,13 @@ public static class ExclusionAndSettingsService
                 string json = File.ReadAllText(ConfigFilePath);
                 var data = JsonSerializer.Deserialize<CleanerConfigData>(json);
                 if (data is not null)
+                {
+                    if (!json.Contains("\"HasCompletedOnboarding\"", StringComparison.Ordinal))
+                        data.HasCompletedOnboarding = true;
+
+                    data.CustomProfiles ??= [];
                     return data;
+                }
             }
         }
         catch (Exception ex)

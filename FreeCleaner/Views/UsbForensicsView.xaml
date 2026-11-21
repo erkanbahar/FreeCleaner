@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="USB DEPOLAMA GEÇMİŞİ (USBSTOR ADLİ ANALİZ) &amp; İZ TEMİZLEYİCİ"
+                    <TextBlock Text="{DynamicResource Loc_M_UsbTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Bilgisayara bugüne kadar takılmış tüm USB bellek ve harici disklerin marka, model ve seri numaralarını (HKLM\...\USBSTOR) listeler."
+                    <TextBlock Text="{DynamicResource Loc_M_UsbSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,12 +27,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="USB Geçmişini Tara"
+                            Content="{DynamicResource Loc_M_UsbScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanUsbHistoryCommand}"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="Seçili USB İzlerini Sil (Admin)"
+                            Content="{DynamicResource Loc_M_UsbCleanBtn}"
                             Padding="12,7"
                             Command="{Binding CleanUsbHistoryCommand}"/>
                 </StackPanel>
@@ -52,11 +52,31 @@
                       BorderThickness="1"
                       RowHeight="34">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Cihaz Adı (FriendlyName)" Binding="{Binding FriendlyName}" IsReadOnly="True" Width="240"/>
-                    <DataGridTextColumn Header="Üretici &amp; Ürün Kimliği" Binding="{Binding VendorAndProduct}" IsReadOnly="True" Width="250"/>
-                    <DataGridTextColumn Header="Donanım Seri Numarası" Binding="{Binding SerialNumber}" IsReadOnly="True" Width="220"/>
-                    <DataGridTextColumn Header="Kayıt Defteri Anahtarı" Binding="{Binding RegistrySubKeyPath}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding FriendlyName}" IsReadOnly="True" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_UsbNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding VendorAndProduct}" IsReadOnly="True" Width="250">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_UsbVendorCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SerialNumber}" IsReadOnly="True" Width="220">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_UsbSerialCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding RegistrySubKeyPath}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_RegColKeyPath}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

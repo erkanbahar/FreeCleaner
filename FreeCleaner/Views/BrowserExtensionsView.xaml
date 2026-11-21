@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="TARAYICI EKLENTİLERİ (EXTENSIONS) DENETÇİSİ"
+                    <TextBlock Text="{DynamicResource Loc_M_ExtTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Chrome, Edge, Brave ve Vivaldi profillerinde kurulu tüm eklentileri (manifest.json) tarar; şüpheli veya gereksiz eklentileri kaldırır."
+                    <TextBlock Text="{DynamicResource Loc_M_ExtSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,12 +27,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Eklentileri Yeniden Tara"
+                            Content="{DynamicResource Loc_M_ExtScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanBrowserExtensionsCommand}"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="Seçili Eklentileri Kaldır"
+                            Content="{DynamicResource Loc_M_ExtRemoveBtn}"
                             Padding="12,7"
                             Command="{Binding RemoveSelectedExtensionsCommand}"/>
                 </StackPanel>
@@ -52,18 +52,49 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
-                    <DataGridTextColumn Header="Tarayıcı" Binding="{Binding BrowserName}" IsReadOnly="True" Width="125"/>
-                    <DataGridTextColumn Header="Profil" Binding="{Binding ProfileName}" IsReadOnly="True" Width="95"/>
-                    <DataGridTextColumn Header="Eklenti Adı" Binding="{Binding Name}" IsReadOnly="True" Width="210"/>
-                    <DataGridTextColumn Header="Sürüm" Binding="{Binding Version}" IsReadOnly="True" Width="85"/>
-                    <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="85"/>
-                    <DataGridTextColumn Header="Açıklama / Uzantı Kimliği" Binding="{Binding Description}" IsReadOnly="True" Width="*"/>
-                    <DataGridTemplateColumn Header="Klasör" Width="105">
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding BrowserName}" IsReadOnly="True" Width="125">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ExtBrowserCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProfileName}" IsReadOnly="True" Width="95">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ExtProfCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Name}" IsReadOnly="True" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ExtNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Version}" IsReadOnly="True" Width="85">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_BloatColVer}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedSize}" IsReadOnly="True" Width="85">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Description}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ExtDescCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="105">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_FolderCol}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource SecondaryButtonStyle}"
-                                        Content="Konumu Aç"
+                                        Content="{DynamicResource Loc_OpenFileLocationTip}"
                                         Padding="8,4"
                                         Command="{Binding DataContext.OpenExtensionFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                         CommandParameter="{Binding}"/>

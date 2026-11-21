@@ -21,13 +21,13 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="0" Margin="0,0,0,10">
-                    <TextBlock Text="FİZİKSEL DİSK SAĞLIĞI (S.M.A.R.T. &amp; NVMe/SSD DURUMU)"
+                    <TextBlock Text="{DynamicResource Loc_M_SmartTitle}"
                                FontSize="12"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Yenile"
+                            Content="{DynamicResource Loc_BtnRefresh}"
                             HorizontalAlignment="Right"
                             Command="{Binding RefreshDiskAndPowerCommand}"/>
                 </Grid>
@@ -46,11 +46,31 @@
                           BorderThickness="1"
                           RowHeight="34">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Disk Modeli" Binding="{Binding FriendlyName}" Width="*"/>
-                        <DataGridTextColumn Header="Tür" Binding="{Binding MediaType}" Width="75"/>
-                        <DataGridTextColumn Header="Veri Yolu" Binding="{Binding BusType}" Width="80"/>
-                        <DataGridTextColumn Header="Kapasite" Binding="{Binding SizeFormatted}" Width="95"/>
-                        <DataGridTextColumn Header="S.M.A.R.T. Sağlığı" Binding="{Binding HealthStatus}" Width="135"/>
+                        <DataGridTextColumn Binding="{Binding FriendlyName}" Width="*">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_M_SmartModelCol}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding MediaType}" Width="75">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_DlColType}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding BusType}" Width="80">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_M_SmartBusCol}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding SizeFormatted}" Width="95">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_M_SmartCapCol}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding HealthStatus}" Width="135">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_M_SmartHealthCol}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
@@ -71,13 +91,13 @@
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0" Margin="0,0,0,10">
-                    <TextBlock Text="WINDOWS GÜÇ PLANI &amp; OYUN HIZLANDIRICI"
+                    <TextBlock Text="{DynamicResource Loc_M_PowerTitle}"
                                FontSize="12"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="+ Nihai Performans Planını Aç"
+                            Content="{DynamicResource Loc_M_PowerUltimateBtn}"
                             Padding="10,5"
                             HorizontalAlignment="Right"
                             Command="{Binding UnlockUltimatePowerCommand}"/>
@@ -85,12 +105,12 @@
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="⚡ Tek Tıkla Oyun &amp; Performans Modu"
+                            Content="{DynamicResource Loc_M_GameBoostBtn}"
                             Padding="12,6"
                             Margin="0,0,8,0"
                             Command="{Binding ActivateGameBoosterCommand}"/>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                            Content="🔋 Pil Sağlık Raporu (HTML)"
+                            Content="{DynamicResource Loc_M_PowerBatteryBtn}"
                             Padding="12,6"
                             Command="{Binding GenerateBatteryReportCommand}"/>
                 </StackPanel>
@@ -110,13 +130,24 @@
                           BorderThickness="1"
                           RowHeight="36">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Durum" Binding="{Binding StatusBadge}" Width="105"/>
-                        <DataGridTextColumn Header="Güç Planı Adı" Binding="{Binding Name}" Width="*"/>
-                        <DataGridTemplateColumn Header="Seç" Width="110">
+                        <DataGridTextColumn Binding="{Binding StatusBadge}" Width="105">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding Name}" Width="*">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_M_PowerNameCol}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTemplateColumn Width="110">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                            </DataGridTemplateColumn.Header>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Style="{StaticResource CleanButtonStyle}"
-                                            Content="Etkinleştir"
+                                            Content="{DynamicResource Loc_M_PowerApplyBtn}"
                                             Padding="8,4"
                                             Command="{Binding DataContext.ActivatePowerPlanCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>

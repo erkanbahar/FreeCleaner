@@ -16,11 +16,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,10">
                 <StackPanel>
-                    <TextBlock Text="TOPLU DOSYA YENİDEN ADLANDIRICI (POWERRENAME &amp; GERİ ALMA MERKEZİ)"
+                    <TextBlock Text="{DynamicResource Loc_M_RenameTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Klasördeki dosyalar için Ön Ek, Son Ek, Bul/Değiştir, Numaralandırma (001, 002...) ve Harf Biçimi kurallarını canlı önizlemeyle uygulayın."
+                    <TextBlock Text="{DynamicResource Loc_M_RenameSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -28,12 +28,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                            Content="↩ Son Adlandırmayı Geri Al"
+                            Content="{DynamicResource Loc_M_RenameUndoBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding UndoBatchRenameCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="✨ Seçili Dosyaları Yeniden Adlandır"
+                            Content="{DynamicResource Loc_M_RenameApplyBtn}"
                             Padding="14,7"
                             Command="{Binding ApplyBatchRenameCommand}"/>
                 </StackPanel>
@@ -48,7 +48,7 @@
                     Margin="0,0,0,10">
                 <StackPanel>
                     <WrapPanel VerticalAlignment="Center" Margin="0,0,0,8">
-                        <TextBlock Text="Hedef Klasör:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{DynamicResource Loc_DiskTargetFolder}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBox Text="{Binding BatchRenameFolderPath, UpdateSourceTrigger=PropertyChanged}"
                                  Width="360"
                                  Padding="8,5"
@@ -57,27 +57,27 @@
                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
                                  Margin="0,0,8,0"/>
                         <Button Style="{StaticResource SecondaryButtonStyle}"
-                                Content="Klasör Seç..."
+                                Content="{DynamicResource Loc_SettingsBrowseBtn}"
                                 Padding="10,5"
                                 Margin="0,0,12,0"
                                 Command="{Binding BrowseRenameFolderCommand}"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="Önizlemeyi Yenile"
+                                Content="{DynamicResource Loc_M_RenamePreviewBtn}"
                                 Padding="12,5"
                                 Command="{Binding PreviewBatchRenameCommand}"/>
                     </WrapPanel>
 
                     <WrapPanel VerticalAlignment="Center">
-                        <TextBlock Text="Bul:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBlock Text="{DynamicResource Loc_M_RenameFindLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <TextBox Text="{Binding BatchRenameFindText, UpdateSourceTrigger=PropertyChanged}" Width="110" Padding="6,4" Background="#0D1422" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
 
-                        <TextBlock Text="Değiştir:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBlock Text="{DynamicResource Loc_M_RenameReplaceLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <TextBox Text="{Binding BatchRenameReplaceText, UpdateSourceTrigger=PropertyChanged}" Width="110" Padding="6,4" Background="#0D1422" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
 
-                        <TextBlock Text="Ön Ek (Prefix):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBlock Text="{DynamicResource Loc_M_RenamePrefixLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <TextBox Text="{Binding BatchRenamePrefixText, UpdateSourceTrigger=PropertyChanged}" Width="95" Padding="6,4" Background="#0D1422" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
 
-                        <TextBlock Text="Son Ek (Suffix):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBlock Text="{DynamicResource Loc_M_RenameSuffixLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
                         <TextBox Text="{Binding BatchRenameSuffixText, UpdateSourceTrigger=PropertyChanged}" Width="95" Padding="6,4" Background="#0D1422" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
 
                         <ComboBox ItemsSource="{Binding AvailableRenameCaseModes}"
@@ -86,7 +86,7 @@
                                   Padding="6,4"
                                   Margin="0,0,12,0"/>
 
-                        <CheckBox Content="Sıra No (_001)"
+                        <CheckBox Content="{DynamicResource Loc_M_RenameSeqCheck}"
                                   IsChecked="{Binding BatchRenameAddNumbers}"
                                   Foreground="{DynamicResource TextPrimaryBrush}"
                                   VerticalAlignment="Center"/>
@@ -108,12 +108,36 @@
                       BorderThickness="1"
                       RowHeight="34">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Mevcut Dosya Adı" Binding="{Binding OriginalName}" IsReadOnly="True" Width="260"/>
-                    <DataGridTextColumn Header="Yeni Dosya Adı (Önizleme)" Binding="{Binding NewName}" IsReadOnly="True" Width="280"/>
-                    <DataGridTextColumn Header="Uzantı" Binding="{Binding Extension}" IsReadOnly="True" Width="80"/>
-                    <DataGridTextColumn Header="Durum" Binding="{Binding ChangeStatus}" IsReadOnly="True" Width="175"/>
-                    <DataGridTextColumn Header="Tam Dosya Yolu" Binding="{Binding OriginalFullPath}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding OriginalName}" IsReadOnly="True" Width="260">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_RenameOrigCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding NewName}" IsReadOnly="True" Width="280">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_RenameNewCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Extension}" IsReadOnly="True" Width="80">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_AssocExtCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ChangeStatus}" IsReadOnly="True" Width="175">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding OriginalFullPath}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_CleanerColFilePath}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

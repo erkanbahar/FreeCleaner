@@ -53,6 +53,14 @@ public partial class MainViewModel : INotifyPropertyChanged
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
         "Downloads");
     private string _organizerSummaryText = "Önizleme için 'Düzenlemeyi Önizle' butonuna tıklayın.";
+    private double? _windowLeft;
+    private double? _windowTop;
+    private double? _windowWidth;
+    private double? _windowHeight;
+    private bool _windowMaximized;
+    private bool _hasCompletedOnboarding = true;
+    private string _newCustomProfileName = string.Empty;
+    private CustomCleaningProfile? _selectedCustomProfile;
 
     private string _activeSection = "Dashboard";
     private string _selectedTheme = "ObsidianNeon";
@@ -234,6 +242,7 @@ public partial class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<DeepSpaceItem> DeepSpaceItems { get; } = [];
     public ObservableCollection<SimilarPhotoItem> SimilarPhotoItems { get; } = [];
     public ObservableCollection<CleanupHistoryBarItem> RecentCleanupBars { get; } = [];
+    public ObservableCollection<CustomCleaningProfile> CustomProfiles { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -531,6 +540,13 @@ public partial class MainViewModel : INotifyPropertyChanged
     public ICommand ApplyFolderOrganizeCommand { get; }
     public ICommand UndoFolderOrganizeCommand { get; }
 
+    // 17th Gen Custom Cleaning Profiles & Onboarding Commands
+    public ICommand SaveCustomProfileCommand { get; }
+    public ICommand ApplyCustomProfileCommand { get; }
+    public ICommand DeleteCustomProfileCommand { get; }
+    public ICommand CompleteOnboardingCommand { get; }
+    public ICommand OpenOnboardingCommand { get; }
+
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
     public string AdminStatusBadge => LocalizationService.NormalizeLanguageCode(_selectedLanguage) == "en-US"
@@ -565,6 +581,18 @@ public partial class MainViewModel : INotifyPropertyChanged
             ? savedConfig.StorageAlertThresholdDays
             : 15;
         _lastStorageForecastAlertDate = savedConfig.LastStorageForecastAlertDate ?? string.Empty;
+        _windowLeft = savedConfig.WindowLeft;
+        _windowTop = savedConfig.WindowTop;
+        _windowWidth = savedConfig.WindowWidth;
+        _windowHeight = savedConfig.WindowHeight;
+        _windowMaximized = savedConfig.WindowMaximized;
+        _hasCompletedOnboarding = savedConfig.HasCompletedOnboarding;
+        foreach (CustomCleaningProfile cp in savedConfig.CustomProfiles ?? [])
+        {
+            if (!string.IsNullOrWhiteSpace(cp.Name))
+                CustomProfiles.Add(cp);
+        }
+        SelectedCustomProfile = CustomProfiles.FirstOrDefault();
         _startMinimizedWithWindows = ShellIntegrationAndProfilesService.IsAutoStartWithWindowsEnabled();
         _lastScheduledMaintenanceUtc = DateTime.UtcNow;
         LoadActivityLogs();
@@ -1064,6 +1092,17 @@ public partial class MainViewModel : INotifyPropertyChanged
         PreviewFolderOrganizeCommand = new RelayCommand(_ => ExecutePreviewFolderOrganize(), _ => !IsBusy);
         ApplyFolderOrganizeCommand = new RelayCommand(_ => ExecuteApplyFolderOrganize(), _ => !IsBusy);
         UndoFolderOrganizeCommand = new RelayCommand(_ => ExecuteUndoFolderOrganize(), _ => !IsBusy && SmartFolderOrganizerService.HasUndoJournal());
+
+        // 17th Gen Custom Cleaning Profiles & Onboarding Commands
+        SaveCustomProfileCommand = new RelayCommand(_ => ExecuteSaveCustomProfile(), _ => !IsBusy && !string.IsNullOrWhiteSpace(NewCustomProfileName));
+        ApplyCustomProfileCommand = new RelayCommand(_ => ExecuteApplySelectedCustomProfile(), _ => !IsBusy && SelectedCustomProfile is not null);
+        DeleteCustomProfileCommand = new RelayCommand(_ => ExecuteDeleteSelectedCustomProfile(), _ => !IsBusy && SelectedCustomProfile is not null);
+        CompleteOnboardingCommand = new RelayCommand(_ =>
+        {
+            HasCompletedOnboarding = true;
+            SaveCurrentSettings();
+        });
+        OpenOnboardingCommand = new RelayCommand(_ => HasCompletedOnboarding = false);
 
         _liveTelemetryTimer = new DispatcherTimer
         {

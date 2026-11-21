@@ -15,24 +15,24 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="SÜREÇ &amp; DİJİTAL İMZA DENETÇİSİ (UNSIGNED BINARY &amp; SHA-256 HUNTER)"
+                    <TextBlock Text="{DynamicResource Loc_M_SecProcTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Çalışan tüm işlemlerin X.509 Authenticode dijital imzalarını, SHA-256 özetlerini ve Temp/Downloads gibi şüpheli dizinleri denetler."
+                    <TextBlock Text="{DynamicResource Loc_M_SecProcSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <CheckBox Content="Yalnızca İmzasız / Şüpheli İşlemleri Göster"
+                    <CheckBox Content="{DynamicResource Loc_M_SecOnlyUnsignedCheck}"
                               IsChecked="{Binding OnlyUnsignedProcessesFilter}"
                               Foreground="{DynamicResource AccentAmberBrush}"
                               VerticalAlignment="Center"
                               Margin="0,0,14,0"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Çalışan İşlemleri Yeniden Denetle"
+                            Content="{DynamicResource Loc_M_SecProcScanBtn}"
                             Padding="14,7"
                             Command="{Binding ScanProcessSecurityCommand}"/>
                 </StackPanel>
@@ -53,26 +53,57 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="65"/>
-                    <DataGridTextColumn Header="İşlem Adı" Binding="{Binding ProcessName}" Width="155"/>
-                    <DataGridTextColumn Header="Dijital İmza Durumu" Binding="{Binding SignatureStatus}" Width="205"/>
-                    <DataGridTextColumn Header="Yayıncı (Sertifika CN)" Binding="{Binding PublisherName}" Width="195"/>
-                    <DataGridTextColumn Header="RAM" Binding="{Binding MemoryFormatted}" Width="85"/>
-                    <DataGridTextColumn Header="SHA-256 (Kısa)" Binding="{Binding Sha256Short}" Width="145"/>
-                    <DataGridTextColumn Header="Tam Dosya Konumu" Binding="{Binding ExecutablePath}" Width="*"/>
-                    <DataGridTemplateColumn Header="Eylem" Width="165">
+                    <DataGridTextColumn Binding="{Binding ProcessId}" Width="65">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_LiveColPid}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProcessName}" Width="155">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ProcNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SignatureStatus}" Width="205">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SecSigCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PublisherName}" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SecPubCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding MemoryFormatted}" Width="85">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_RamShortCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Sha256Short}" Width="145">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SecShaCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ExecutablePath}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SecPathCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="165">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ClipActionCol}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                                            Content="Konum"
+                                            Content="{DynamicResource Loc_StartupColLocation}"
                                             Padding="8,3"
                                             FontSize="11"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.OpenProcessSecurityFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource DangerButtonStyle}"
-                                            Content="Sonlandır"
+                                            Content="{DynamicResource Loc_M_KillBtn}"
                                             Padding="8,3"
                                             FontSize="11"
                                             Command="{Binding DataContext.KillProcessSecurityItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

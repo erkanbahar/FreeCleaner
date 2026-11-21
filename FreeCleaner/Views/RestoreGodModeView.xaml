@@ -16,11 +16,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="SİSTEM GERİ YÜKLEME NOKTASI (RESTORE POINT) &amp; WINDOWS GOD MODE MERKEZİ"
+                    <TextBlock Text="{DynamicResource Loc_M_RestoreTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Kritik temizlik/optimizasyon işlemlerinden önce tek tıkla Geri Yükleme Noktası oluşturun ve Windows Tanrı Modu (200+ gizli ayar) araçlarına erişin."
+                    <TextBlock Text="{DynamicResource Loc_M_RestoreSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -28,18 +28,18 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="⚡ Masaüstünde Windows God Mode Aç"
+                            Content="{DynamicResource Loc_M_GodModeBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding OpenGodModeCommand}"/>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                            Content="Kaynak İzleyicisi (resmon)"
+                            Content="{DynamicResource Loc_M_ResmonBtn}"
                             Padding="10,7"
                             Margin="0,0,6,0"
                             Command="{Binding LaunchSystemToolCommand}"
                             CommandParameter="resmon.exe"/>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                            Content="Olay Görüntüleyicisi"
+                            Content="{DynamicResource Loc_M_EventViewerBtn}"
                             Padding="10,7"
                             Command="{Binding LaunchSystemToolCommand}"
                             CommandParameter="eventvwr.msc"/>
@@ -65,14 +65,14 @@
 
                 <Button Grid.Column="1"
                         Style="{StaticResource PrimaryButtonStyle}"
-                        Content="+ Yeni Geri Yükleme Noktası Oluştur"
+                        Content="{DynamicResource Loc_M_CreateRestoreBtn}"
                         Padding="14,7"
                         Margin="0,0,8,0"
                         Command="{Binding CreateRestorePointCommand}"/>
 
                 <Button Grid.Column="2"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        Content="Listeyi Yenile"
+                        Content="{DynamicResource Loc_StartupRefreshBtn}"
                         Padding="12,7"
                         Command="{Binding RefreshRestorePointsCommand}"/>
             </Grid>
@@ -92,10 +92,26 @@
                       BorderThickness="1"
                       RowHeight="35">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Sıra No" Binding="{Binding SequenceNumber}" Width="95"/>
-                    <DataGridTextColumn Header="Oluşturulma Tarihi" Binding="{Binding CreationTime}" Width="180"/>
-                    <DataGridTextColumn Header="Tür" Binding="{Binding RestorePointType}" Width="165"/>
-                    <DataGridTextColumn Header="Geri Yükleme Noktası Açıklaması" Binding="{Binding Description}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding SequenceNumber}" Width="95">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_RestoreSeqCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding CreationTime}" Width="180">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_RestoreDateCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding RestorePointType}" Width="165">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DlColType}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Description}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_RestoreDescCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

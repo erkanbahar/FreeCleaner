@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="SİSTEM &amp; KULLANICI FONT (YAZI TİPİ) YÖNETİCİSİ"
+                    <TextBlock Text="{DynamicResource Loc_M_FontTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Windows Sistem Fontlarını ve Kullanıcı Fontlarını listeler; seçilen kullanıcı fontlarını Masaüstüne yedekleyerek güvenle kaldırır."
+                    <TextBlock Text="{DynamicResource Loc_M_FontSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -34,17 +34,17 @@
                              BorderBrush="{DynamicResource BorderSubtleBrush}"
                              Margin="0,0,8,0"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Fontları Tara"
+                            Content="{DynamicResource Loc_M_FontScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanInstalledFontsCommand}"/>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                            Content="Fonts Klasörü"
+                            Content="{DynamicResource Loc_M_FontOpenDirBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding OpenWindowsFontsFolderCommand}"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="Seçili Kullanıcı Fontlarını Yedekle &amp; Sil"
+                            Content="{DynamicResource Loc_M_FontRemoveBtn}"
                             Padding="12,7"
                             Command="{Binding RemoveSelectedUserFontsCommand}"/>
                 </StackPanel>
@@ -64,12 +64,36 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Kategori" Binding="{Binding SourceCategory}" IsReadOnly="True" Width="210"/>
-                    <DataGridTextColumn Header="Yazı Tipi Ailesi" Binding="{Binding FontFamilyGuess}" IsReadOnly="True" Width="195"/>
-                    <DataGridTextColumn Header="Dosya Adı" Binding="{Binding FontFileName}" IsReadOnly="True" Width="185"/>
-                    <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="95"/>
-                    <DataGridTextColumn Header="Örnek Türkçe Karakter Metni" Binding="{Binding SamplePreviewText}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding SourceCategory}" IsReadOnly="True" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColCategory}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FontFamilyGuess}" IsReadOnly="True" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_FontNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FontFileName}" IsReadOnly="True" Width="185">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DiskColFileName}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedSize}" IsReadOnly="True" Width="95">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SamplePreviewText}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_FontSampleCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

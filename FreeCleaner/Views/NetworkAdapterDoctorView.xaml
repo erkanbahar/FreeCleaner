@@ -16,18 +16,18 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,10">
                 <StackPanel>
-                    <TextBlock Text="AĞ ADAPTÖRÜ, IP/MAC ENVANTERİ &amp; TCP/IP WINSOCK ONARIM DOKTORU"
+                    <TextBlock Text="{DynamicResource Loc_M_NetAdpTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Tüm fiziksel/sanal ağ kartlarını, MAC adreslerini, Ağ Geçidi (Gateway) ve DNS sunucularını listeler; tek tıkla TCP/IP ve Winsock onarımı yapar."
+                    <TextBlock Text="{DynamicResource Loc_M_NetAdpSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Content="Ağ Adaptörlerini Yenile"
+                        Content="{DynamicResource Loc_M_NetAdpRefreshBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
@@ -42,21 +42,21 @@
                     Padding="12,10"
                     Margin="0,0,0,10">
                 <WrapPanel VerticalAlignment="Center">
-                    <TextBlock Text="Hızlı Ağ Onarım Araçları:" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <TextBlock Text="{DynamicResource Loc_M_NetAdpToolsLabel}" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                            Content="🧹 DNS &amp; ARP Önbelleğini Sıfırla (arp -d *)"
+                            Content="{DynamicResource Loc_M_NetAdpDnsArpBtn}"
                             Padding="12,6"
                             Margin="0,0,10,0"
                             Command="{Binding RunNetworkRepairActionCommand}"
                             CommandParameter="ARP_FLUSH"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="🔄 DHCP IP Yenile (Release &amp; Renew)"
+                            Content="{DynamicResource Loc_M_NetAdpDhcpBtn}"
                             Padding="12,6"
                             Margin="0,0,10,0"
                             Command="{Binding RunNetworkRepairActionCommand}"
                             CommandParameter="DHCP_RENEW"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="🛠️ Winsock &amp; TCP/IP Yığınını Sıfırla (Admin)"
+                            Content="{DynamicResource Loc_M_NetAdpWinsockBtn}"
                             Padding="12,6"
                             Command="{Binding RunNetworkRepairActionCommand}"
                             CommandParameter="TCP_WINSOCK_RESET"/>
@@ -78,12 +78,36 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Bağlantı Durumu" Binding="{Binding StatusBadge}" Width="135"/>
-                    <DataGridTextColumn Header="Arayüz Adı" Binding="{Binding AdapterName}" Width="165"/>
-                    <DataGridTextColumn Header="Donanım / Sanal Adaptör" Binding="{Binding Description}" Width="245"/>
-                    <DataGridTextColumn Header="Fiziksel Adres (MAC)" Binding="{Binding MacAddress}" Width="150"/>
-                    <DataGridTextColumn Header="IPv4 &amp; Ağ Geçidi (Gateway)" Binding="{Binding IpAndGateway}" Width="240"/>
-                    <DataGridTextColumn Header="Hız &amp; DNS Sunucuları" Binding="{Binding DnsAndSpeed}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding StatusBadge}" Width="135">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_NetAdpStateCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding AdapterName}" Width="165">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_NetAdpNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Description}" Width="245">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_NetAdpDescCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding MacAddress}" Width="150">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_LanMacCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding IpAndGateway}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_NetAdpIpCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding DnsAndSpeed}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_NetAdpSpeedCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

@@ -36,60 +36,69 @@ public static class NinthGenWingetAndNetworkSuiteService
 
                 string output = proc.StandardOutput.ReadToEnd();
                 proc.WaitForExit(20000);
-
-                var lines = output
-                    .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
-                    .Where(l => l.Trim().Length > 5)
-                    .ToList();
-
-                int sepIndex = lines.FindIndex(l => l.StartsWith("---", StringComparison.Ordinal));
-                if (sepIndex <= 0 || sepIndex >= lines.Count - 1)
-                    return results;
-
-                string headerLine = lines[sepIndex - 1];
-                for (int i = sepIndex + 1; i < lines.Count; i++)
-                {
-                    string row = lines[i].Trim();
-                    if (row.StartsWith("---", StringComparison.Ordinal) ||
-                        row.Contains("upgrades available", StringComparison.OrdinalIgnoreCase) ||
-                        row.Contains("yükseltme mevcut", StringComparison.OrdinalIgnoreCase) ||
-                        row.Contains("paket", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    // Split by 2 or more spaces to reliably parse winget columns regardless of localization
-                    var cols = System.Text.RegularExpressions.Regex.Split(row, @"\s{2,}")
-                        .Where(c => !string.IsNullOrWhiteSpace(c))
-                        .ToArray();
-
-                    if (cols.Length >= 4)
-                    {
-                        string name = cols[0].Trim();
-                        string id = cols[1].Trim();
-                        string curVer = cols[2].Trim();
-                        string availVer = cols[3].Trim();
-                        string src = cols.Length >= 5 ? cols[4].Trim() : "winget";
-
-                        if (!id.Contains('.') && cols.Length == 4)
-                            continue;
-
-                        results.Add(new WingetUpgradeItem
-                        {
-                            PackageName = name,
-                            PackageId = id,
-                            InstalledVersion = curVer,
-                            AvailableVersion = availVer,
-                            SourceName = src,
-                            IsSelected = true
-                        });
-                    }
-                }
+                results = ParseWingetUpgradeOutput(output);
             }
             catch { }
 
             return results;
         });
+    }
+
+    public static List<WingetUpgradeItem> ParseWingetUpgradeOutput(string? output)
+    {
+        var results = new List<WingetUpgradeItem>();
+        if (string.IsNullOrWhiteSpace(output))
+            return results;
+
+        var lines = output
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(l => l.Trim().Length > 5)
+            .ToList();
+
+        int sepIndex = lines.FindIndex(l => l.StartsWith("---", StringComparison.Ordinal));
+        if (sepIndex <= 0 || sepIndex >= lines.Count - 1)
+            return results;
+
+        for (int i = sepIndex + 1; i < lines.Count; i++)
+        {
+            string row = lines[i].Trim();
+            if (row.StartsWith("---", StringComparison.Ordinal) ||
+                row.Contains("upgrades available", StringComparison.OrdinalIgnoreCase) ||
+                row.Contains("yükseltme mevcut", StringComparison.OrdinalIgnoreCase) ||
+                row.Contains("paket", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            // Split by 2 or more spaces to reliably parse winget columns regardless of localization
+            var cols = System.Text.RegularExpressions.Regex.Split(row, @"\s{2,}")
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .ToArray();
+
+            if (cols.Length >= 4)
+            {
+                string name = cols[0].Trim();
+                string id = cols[1].Trim();
+                string curVer = cols[2].Trim();
+                string availVer = cols[3].Trim();
+                string src = cols.Length >= 5 ? cols[4].Trim() : "winget";
+
+                if (!id.Contains('.') && cols.Length == 4)
+                    continue;
+
+                results.Add(new WingetUpgradeItem
+                {
+                    PackageName = name,
+                    PackageId = id,
+                    InstalledVersion = curVer,
+                    AvailableVersion = availVer,
+                    SourceName = src,
+                    IsSelected = true
+                });
+            }
+        }
+
+        return results;
     }
 
     /// <summary>

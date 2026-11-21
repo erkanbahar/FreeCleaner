@@ -15,18 +15,18 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="DERİN DONANIM ENVANTERİ, BIOS &amp; OEM WINDOWS ÜRÜN ANAHTARI (PRODUCT KEY)"
+                    <TextBlock Text="{DynamicResource Loc_M_HwTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="İşlemci (CPU), Anakart, BIOS sürümü, RAM modül frekansları (MHz), Ekran Kartı (GPU) ve Anakart gömülü OEM Windows anahtarını listeler."
+                    <TextBlock Text="{DynamicResource Loc_M_HwSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Content="Donanım &amp; Lisans Bilgilerini Yenile"
+                        Content="{DynamicResource Loc_M_HwRefreshBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
@@ -48,10 +48,26 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Bileşen Kategorisi" Binding="{Binding ComponentCategory}" Width="210"/>
-                    <DataGridTextColumn Header="Donanım / Model Adı" Binding="{Binding ComponentName}" Width="290"/>
-                    <DataGridTextColumn Header="Birincil Değer / Ürün Anahtarı" Binding="{Binding PrimaryValue}" Width="260"/>
-                    <DataGridTextColumn Header="Teknik Ayrıntılar" Binding="{Binding SecondaryDetails}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding ComponentCategory}" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_HwCatCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ComponentName}" Width="290">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_HwNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PrimaryValue}" Width="260">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_HwValCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SecondaryDetails}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_HwDetailsCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

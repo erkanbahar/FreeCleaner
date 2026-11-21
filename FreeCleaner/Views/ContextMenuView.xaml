@@ -15,21 +15,21 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Windows Sağ Tık Bağlam Menüsü (Context Menu) Yöneticisi"
+                    <TextBlock Text="{DynamicResource Loc_M_CtxTitle}"
                                FontSize="14"
                                FontWeight="SemiBold"/>
-                    <TextBlock Text="Dosya, klasör ve masaüstü sağ tık menüsünü yavaşlatan 3. parti kabuk eklentilerini (HKCR\*\shellex) listeler ve temizler."
+                    <TextBlock Text="{DynamicResource Loc_M_CtxSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Menü Öğelerini Yenile"
+                            Content="{DynamicResource Loc_M_CtxRefreshBtn}"
                             Command="{Binding RefreshContextMenuCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="Seçili Sağ Tık Öğelerini Kaldır"
+                            Content="{DynamicResource Loc_M_CtxRemoveBtn}"
                             Command="{Binding DeleteContextMenuCommand}"/>
                 </StackPanel>
             </Grid>
@@ -48,11 +48,31 @@
                       BorderThickness="1"
                       RowHeight="32">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                    <DataGridTextColumn Header="Kapsam (Scope)" Binding="{Binding TargetScope}" IsReadOnly="True" Width="190"/>
-                    <DataGridTextColumn Header="Menü Eklenti Adı" Binding="{Binding Name}" IsReadOnly="True" Width="210"/>
-                    <DataGridTextColumn Header="CLSID / Komut" Binding="{Binding HandlerValue}" IsReadOnly="True" Width="260"/>
-                    <DataGridTextColumn Header="Kayıt Defteri Yolu" Binding="{Binding RegistrySubKeyPath}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding TargetScope}" IsReadOnly="True" Width="190">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CtxScopeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Name}" IsReadOnly="True" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CtxNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding HandlerValue}" IsReadOnly="True" Width="260">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CtxCmdCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding RegistrySubKeyPath}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_CtxRegCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

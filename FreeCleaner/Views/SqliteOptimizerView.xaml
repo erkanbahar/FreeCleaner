@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="TARAYICI &amp; IDE SQLITE VERİTABANI SIKIŞTIRICI (ZERO-DATA-LOSS OPTIMIZER)"
+                    <TextBlock Text="{DynamicResource Loc_M_SqliteTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Chrome, Edge, Brave, Firefox, VS Code ve Cursor SQLite3 veritabanlarındaki boş sayfaları (freelist) ve WAL günlük şişkinliğini veri silmeden temizler."
+                    <TextBlock Text="{DynamicResource Loc_M_SqliteSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,12 +27,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="🗄️ SQLite Veritabanlarını Analiz Et"
+                            Content="{DynamicResource Loc_M_SqliteScanBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanSqliteDatabasesCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="⚡ Seçili Veritabanlarını Optimize Et"
+                            Content="{DynamicResource Loc_M_SqliteVacuumBtn}"
                             Padding="13,7"
                             Command="{Binding OptimizeSqliteDatabasesCommand}"/>
                 </StackPanel>
@@ -52,12 +52,36 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Uygulama / Tarayıcı" Binding="{Binding AppName}" IsReadOnly="True" Width="195"/>
-                    <DataGridTextColumn Header="Veritabanı Dosyası" Binding="{Binding DatabaseName}" IsReadOnly="True" Width="190"/>
-                    <DataGridTextColumn Header="Toplam Boyut" Binding="{Binding FormattedTotalSize}" IsReadOnly="True" Width="115"/>
-                    <DataGridTextColumn Header="Kazanılabilir" Binding="{Binding FormattedReclaimable}" IsReadOnly="True" Width="115"/>
-                    <DataGridTextColumn Header="SQLite Sayfa &amp; WAL Analizi" Binding="{Binding HealthDetails}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding AppName}" IsReadOnly="True" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SqliteAppCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding DatabaseName}" IsReadOnly="True" Width="190">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SqliteFileCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedTotalSize}" IsReadOnly="True" Width="115">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_TotalSizeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedReclaimable}" IsReadOnly="True" Width="115">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SqliteGainCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding HealthDetails}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SqliteWalCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

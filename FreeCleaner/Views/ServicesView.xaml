@@ -15,16 +15,16 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Windows Arka Plan Servisleri &amp; Telemetri Optimizasyon Yöneticisi"
+                    <TextBlock Text="{DynamicResource Loc_M_SvcTitle}"
                                FontSize="14"
                                FontWeight="SemiBold"/>
-                    <TextBlock Text="Telemetri (DiagTrack), SysMain (Superfetch), Windows Search, Yazdırma Biriktiricisi ve Xbox servislerini yönetin."
+                    <TextBlock Text="{DynamicResource Loc_M_SvcSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </StackPanel>
 
                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Content="Servis Durumlarını Yenile"
+                        Content="{DynamicResource Loc_M_SvcRefreshBtn}"
                         HorizontalAlignment="Right"
                         Command="{Binding RefreshServicesCommand}"/>
             </Grid>
@@ -44,23 +44,46 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Servis Kodu" Binding="{Binding ServiceName}" Width="130"/>
-                    <DataGridTextColumn Header="Servis Adı" Binding="{Binding DisplayName}" Width="230"/>
-                    <DataGridTextColumn Header="Durum" Binding="{Binding Status}" Width="140"/>
-                    <DataGridTextColumn Header="Başlangıç" Binding="{Binding StartType}" Width="95"/>
-                    <DataGridTextColumn Header="Açıklama" Binding="{Binding Description}" Width="*"/>
-                    <DataGridTemplateColumn Header="Kontrol" Width="165">
+                    <DataGridTextColumn Binding="{Binding ServiceName}" Width="130">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SvcCodeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding DisplayName}" Width="230">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SvcNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Status}" Width="140">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding StartType}" Width="95">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SvcStartCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Description}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColDescription}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="165">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_SvcCtrlCol}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource SubtleButtonStyle}"
-                                            Content="Durdur"
+                                            Content="{DynamicResource Loc_M_SvcStopBtn}"
                                             Padding="8,3"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.StopServiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource SubtleButtonStyle}"
-                                            Content="Başlat"
+                                            Content="{DynamicResource Loc_M_SvcStartBtn}"
                                             Padding="8,3"
                                             Command="{Binding DataContext.StartServiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>

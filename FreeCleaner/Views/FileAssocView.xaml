@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="DOSYA UZANTISI &amp; VARSAYILAN PROGRAM (USERCHOICE) DOKTORU"
+                    <TextBlock Text="{DynamicResource Loc_M_AssocTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Popüler dosya uzantılarının (.pdf, .zip, .mp4, .jpg, .json, .cs vb.) bağlı olduğu ProgId kayıtlarını denetler ve bozuk uzantı ilişkilerini sıfırlar."
+                    <TextBlock Text="{DynamicResource Loc_M_AssocSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,12 +27,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Uzantıları Yeniden Tara"
+                            Content="{DynamicResource Loc_M_AssocScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanFileAssocCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="Seçili Uzantı İlişkilerini Sıfırla"
+                            Content="{DynamicResource Loc_M_AssocResetBtn}"
                             Padding="12,7"
                             Command="{Binding ResetFileAssocCommand}"/>
                 </StackPanel>
@@ -52,11 +52,31 @@
                       BorderThickness="1"
                       RowHeight="34">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Uzantı" Binding="{Binding Extension}" IsReadOnly="True" Width="95"/>
-                    <DataGridTextColumn Header="Atanmış ProgId" Binding="{Binding CurrentProgId}" IsReadOnly="True" Width="230"/>
-                    <DataGridTextColumn Header="Durum" Binding="{Binding StatusText}" IsReadOnly="True" Width="210"/>
-                    <DataGridTextColumn Header="Uygulama / İşleyici Açıklaması" Binding="{Binding HandlerDescription}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding Extension}" IsReadOnly="True" Width="95">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_AssocExtCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding CurrentProgId}" IsReadOnly="True" Width="230">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_AssocProgCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding StatusText}" IsReadOnly="True" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding HandlerDescription}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_AssocDescCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

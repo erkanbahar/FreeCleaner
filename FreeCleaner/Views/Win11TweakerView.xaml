@@ -15,11 +15,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="WINDOWS 11 İNCE AYAR (ULTIMATE TWEAKER) &amp; EXPLORER HIZLANDIRICI"
+                    <TextBlock Text="{DynamicResource Loc_M_TweakTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Windows 11 Klasik Sağ Tık Menüsü, Bing Arama Kapatma, Saniyeli Saat, Dosya Uzantıları ve Oyun GameDVR ince ayarlarını tek tıkla yönetir."
+                    <TextBlock Text="{DynamicResource Loc_M_TweakSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -27,12 +27,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="🔄 Windows Gezgini'ni (explorer.exe) Yeniden Başlat"
+                            Content="{DynamicResource Loc_M_TweakRestartExpBtn}"
                             Padding="14,7"
                             Margin="0,0,8,0"
                             Command="{Binding RestartExplorerNowCommand}"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Durumları Yenile"
+                            Content="{DynamicResource Loc_M_TweakRefreshBtn}"
                             Padding="12,7"
                             Command="{Binding RefreshWindowsTweaksCommand}"/>
                 </StackPanel>
@@ -53,15 +53,34 @@
                       BorderThickness="1"
                       RowHeight="38">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" Width="195"/>
-                    <DataGridTextColumn Header="İnce Ayar Başlığı" Binding="{Binding Title}" Width="290"/>
-                    <DataGridTextColumn Header="Mevcut Durum" Binding="{Binding CurrentStateText}" Width="230"/>
-                    <DataGridTextColumn Header="Açıklama" Binding="{Binding Description}" Width="*"/>
-                    <DataGridTemplateColumn Header="Eylem" Width="155">
+                    <DataGridTextColumn Binding="{Binding Category}" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColCategory}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Title}" Width="290">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_TweakTitleCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding CurrentStateText}" Width="230">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_TweakStateCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Description}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColDescription}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="155">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ClipActionCol}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                                        Content="Durumu Değiştir"
+                                        Content="{DynamicResource Loc_M_TweakToggleBtn}"
                                         Padding="10,4"
                                         FontSize="11"
                                         Command="{Binding DataContext.ToggleWindowsTweakCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

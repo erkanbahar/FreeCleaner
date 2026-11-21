@@ -15,11 +15,11 @@
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                <TextBlock Text="KİLİTLİ DOSYA &amp; KLASÖR ÇÖZÜCÜ (WIN32 RESTART MANAGER)"
+                <TextBlock Text="{DynamicResource Loc_M_UnlockerTitle}"
                            FontSize="13"
                            FontWeight="Bold"
                            Foreground="{DynamicResource TextPrimaryBrush}"/>
-                <TextBlock Text="'Dosya başka bir işlem tarafından kullanılıyor' hatası aldığınız dosya veya klasörü seçin; kilitleyen işlemleri anında tespit edip sonlandırın."
+                <TextBlock Text="{DynamicResource Loc_M_UnlockerSub}"
                            FontSize="11.5"
                            Foreground="{DynamicResource TextMutedBrush}"
                            Margin="0,3,0,0"/>
@@ -45,21 +45,21 @@
 
                 <Button Grid.Column="1"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        Content="Dosya Seç..."
+                        Content="{DynamicResource Loc_M_CryptoPickBtn}"
                         Padding="12,7"
                         Margin="0,0,8,0"
                         Command="{Binding BrowseUnlockerFileCommand}"/>
 
                 <Button Grid.Column="2"
                         Style="{StaticResource SecondaryButtonStyle}"
-                        Content="Klasör Seç..."
+                        Content="{DynamicResource Loc_SettingsBrowseBtn}"
                         Padding="12,7"
                         Margin="0,0,8,0"
                         Command="{Binding BrowseUnlockerFolderCommand}"/>
 
                 <Button Grid.Column="3"
                         Style="{StaticResource PrimaryButtonStyle}"
-                        Content="Kilitleyen İşlemleri Bul"
+                        Content="{DynamicResource Loc_M_UnlockerFindBtn}"
                         Padding="14,7"
                         Command="{Binding ScanLockingProcessesCommand}"/>
             </Grid>
@@ -79,15 +79,34 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="80"/>
-                    <DataGridTextColumn Header="İşlem Adı" Binding="{Binding ProcessName}" Width="180"/>
-                    <DataGridTextColumn Header="Uygulama Türü" Binding="{Binding ApplicationType}" Width="150"/>
-                    <DataGridTextColumn Header="Kilitlenen Hedef" Binding="{Binding LockedTargetPath}" Width="*"/>
-                    <DataGridTemplateColumn Header="Kilidi Aç" Width="150">
+                    <DataGridTextColumn Binding="{Binding ProcessId}" Width="80">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_LiveColPid}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProcessName}" Width="180">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_ProcNameCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ApplicationType}" Width="150">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_UnlockerTypeCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding LockedTargetPath}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_UnlockerTargetCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="150">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_UnlockerColBtn}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Style="{StaticResource DangerButtonStyle}"
-                                        Content="İşlemi Sonlandır"
+                                        Content="{DynamicResource Loc_M_UnlockerKillBtn}"
                                         Padding="8,4"
                                         Command="{Binding DataContext.KillLockingProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                         CommandParameter="{Binding}"/>

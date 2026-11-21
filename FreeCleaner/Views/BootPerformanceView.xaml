@@ -15,18 +15,18 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="WINDOWS AÇILIŞ SÜRESİ (BOOT TIME) &amp; ÖNYÜKLEME DARBOĞAZ ANALİZCİSİ"
+                    <TextBlock Text="{DynamicResource Loc_M_BootTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Windows Diagnostics-Performance (Event ID 100/101) verilerinden son açılış süresini, çekirdek süresini ve açılışı yavaşlatan servisleri listeler."
+                    <TextBlock Text="{DynamicResource Loc_M_BootSub}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Content="⏱️ Açılış Performansını Yeniden Analiz Et"
+                        Content="{DynamicResource Loc_M_BootRefreshBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"
@@ -48,10 +48,26 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Metrik Kategorisi" Binding="{Binding MetricCategory}" Width="245"/>
-                    <DataGridTextColumn Header="Bileşen / Uygulama / Olay" Binding="{Binding ComponentOrAppName}" Width="270"/>
-                    <DataGridTextColumn Header="Süre / Değer" Binding="{Binding DurationOrValue}" Width="240"/>
-                    <DataGridTextColumn Header="Etki &amp; Performans Değerlendirmesi" Binding="{Binding ImpactAssessment}" Width="*"/>
+                    <DataGridTextColumn Binding="{Binding MetricCategory}" Width="245">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BootCatCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ComponentOrAppName}" Width="270">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BootItemCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding DurationOrValue}" Width="240">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BootDurCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ImpactAssessment}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_M_BootImpactCol}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
