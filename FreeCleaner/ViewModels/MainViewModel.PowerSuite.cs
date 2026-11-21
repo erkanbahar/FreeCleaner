@@ -738,4 +738,112 @@ public partial class MainViewModel
         TreemapDiffSummaryText = string.Empty;
     }
 
+    // ==================== 22. SILENT AUTO-START TO TRAY & ACTIVITY LOG TOOLS ====================
+
+    public bool StartMinimizedWithWindows
+    {
+        get => _startMinimizedWithWindows;
+        set
+        {
+            if (_startMinimizedWithWindows != value)
+            {
+                var (success, message) = ShellIntegrationAndProfilesService.SetAutoStartWithWindows(value);
+                if (success)
+                {
+                    _startMinimizedWithWindows = value;
+                    OnPropertyChanged();
+                    StatusMessage = message;
+                    AddLog($"[OTOMATİK BAŞLATMA] {message}");
+                }
+                else
+                {
+                    StatusMessage = message;
+                    MessageBox.Show(message, "Windows Otomatik Başlatma", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+    }
+
+    public string ActivityLogFilter
+    {
+        get => _activityLogFilter;
+        set
+        {
+            string normalized = value ?? string.Empty;
+            if (_activityLogFilter != normalized)
+            {
+                _activityLogFilter = normalized;
+                OnPropertyChanged();
+                FilteredActivityLogsView.Refresh();
+            }
+        }
+    }
+
+    private bool FilterActivityLogPredicate(object obj)
+    {
+        if (string.IsNullOrWhiteSpace(ActivityLogFilter))
+            return true;
+
+        return obj is string line &&
+               line.Contains(ActivityLogFilter, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void ExecuteCopyActivityLogs()
+    {
+        var visible = FilteredActivityLogsView.Cast<string>().ToList();
+        if (visible.Count == 0)
+        {
+            StatusMessage = "Kopyalanacak günlük satırı bulunamadı.";
+            return;
+        }
+
+        try
+        {
+            Clipboard.SetText(string.Join(Environment.NewLine, visible));
+            StatusMessage = $"{visible.Count} işlem günlüğü satırı panoya kopyalandı.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Panoya kopyalanamadı: {ex.Message}";
+        }
+    }
+
+    private void ExecuteExportActivityLogs()
+    {
+        var visible = FilteredActivityLogsView.Cast<string>().ToList();
+        if (visible.Count == 0)
+        {
+            StatusMessage = "Dışa aktarılacak günlük satırı bulunamadı.";
+            return;
+        }
+
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "İşlem Günlüğünü Dışa Aktar",
+            Filter = "Log Dosyası (*.log)|*.log|Metin Dosyası (*.txt)|*.txt",
+            FileName = $"FreeCleaner-Gunluk-{DateTime.Now:yyyyMMdd_HHmm}.log",
+            DefaultExt = ".log"
+        };
+
+        if (dlg.ShowDialog() != true)
+            return;
+
+        try
+        {
+            File.WriteAllLines(dlg.FileName, visible);
+            StatusMessage = $"Günlük kaydedildi: {dlg.FileName}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Günlük kaydedilemedi: {ex.Message}";
+        }
+    }
+
+    private void ExecuteClearActivityLogs()
+    {
+        ActivityLogs.Clear();
+        FilteredActivityLogsView.Refresh();
+        StatusMessage = "Ekrandaki işlem günlüğü temizlendi.";
+    }
+
 }

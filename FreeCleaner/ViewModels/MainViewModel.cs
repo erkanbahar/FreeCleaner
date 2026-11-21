@@ -60,6 +60,8 @@ public partial class MainViewModel : INotifyPropertyChanged
     private int _updateDownloadPercent;
     private bool _hasTreemapDiffResults;
     private string _treemapDiffSummaryText = string.Empty;
+    private string _activityLogFilter = string.Empty;
+    private bool _startMinimizedWithWindows;
     private string _treemapCurrentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     private string _treemapSummaryText = "Bir klasör seçip 'Haritayı Oluştur' butonuna tıklayın.";
     private bool _isTreemapScanning;
@@ -226,6 +228,7 @@ public partial class MainViewModel : INotifyPropertyChanged
     public ICollectionView FilteredRulesView { get; }
     public ICollectionView FilteredFilesView { get; }
     public ICollectionView FilteredInstalledAppsView { get; }
+    public ICollectionView FilteredActivityLogsView { get; }
 
     public int[] AvailableSizeThresholdsMb { get; } = [10, 25, 50, 100, 250, 500, 1024];
     public int[] AvailableShredPasses { get; } = [1, 3, 7];
@@ -502,6 +505,11 @@ public partial class MainViewModel : INotifyPropertyChanged
     public ICommand OpenTreemapDiffPathCommand { get; }
     public ICommand DownloadAndInstallUpdateCommand { get; }
 
+    // 15th Gen Activity Console Filter & Export Commands
+    public ICommand CopyActivityLogsCommand { get; }
+    public ICommand ExportActivityLogsCommand { get; }
+    public ICommand ClearActivityLogsCommand { get; }
+
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
     public string AdminStatusBadge => LocalizationService.NormalizeLanguageCode(_selectedLanguage) == "en-US"
@@ -531,6 +539,7 @@ public partial class MainViewModel : INotifyPropertyChanged
             ? savedConfig.SelectedTheme
             : "ObsidianNeon";
         _selectedLanguage = LocalizationService.NormalizeLanguageCode(savedConfig.SelectedLanguage);
+        _startMinimizedWithWindows = ShellIntegrationAndProfilesService.IsAutoStartWithWindowsEnabled();
         _lastScheduledMaintenanceUtc = DateTime.UtcNow;
         LoadActivityLogs();
 
@@ -557,6 +566,9 @@ public partial class MainViewModel : INotifyPropertyChanged
 
         FilteredInstalledAppsView = CollectionViewSource.GetDefaultView(InstalledApps);
         FilteredInstalledAppsView.Filter = FilterInstalledAppsPredicate;
+
+        FilteredActivityLogsView = CollectionViewSource.GetDefaultView(ActivityLogs);
+        FilteredActivityLogsView.Filter = FilterActivityLogPredicate;
 
         // Cleaner Commands
         AnalyzeCommand = new RelayCommand(async _ => await RunAnalyzeAsync(), _ => !IsBusy);
@@ -1008,6 +1020,11 @@ public partial class MainViewModel : INotifyPropertyChanged
         DownloadAndInstallUpdateCommand = new RelayCommand(
             async _ => await DownloadAndInstallUpdateAsync(),
             _ => CanDownloadUpdate);
+
+        // 15th Gen Activity Console Commands
+        CopyActivityLogsCommand = new RelayCommand(_ => ExecuteCopyActivityLogs());
+        ExportActivityLogsCommand = new RelayCommand(_ => ExecuteExportActivityLogs());
+        ClearActivityLogsCommand = new RelayCommand(_ => ExecuteClearActivityLogs());
 
         _liveTelemetryTimer = new DispatcherTimer
         {
@@ -2016,12 +2033,17 @@ public partial class MainViewModel : INotifyPropertyChanged
     {
         try
         {
+            long lifetimeFreed = CleanupHistoryService.GetTotalLifetimeFreedBytes(CleanupHistoryService.LoadHistory());
             var (htmlPath, jsonPath) = SystemBoosterAndReportService.ExportDiagnosticReports(
                 SystemMetrics,
                 AllRules,
                 LastFreedBytes,
                 LastDeletedFiles,
-                ActivityLogs);
+                ActivityLogs,
+                HealthScore,
+                HealthGradeBadge,
+                lifetimeFreed,
+                RecentCleanupBars.ToList());
 
             StatusMessage = $"HTML ve JSON raporları Masaüstü\\FreeCleaner_Raporlar klasörüne kaydedildi.";
             AddLog($"[RAPOR] HTML Raporu: {htmlPath}");

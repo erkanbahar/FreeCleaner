@@ -14,14 +14,14 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Windows Açılışında Otomatik Başlayan Uygulamalar (HKCU / HKLM / Startup Klasörü)"
+                    <TextBlock Text="{DynamicResource Loc_StartupHeader}"
                                FontSize="13.5"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
                 <Button Style="{StaticResource PrimaryButtonStyle}"
-                        Content="Listeyi Yenile"
+                        Content="{DynamicResource Loc_StartupRefreshBtn}"
                         HorizontalAlignment="Right"
                         Command="{Binding RefreshStartupCommand}"/>
             </Grid>
@@ -51,13 +51,13 @@
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
                                     <Button Style="{StaticResource SubtleButtonStyle}"
-                                            Content="Etkin / Devre Dışı"
+                                            Content="{DynamicResource Loc_StartupToggleBtn}"
                                             Padding="8,4"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.ToggleStartupItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource SubtleButtonStyle}"
-                                            Content="Sil"
+                                            Content="{DynamicResource Loc_StartupDeleteBtn}"
                                             Padding="8,4"
                                             Command="{Binding DataContext.DeleteStartupItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>

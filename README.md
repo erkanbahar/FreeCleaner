@@ -1,13 +1,13 @@
-# FreeCleaner Pro v4.0 (.NET 10 WPF)
+# FreeCleaner Pro v4.1 (.NET 10 WPF)
 
 [![FreeCleaner .NET 10 CI](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--windows-512BD4?logo=dotnet)
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011%20(x64)-0078D6?logo=windows)
 ![Modules](https://img.shields.io/badge/Modules-57%20Tools-10B981)
-![Tests](https://img.shields.io/badge/Tests-35%20Passing-22C55E)
+![Tests](https://img.shields.io/badge/Tests-39%20Passing-22C55E)
 ![Language](https://img.shields.io/badge/Language-English%20%7C%20T%C3%BCrk%C3%A7e-38BDF8)
 
-> 🌐 **Language / Dil:** [English](#english) • [Türkçe](#türkçe)
+> 🌐 **Language / Dil:** [English](#english) • [Türkçe](#türkçe) • 📋 [Changelog](CHANGELOG.md)
 
 ---
 
@@ -18,13 +18,15 @@
 ### Flagship & Power-User Features
 
 - **🔁 Single-Instance & Named Pipe IPC Bridge (`Mutex` + `NamedPipeServerStream`):** Prevents duplicate tray/window launches; secondary invocations (including Windows Explorer right-click actions) forward CLI arguments immediately to the running primary window and restore it to front.
-- **🖱️ Windows Explorer Right-Click Menu (`HKCU`) & CLI Integration:** Install/remove cascading Explorer context-menu shortcuts for folders and folder backgrounds without Administrator privileges, launching **Disk Treemap**, **EXIF/GPS Scrubber**, or **Similar Photo Finder** directly on the selected path.
+- **🖱️ Windows Explorer Right-Click Menu (`HKCU`), Silent Tray Auto-Start (`--minimized`) & CLI:** Install/remove cascading Explorer context-menu shortcuts under `HKCU` without Administrator rights, or enable Windows startup directly to System Tray via `--minimized`.
 - **🛡️ 4 One-Click Smart Cleaning Profiles & JSON Backup:** Instantly apply **Safe Daily**, **Developer Deep**, **Gamer Boost**, or **Max Privacy** rule presets from the Cleaner toolbar or `Ctrl+K` palette, and export/import portable `.json` settings profiles (`ExcludedPaths`, rules, theme, language, pinned tools).
 - **🔗 Zero-Data-Loss NTFS Hardlink Deduplicator:** Merges byte-for-byte identical duplicate files (`CreateHardLinkW` + `GetFileInformationByHandle` inode checks + full SHA-256 verification + same-NTFS-volume safety guard + atomic swap/rollback) so disk space is reclaimed while keeping every file path accessible.
 - **📈 Disk Snapshot Diff ("Where Did My Disk Space Go?"):** Saves lightweight Treemap snapshots (`%LocalAppData%\FreeCleaner\snapshots`) and computes per-folder `+GB` growth deltas (`ComputeGrowthDiff`) between scans.
 - **🔒 Smart Browser / VM Process Lock Guard:** Detects active browsers (`Chrome`, `Edge`, `Brave`, `Firefox`, `Discord`, `Steam`, `VS Code`) before cleanup and `Claude Desktop` / `Docker` / `WSL2` before `.vhdx` compaction, offering a safe **Close & Continue / Skip / Cancel** prompt.
 - **⬇️ In-App GitHub Releases Updater with SHA-256 Verification:** Downloads portable `.exe`/`.zip` releases with live progress tracking, validates cryptographic `SHA-256` digests (`SHA256SUMS.txt` / GitHub asset digest), and runs an atomic backup/swap/relaunch script.
 - **🔔 Live System Tray Telemetry & Cooldown Alerts:** Displays real-time `CPU %`, `RAM %`, and `C:` free GB in the tray tooltip (63-char safe), supports minimize-to-tray, and sends cooldown-protected alerts when Disk (`>= 90%`) or RAM (`>= 92%`) reaches critical thresholds.
+- **📊 SVG Diagnostic HTML Report & Filterable Activity Console:** Exports rich HTML/JSON reports featuring an inline SVG health-score gauge and 14-day cleanup history bars, paired with live log search, clipboard copy, `.log` export, and clear buttons in the Activity Console.
+- **🪟 Native Windows 11 DWM & Manifest Polish:** Includes `app.manifest` (`PerMonitorV2` DPI awareness and `longPathAware` for deep `node_modules`/cache paths) plus DWM rounded corners and theme-adaptive frame attributes.
 - **🩺 Dashboard, Lifetime Saved Space & 100-Point Health Check:** Scores disk usage, junk load, startup items, and RAM; tracks **Lifetime Reclaimed Space** and a 14-day cleanup chart via `%LocalAppData%\FreeCleaner\history.json`.
 - **🗺️ Interactive Disk Treemap & Smart File Advisor:** Fast Win32 `FileSystemEnumerator` scanning visualizes large folders in seconds and classifies 30+ known targets (`OptGuideOnDeviceModel`, `Claude-Data rootfs.vhdx`, `Docker VHDX`, `hiberfil.sys`, `node_modules`) with safe recycle or protection guidance.
 - **💾 Deep Windows Space Recovery & VHDX Compactor:** Manages `hiberfil.sys` (`powercfg`), `WinSxS` (`DISM`), lossless `CompactOS`, `NVIDIA/AMD` installer caches, and one-click DiskPart `compact vdisk` for WSL2 / Docker / Claude VM `.vhdx` virtual disks.
@@ -114,6 +116,7 @@
 | `--deep-space` | Opens Deep Windows Space Recovery and starts analysis |
 | `--health-check` | Runs the 100-Point Health Check on Dashboard |
 | `--scheduled-maintenance` | Executes headless/auto scheduled cleanup and closes on completion |
+| `--minimized` / `--tray` | Starts silently minimized directly to System Tray |
 
 | Shortcut | Action |
 | :--- | :--- |
@@ -127,7 +130,7 @@
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### CLI Build & Unit Tests (35 Tests)
+#### CLI Build & Unit Tests (39 Tests)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore
@@ -152,13 +155,15 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 ### Öne Çıkan Amiral Gemisi Özellikler
 
 - **🔁 Tek Örnek (Single-Instance) & Named Pipe IPC Köprüsü:** Uygulama sistem tepsisinde açıkken ikinci bir kopya açılmasını önler; Gezgin sağ tık veya CLI üzerinden gelen parametreleri mevcut pencereye iletip uygulamayı anında öne getirir.
-- **🖱️ Windows Gezgini Sağ Tık Menüsü (`HKCU`) & CLI Entegrasyonu:** Yönetici izni gerektirmeden `HKCU` altında klasör ve klasör arka planına **FreeCleaner Pro ile Analiz Et** sağ tık menüsü kurup kaldırır; seçilen klasörü doğrudan **Disk Treemap**, **EXIF/GPS Temizleyici** veya **Benzer Fotoğraf Bulucu** ile başlatır.
+- **🖱️ Windows Gezgini Sağ Tık Menüsü (`HKCU`), Sessiz Başlatma (`--minimized`) & CLI:** Yönetici izni olmadan `HKCU` altında sağ tık menüsü kurup kaldırır veya Windows başlangıcında `--minimized` ile doğrudan sistem tepsisine gizli başlatır.
 - **🛡️ Tek Tıkla 4 Akıllı Temizlik Profili & JSON Ayar Yedekleme:** Temizlik araç çubuğundan veya `Ctrl+K` paletinden **Güvenli Günlük**, **Geliştirici**, **Oyuncu** ve **Maksimum Gizlilik** profillerini tek tıkla uygular; dışlama listesi, kural seçimleri, tema, dil ve sabitlenen modülleri `.json` olarak dışa/içe aktarır.
 - **🔗 Sıfır Veri Kayıplı NTFS Hardlink Birleştirici:** Aynı NTFS sürücüsündeki birebir kopya dosyaları (`CreateHardLinkW` + `GetFileInformationByHandle` inode kontrolü + tam SHA-256 doğrulaması + atomik geri alma koruması) tek fiziksel bloğa bağlayarak disk alanı açarken tüm dosya yollarını yerinde korur.
 - **📈 Klasör Boyutu Anlık Görüntü Karşılaştırması (Disk Snapshot Diff):** Treemap taramalarını hafif anlık görüntüler (`%LocalAppData%\FreeCleaner\snapshots`) olarak kaydeder; önceki taramaya göre en çok büyüyen klasörleri (`+GB` artış) listeler.
 - **🔒 Akıllı Süreç Kilit Koruması (Process Lock Guard):** Temizlik öncesinde açık tarayıcı/uygulamaları (`Chrome`, `Edge`, `Brave`, `Firefox`, `Discord`, `Steam`, `VS Code`), `.vhdx` sıkıştırma öncesinde ise `Claude Desktop` / `Docker` / `WSL2` süreçlerini algılayıp güvenli kapatma seçeneği sunar.
 - **⬇️ Uygulama İçi SHA-256 Doğrulamalı Güncelleyici:** GitHub Releases üzerinden `.exe`/`.zip` paketlerini ilerleme çubuğuyla indirir, kriptografik `SHA-256` bütünlüğünü (`SHA256SUMS.txt` / asset digest) doğrular ve atomik yedekleme/yeniden başlatma uygular.
 - **🔔 Canlı Sistem Tepsisi Telemetrisi & Bekleme Süreli Kritik Uyarılar:** Tepsi ikonu üzerine gelince anlık `CPU %`, `RAM %` ve `C:` boş alanı (63 karakter sınırına uygun) gösterir; Disk (`>= %90`) veya RAM (`>= %92`) kritik eşiğe ulaştığında 30 dakikalık bekleme süresiyle (cooldown) akıllı uyarı gönderir.
+- **📊 SVG Sağlık Göstergeli HTML Rapor & Filtrelenebilir Konsol:** Inline SVG sağlık puanı kadranı ve 14 günlük geçmiş çubukları içeren HTML/JSON rapor üretir; işlem konsolunda canlı arama, panoya kopyalama, `.log` dışa aktarma ve temizleme araçları sunar.
+- **🪟 Windows 11 Yerel Pencere Cilası & `app.manifest`:** `PerMonitorV2` DPI, `longPathAware` uzun yol desteği ve DWM yuvarlatılmış pencere/uyumlu çerçeve özellikleri içerir.
 - **🩺 Genel Bakış (Dashboard), Ömür Boyu Kazanılan Alan & 100 Puanlık Sağlık Kontrolü:** Disk doluluğu, çöp yükü, başlangıç uygulamaları ve RAM'i puanlar; `%LocalAppData%\FreeCleaner\history.json` üzerinden **Ömür Boyu Kurtarılan Alan** ve son 14 günlük temizlik grafiğini gösterir.
 - **🗺️ Etkileşimli Görsel Disk Haritası (Treemap + Akıllı Dosya Danışmanı):** Doğrudan Win32 `FileSystemEnumerator` ve 2 seviyeli paralel taramayla dev klasörleri saniyeler içinde görselleştirir; `OptGuideOnDeviceModel`, `Claude-Data rootfs.vhdx`, `Docker VHDX`, `hiberfil.sys`, `node_modules` gibi 30+ bilinen yapıyı tanıyıp **Güvenle Geri Dönüşüm'e Gönder** veya koruma önerisi sunar.
 - **💾 Dev Windows Sistem Alanı Kurtarıcısı & VHDX Sıkıştırıcı:** Hazırda bekletmeyi kapatma/yarıya indirme (`powercfg`), bileşen deposu temizliği (`DISM`), kayıpsız `CompactOS` sıkıştırma, `NVIDIA/AMD` sürücü artıkları ve WSL2/Docker/Claude VM `.vhdx` sanal diskleri için tek tıkla DiskPart `compact vdisk` desteği sunar.
@@ -248,6 +253,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 | `--deep-space` | Dev Windows Sistem Alanı Kurtarıcısı'nı açıp analizi başlatır |
 | `--health-check` | Dashboard üzerinde 100 puanlık Sistem Sağlık Kontrolü başlatır |
 | `--scheduled-maintenance` | Zamanlanmış otomatik bakımı çalıştırıp tamamlanınca kapatır |
+| `--minimized` / `--tray` | Pencere göstermeden doğrudan Sistem Tepsisinde sessiz başlatır |
 
 | Kısayol | İşlev |
 | :--- | :--- |
@@ -261,7 +267,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### Komut Satırı ile Derleme & Test (35 Test)
+#### Komut Satırı ile Derleme & Test (39 Test)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore
@@ -273,4 +279,4 @@ dotnet run --project FreeCleaner/FreeCleaner.csproj
 ```powershell
 .\scripts\Publish-Portable.ps1
 ```
-Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.0.0 && git push origin v4.0.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp tek dosya `.exe` ve `.zip` paketini GitHub Releases sayfasında yayınlar.
+Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.1.0 && git push origin v4.1.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp tek dosya `.exe`, `.zip` ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar.

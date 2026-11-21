@@ -19,7 +19,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Hedef Klasör:" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="{DynamicResource Loc_DiskTargetFolder}" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
                     <TextBox Text="{Binding DiskScanTargetFolder, UpdateSourceTrigger=PropertyChanged}"
                              Width="250"
                              Background="{DynamicResource BgCardBrush}"
@@ -29,11 +29,11 @@
                              VerticalContentAlignment="Center"
                              Margin="0,0,6,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Gözat..."
+                            Content="{DynamicResource Loc_DiskBrowseBtn}"
                             Command="{Binding BrowseDiskFolderCommand}"
                             Margin="0,0,12,0"/>
 
-                    <TextBlock Text="Min Boyut (MB):" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
+                    <TextBlock Text="{DynamicResource Loc_DiskMinSize}" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
                     <ComboBox ItemsSource="{Binding AvailableSizeThresholdsMb}"
                               SelectedItem="{Binding SelectedMinSizeMb}"
                               Width="72"
@@ -42,11 +42,11 @@
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Büyük Dosyaları Bul"
+                            Content="{DynamicResource Loc_DiskFindLargeBtn}"
                             Command="{Binding ScanLargeFilesCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Çift (Kopya) Dosyaları Bul"
+                            Content="{DynamicResource Loc_DiskFindDupBtn}"
                             Command="{Binding ScanDuplicatesCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
@@ -55,7 +55,7 @@
                             Command="{Binding MergeDuplicatesWithHardlinksCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="Seçilileri Geri Dönüşüm'e Taşı"
+                            Content="{DynamicResource Loc_DiskDeleteSelBtn}"
                             Command="{Binding DeleteSelectedDiskFilesCommand}"/>
                 </StackPanel>
             </Grid>

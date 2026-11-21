@@ -827,4 +827,94 @@ public class NextGenUpgradesTests
             return Task.FromResult(msg);
         }
     }
+
+    [Fact]
+    public void ShellIntegrationAndProfilesService_ParsesMinimizedAndCombinedCliFlags()
+    {
+        CliLaunchAction trayOnly = ShellIntegrationAndProfilesService.ParseStartupArguments(["--minimized"]);
+        Assert.Equal(CliLaunchActionKind.None, trayOnly.Kind);
+        Assert.True(trayOnly.StartMinimized);
+
+        CliLaunchAction combined = ShellIntegrationAndProfilesService.ParseStartupArguments(["--tray", "--treemap", @"D:\Workspace"]);
+        Assert.Equal(CliLaunchActionKind.OpenTreemap, combined.Kind);
+        Assert.Equal(@"D:\Workspace", combined.TargetPath);
+        Assert.True(combined.StartMinimized);
+    }
+
+    [Fact]
+    public void SystemBoosterAndReportService_BuildDiagnosticHtmlReport_IncludesSvgGaugeAndEscapesLogs()
+    {
+        var metrics = new SystemMetricsSnapshot(
+            OsName: "Windows 11 Pro",
+            CpuArchitecture: "X64",
+            DotNetVersion: ".NET 10",
+            DriveName: @"C:\",
+            DriveTotalBytes: 500_000_000_000,
+            DriveFreeBytes: 200_000_000_000,
+            DriveUsedPercent: 60.0,
+            RamTotalBytes: 32_000_000_000,
+            RamAvailableBytes: 16_000_000_000,
+            RamUsedPercent: 50.0);
+
+        var rules = new List<FreeCleaner.Models.CleanerRule>
+        {
+            new() { Id = "tmp", Name = "Windows Temp", Category = "Sistem", Description = "Temp", IconGlyph = "\uE7F8", Group = FreeCleaner.Models.RuleGroup.System, DetectedFileCount = 12, DetectedSizeBytes = 1048576 }
+        };
+
+        var bars = new List<FreeCleaner.Models.CleanupHistoryBarItem>
+        {
+            new("21.11", 10_485_760, 48, "10.0 MB", "21 Nov: 10 MB")
+        };
+
+        string html = SystemBoosterAndReportService.BuildDiagnosticHtmlReport(
+            metrics,
+            rules,
+            totalFreedBytes: 10_485_760,
+            totalDeletedFiles: 12,
+            logs: ["<script>alert('xss')</script>"],
+            healthScore: 94,
+            healthBadge: "A+ Harika",
+            lifetimeFreedBytes: 1_073_741_824,
+            recentHistory: bars);
+
+        Assert.Contains("<svg", html);
+        Assert.Contains("94", html);
+        Assert.Contains("FreeCleaner Pro v4.1.0", html);
+        Assert.DoesNotContain("<script>alert('xss')</script>", html);
+        Assert.Contains("&lt;script&gt;", html);
+    }
+
+    [Fact]
+    public void AppUpdateService_CurrentVersionIs410AndComparesCorrectly()
+    {
+        Assert.Equal("4.1.0", AppUpdateService.CurrentVersion);
+        Assert.True(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.2.0"));
+        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.1.0"));
+        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.0.0"));
+    }
+
+    [Fact]
+    public void LocalizationService_ProvidesNonEmptyV41KeysInTurkishAndEnglish()
+    {
+        string[] requiredKeys =
+        [
+            "Loc_SettingsAutoStartTrayCheck",
+            "Loc_LogFilterHint",
+            "Loc_NavDashboard",
+            "Loc_CleanerAnalyzeBtn",
+            "Loc_StartupHeader",
+            "Loc_RegistryScanBtn",
+            "Loc_DiskFindLargeBtn",
+            "Loc_PkgScanBtn"
+        ];
+
+        foreach (string key in requiredKeys)
+        {
+            string tr = LocalizationService.Get(key, "tr-TR");
+            string en = LocalizationService.Get(key, "en-US");
+            Assert.False(string.IsNullOrWhiteSpace(tr));
+            Assert.False(string.IsNullOrWhiteSpace(en));
+            Assert.NotEqual(tr, en);
+        }
+    }
 }

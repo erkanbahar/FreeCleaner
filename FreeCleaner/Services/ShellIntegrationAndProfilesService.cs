@@ -16,7 +16,7 @@ public enum CliLaunchActionKind
     QuickHealthCheck
 }
 
-public sealed record CliLaunchAction(CliLaunchActionKind Kind, string? TargetPath = null);
+public sealed record CliLaunchAction(CliLaunchActionKind Kind, string? TargetPath = null, bool StartMinimized = false);
 
 public enum CleaningProfileKind
 {
@@ -30,6 +30,8 @@ public static class ShellIntegrationAndProfilesService
 {
     private const string DirShellSubKey = @"Software\Classes\Directory\shell\FreeCleanerPro";
     private const string BgShellSubKey = @"Software\Classes\Directory\Background\shell\FreeCleanerPro";
+    private const string RunAutoStartSubKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    private const string RunAutoStartValueName = "FreeCleanerPro";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -40,6 +42,10 @@ public static class ShellIntegrationAndProfilesService
     {
         if (args is null || args.Count == 0)
             return new CliLaunchAction(CliLaunchActionKind.None);
+
+        CliLaunchActionKind kind = CliLaunchActionKind.None;
+        string? targetPath = null;
+        bool startMinimized = false;
 
         for (int i = 0; i < args.Count; i++)
         {
@@ -56,26 +62,88 @@ public static class ShellIntegrationAndProfilesService
                 inlineValue = CleanCliPath(raw[(eqIndex + 1)..]);
             }
 
+            if (flag.Equals("--minimized", StringComparison.OrdinalIgnoreCase) ||
+                flag.Equals("--tray", StringComparison.OrdinalIgnoreCase))
+            {
+                startMinimized = true;
+                continue;
+            }
+
+            if (kind != CliLaunchActionKind.None)
+                continue;
+
             if (flag.Equals("--scheduled-maintenance", StringComparison.OrdinalIgnoreCase))
-                return new CliLaunchAction(CliLaunchActionKind.ScheduledMaintenance);
-
-            if (flag.Equals("--deep-space", StringComparison.OrdinalIgnoreCase))
-                return new CliLaunchAction(CliLaunchActionKind.OpenDeepSpace);
-
-            if (flag.Equals("--health-check", StringComparison.OrdinalIgnoreCase))
-                return new CliLaunchAction(CliLaunchActionKind.QuickHealthCheck);
-
-            if (flag.Equals("--treemap", StringComparison.OrdinalIgnoreCase))
-                return new CliLaunchAction(CliLaunchActionKind.OpenTreemap, inlineValue ?? ReadNextPathArg(args, i));
-
-            if (flag.Equals("--exif", StringComparison.OrdinalIgnoreCase))
-                return new CliLaunchAction(CliLaunchActionKind.OpenExifScrubber, inlineValue ?? ReadNextPathArg(args, i));
-
-            if (flag.Equals("--similar", StringComparison.OrdinalIgnoreCase))
-                return new CliLaunchAction(CliLaunchActionKind.OpenSimilarPhotos, inlineValue ?? ReadNextPathArg(args, i));
+                kind = CliLaunchActionKind.ScheduledMaintenance;
+            else if (flag.Equals("--deep-space", StringComparison.OrdinalIgnoreCase))
+                kind = CliLaunchActionKind.OpenDeepSpace;
+            else if (flag.Equals("--health-check", StringComparison.OrdinalIgnoreCase))
+                kind = CliLaunchActionKind.QuickHealthCheck;
+            else if (flag.Equals("--treemap", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = CliLaunchActionKind.OpenTreemap;
+                targetPath = inlineValue ?? ReadNextPathArg(args, i);
+            }
+            else if (flag.Equals("--exif", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = CliLaunchActionKind.OpenExifScrubber;
+                targetPath = inlineValue ?? ReadNextPathArg(args, i);
+            }
+            else if (flag.Equals("--similar", StringComparison.OrdinalIgnoreCase))
+            {
+                kind = CliLaunchActionKind.OpenSimilarPhotos;
+                targetPath = inlineValue ?? ReadNextPathArg(args, i);
+            }
         }
 
-        return new CliLaunchAction(CliLaunchActionKind.None);
+        return new CliLaunchAction(kind, targetPath, startMinimized);
+    }
+
+    public static bool IsAutoStartWithWindowsEnabled()
+    {
+        try
+        {
+            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunAutoStartSubKey, writable: false);
+            return key?.GetValue(RunAutoStartValueName) is string val && !string.IsNullOrWhiteSpace(val);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static (bool Success, string Message) SetAutoStartWithWindows(bool enabled, string? executablePath = null)
+    {
+        try
+        {
+            if (enabled)
+            {
+                string exe = string.IsNullOrWhiteSpace(executablePath)
+                    ? (Environment.ProcessPath ?? AppContext.BaseDirectory)
+                    : executablePath;
+
+                if (!File.Exists(exe) && exe.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                {
+                    string candidate = Path.ChangeExtension(exe, ".exe");
+                    if (File.Exists(candidate))
+                        exe = candidate;
+                }
+
+                using RegistryKey key = Registry.CurrentUser.CreateSubKey(RunAutoStartSubKey, writable: true);
+                key.SetValue(RunAutoStartValueName, $"\"{exe}\" --minimized", RegistryValueKind.String);
+                return (true, "Windows açılışında sistem tepsisinde sessiz başlatma etkinleştirildi.");
+            }
+            else
+            {
+                using RegistryKey? key = Registry.CurrentUser.OpenSubKey(RunAutoStartSubKey, writable: true);
+                key?.DeleteValue(RunAutoStartValueName, throwOnMissingValue: false);
+                return (true, "Windows açılışında otomatik başlatma devre dışı bırakıldı.");
+            }
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("Otomatik başlatma ayarı", ex);
+            return (false, $"Otomatik başlatma ayarı güncellenemedi: {ex.Message}");
+        }
     }
 
     private static string? ReadNextPathArg(IReadOnlyList<string> args, int flagIndex)

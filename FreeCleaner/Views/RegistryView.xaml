@@ -15,30 +15,30 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Kayıt Defteri (Registry) Sorun Tarayıcı &amp; Otomatik .REG Yedekleyici"
+                    <TextBlock Text="{DynamicResource Loc_RegistryHeader}"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Silinmiş programlardan kalan geçersiz App Paths, MuiCache, AppCompat ve kırık başlangıç kayıtlarını tespit eder."
+                    <TextBlock Text="{DynamicResource Loc_RegistrySubheader}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Sorunlar İçin Tara"
+                            Content="{DynamicResource Loc_RegistryScanBtn}"
                             Command="{Binding ScanRegistryCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Sadece .REG Yedeği Al"
+                            Content="{DynamicResource Loc_RegistryBackupOnlyBtn}"
                             Command="{Binding BackupRegistryCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Son Yedeği Geri Yükle"
+                            Content="{DynamicResource Loc_RegistryRestoreLastBtn}"
                             Command="{Binding RestoreRegistryBackupCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="Yedekle ve Seçilileri Onar"
+                            Content="{DynamicResource Loc_RegistryFixBtn}"
                             Command="{Binding FixRegistryCommand}"/>
                 </StackPanel>
             </Grid>
@@ -78,17 +78,17 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" Margin="0,0,0,8">
-                        <TextBlock Text="YEDEK YÖNETİCİSİ"
+                        <TextBlock Text="{DynamicResource Loc_RegistryBackupsHeader}"
                                    FontSize="11"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource TextSecondaryBrush}"/>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                             <Button Style="{StaticResource SubtleButtonStyle}"
-                                    Content="Yenile"
+                                    Content="{DynamicResource Loc_RegistryRefreshBtn}"
                                     Command="{Binding RefreshBackupsCommand}"
                                     Margin="0,0,8,0"/>
                             <Button Style="{StaticResource CleanButtonStyle}"
-                                    Content="Seçili Yedeği Geri Yükle"
+                                    Content="{DynamicResource Loc_RegistryRestoreSelBtn}"
                                     Command="{Binding RestoreSelectedBackupCommand}"/>
                         </StackPanel>
                     </Grid>

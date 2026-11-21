@@ -14,11 +14,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="KÜRESEL PAKET ÖNBELLEKLERİ &amp; SANAL DİSKLER (WSL2 / DOCKER / CLAUDE VM VHDX)"
+                    <TextBlock Text="{DynamicResource Loc_PkgTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="NuGet/NPM/Pip önbellekleri ile WSL2, Docker ve Claude Desktop VM (.vhdx) sanal disk boyutlarını analiz eder; seçili VHDX disklerini tek tıkla sıkıştırır."
+                    <TextBlock Text="{DynamicResource Loc_PkgSubtitle}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -26,12 +26,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Önbellekleri &amp; VHDX Diskleri Tara"
+                            Content="{DynamicResource Loc_PkgScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanPackageCachesCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="Seçili Paket Önbelleklerini Temizle"
+                            Content="{DynamicResource Loc_PkgCleanBtn}"
                             Padding="12,7"
                             Command="{Binding CleanPackageCachesCommand}"/>
                 </StackPanel>
@@ -62,7 +62,7 @@
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                                            Content="🗜️ Sıkıştır"
+                                            Content="{DynamicResource Loc_PkgCompactBtn}"
                                             Padding="8,4"
                                             FontSize="11"
                                             Margin="0,0,5,0"
@@ -71,7 +71,7 @@
                                             Command="{Binding DataContext.CompactVhdxCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                                            Content="Klasörü Aç"
+                                            Content="{DynamicResource Loc_PkgOpenFolderBtn}"
                                             Padding="8,4"
                                             Command="{Binding DataContext.OpenPackageCacheFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>

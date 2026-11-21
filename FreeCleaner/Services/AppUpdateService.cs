@@ -33,7 +33,7 @@ public sealed record UpdateDownloadResult(
 /// </summary>
 public static class AppUpdateService
 {
-    public const string CurrentVersion = "4.0.0";
+    public const string CurrentVersion = "4.1.0";
     public const string ReleasesApiUrl = "https://api.github.com/repos/erkanbahar/FreeCleaner/releases/latest";
     public const string ReleasesPageUrl = "https://github.com/erkanbahar/FreeCleaner/releases";
 

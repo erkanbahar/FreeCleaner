@@ -23,15 +23,15 @@
 
                 <WrapPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Tümünü Seç"
+                            Content="{DynamicResource Loc_CleanerSelectAll}"
                             Command="{Binding SelectAllRulesCommand}"
                             Margin="0,0,6,2"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Seçimi Kaldır"
+                            Content="{DynamicResource Loc_CleanerDeselectAll}"
                             Command="{Binding DeselectAllRulesCommand}"
                             Margin="0,0,8,2"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Rapor Dışa Aktar (HTML/JSON)"
+                            Content="{DynamicResource Loc_CleanerExportReport}"
                             Command="{Binding ExportReportCommand}"
                             Margin="0,0,10,2"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
@@ -70,7 +70,7 @@
                             Margin="0,0,10,0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE721;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Text="Analiz Et (Simülasyon)" VerticalAlignment="Center"/>
+                            <TextBlock Text="{DynamicResource Loc_CleanerAnalyzeBtn}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
 
@@ -78,7 +78,7 @@
                             Command="{Binding CleanCommand}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Text="Temizliği Başlat" VerticalAlignment="Center"/>
+                            <TextBlock Text="{DynamicResource Loc_CleanerStartBtn}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
@@ -106,7 +106,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0"
-                               Text="TEMİZLİK KURALLARI &amp; HEDEFLER"
+                               Text="{DynamicResource Loc_CleanerRulesHeader}"
                                FontSize="11"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextSecondaryBrush}"
@@ -196,7 +196,7 @@
                             <ColumnDefinition Width="240"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0"
-                                   Text="BULUNAN DOSYALAR (Çift tıklayarak klasörü açın)"
+                                   Text="{DynamicResource Loc_CleanerFilesHeader}"
                                    FontSize="11"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource TextSecondaryBrush}"

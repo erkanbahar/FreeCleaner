@@ -35,8 +35,12 @@ public partial class App : Application
         Services.LocalizationService.ApplyLanguage(startupConfig.SelectedLanguage);
         Services.ThemeManagerService.ApplyTheme(startupConfig.SelectedTheme);
 
+        var cliAction = Services.ShellIntegrationAndProfilesService.ParseStartupArguments(e.Args);
+
         var window = new MainWindow();
         MainWindow = window;
+        if (cliAction.StartMinimized)
+            window.ConfigureStartMinimizedToTray();
         window.Show();
 
         _singleInstance.StartListening(forwardedArgs =>
@@ -53,7 +57,6 @@ public partial class App : Application
             });
         });
 
-        var cliAction = Services.ShellIntegrationAndProfilesService.ParseStartupArguments(e.Args);
         if (cliAction.Kind != Services.CliLaunchActionKind.None)
         {
             window.Loaded += async (_, _) =>

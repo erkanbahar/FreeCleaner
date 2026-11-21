@@ -17,15 +17,31 @@ public partial class MainWindow : Window
     private Dictionary<Expander, bool>? _preSearchExpanderStates;
     private SystemTrayService? _trayService;
     private bool _forceExit;
+    private bool _startMinimizedToTray;
     private readonly LazyViewRegistry _lazyViews = new();
 
     public MainWindow()
     {
         InitializeComponent();
         RegisterLazyViews();
+        SourceInitialized += (_, _) => ApplyDwmThemePolish();
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
         Closed += MainWindow_Closed;
+    }
+
+    public void ConfigureStartMinimizedToTray()
+    {
+        _startMinimizedToTray = true;
+        ShowInTaskbar = false;
+        Opacity = 0;
+        WindowState = WindowState.Minimized;
+    }
+
+    private void ApplyDwmThemePolish()
+    {
+        string? theme = (DataContext as MainViewModel)?.SelectedTheme;
+        WindowsShellVisualService.ApplyWindowChromePolish(this, theme);
     }
 
     private void RegisterLazyViews()
@@ -102,11 +118,14 @@ public partial class MainWindow : Window
 
         if (DataContext is MainViewModel viewModel)
         {
+            ApplyDwmThemePolish();
             SyncLazyModuleHost(viewModel.ActiveSection);
             viewModel.PropertyChanged += (_, args) =>
             {
                 if (args.PropertyName == nameof(MainViewModel.ActiveSection))
                     SyncLazyModuleHost(viewModel.ActiveSection);
+                else if (args.PropertyName == nameof(MainViewModel.SelectedTheme))
+                    ApplyDwmThemePolish();
             };
 
             viewModel.TrayNotificationRequested += (title, message, isWarning) =>
@@ -116,6 +135,15 @@ public partial class MainWindow : Window
                 _trayService?.UpdateStatusTooltip(cpu, ram, freeGb);
 
             viewModel.TickTrayHealthWatcher();
+
+            if (_startMinimizedToTray)
+            {
+                _startMinimizedToTray = false;
+                Hide();
+                WindowState = WindowState.Normal;
+                Opacity = 1;
+                ShowInTaskbar = true;
+            }
         }
     }
 
@@ -141,6 +169,8 @@ public partial class MainWindow : Window
 
     private void RestoreWindowFromTray()
     {
+        ShowInTaskbar = true;
+        Opacity = 1;
         if (!IsVisible)
             Show();
         if (WindowState == WindowState.Minimized)
