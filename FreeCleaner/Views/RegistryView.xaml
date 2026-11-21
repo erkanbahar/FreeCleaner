@@ -1,0 +1,121 @@
+<UserControl x:Class="FreeCleaner.Views.RegistryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="260"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Kayıt Defteri (Registry) Sorun Tarayıcı &amp; Otomatik .REG Yedekleyici"
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Silinmiş programlardan kalan geçersiz App Paths, MuiCache, AppCompat ve kırık başlangıç kayıtlarını tespit eder."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="Sorunlar İçin Tara"
+                            Command="{Binding ScanRegistryCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="Sadece .REG Yedeği Al"
+                            Command="{Binding BackupRegistryCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="Son Yedeği Geri Yükle"
+                            Command="{Binding RestoreRegistryBackupCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="Yedekle ve Seçilileri Onar"
+                            Command="{Binding FixRegistryCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding RegistryIssues}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="32">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
+                    <DataGridTextColumn Header="Sorun Kategorisi" Binding="{Binding Category}" IsReadOnly="True" Width="220"/>
+                    <DataGridTextColumn Header="Açıklama" Binding="{Binding ProblemDescription}" IsReadOnly="True" Width="250"/>
+                    <DataGridTextColumn Header="Bulunamayan Dosya" Binding="{Binding MissingTarget}" IsReadOnly="True" Width="260"/>
+                    <DataGridTextColumn Header="Kayıt Defteri Anahtarı" Binding="{Binding KeyPath}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <Border Grid.Row="2"
+                    Margin="0,12,0,0"
+                    Padding="10"
+                    Background="{DynamicResource BgCardBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <TextBlock Text="YEDEK YÖNETİCİSİ"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Style="{StaticResource SubtleButtonStyle}"
+                                    Content="Yenile"
+                                    Command="{Binding RefreshBackupsCommand}"
+                                    Margin="0,0,8,0"/>
+                            <Button Style="{StaticResource CleanButtonStyle}"
+                                    Content="Seçili Yedeği Geri Yükle"
+                                    Command="{Binding RestoreSelectedBackupCommand}"/>
+                        </StackPanel>
+                    </Grid>
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding BackupFiles}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="False"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="None"
+                              Background="{DynamicResource BgPrimaryBrush}"
+                              RowBackground="{DynamicResource BgSecondaryBrush}"
+                              AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                              Foreground="{DynamicResource TextPrimaryBrush}"
+                              BorderBrush="{DynamicResource BorderSubtleBrush}"
+                              BorderThickness="1"
+                              RowHeight="28">
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
+                            <DataGridTextColumn Header="Tür" Binding="{Binding BackupType}" IsReadOnly="True" Width="90"/>
+                            <DataGridTextColumn Header="Dosya" Binding="{Binding FileName}" IsReadOnly="True" Width="*"/>
+                            <DataGridTextColumn Header="Tarih" Binding="{Binding FormattedDate}" IsReadOnly="True" Width="145"/>
+                            <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="85"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

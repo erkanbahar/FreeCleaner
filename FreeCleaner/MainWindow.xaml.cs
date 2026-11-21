@@ -30,6 +30,16 @@ public partial class MainWindow : Window
 
     private void RegisterLazyViews()
     {
+        CleanerView? cleanerView = null;
+        object GetOrCreateCleanerView() => cleanerView ??= new CleanerView { DataContext = DataContext };
+
+        _lazyViews.Register("All", GetOrCreateCleanerView);
+        _lazyViews.Register("System", GetOrCreateCleanerView);
+        _lazyViews.Register("Browsers", GetOrCreateCleanerView);
+        _lazyViews.Register("Apps", GetOrCreateCleanerView);
+        _lazyViews.Register("Startup", () => new StartupView { DataContext = DataContext });
+        _lazyViews.Register("Registry", () => new RegistryView { DataContext = DataContext });
+        _lazyViews.Register("Uninstaller", () => new UninstallerView { DataContext = DataContext });
         _lazyViews.Register("Dashboard", () => new DashboardView { DataContext = DataContext });
         _lazyViews.Register("LiveMonitor", () => new LiveMonitorView { DataContext = DataContext });
         _lazyViews.Register("DiskAnalyzer", () => new DiskAnalyzerView { DataContext = DataContext });
@@ -126,6 +136,8 @@ public partial class MainWindow : Window
         _trayService?.Dispose();
         _trayService = null;
     }
+
+    public void BringToFrontFromExternalTrigger() => RestoreWindowFromTray();
 
     private void RestoreWindowFromTray()
     {
@@ -404,15 +416,5 @@ public partial class MainWindow : Window
         if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(query))
             return false;
         return TurkishCulture.CompareInfo.IndexOf(source, query, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0;
-    }
-
-    private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is DataGrid grid &&
-            grid.SelectedItem is ScannedFileItem item &&
-            DataContext is MainViewModel vm)
-        {
-            vm.OpenFileLocationCommand.Execute(item);
-        }
     }
 }

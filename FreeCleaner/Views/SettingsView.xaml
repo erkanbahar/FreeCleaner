@@ -148,15 +148,29 @@
                                        Foreground="{DynamicResource AccentEmeraldBrush}"
                                        TextWrapping="Wrap"
                                        Margin="0,0,0,10"/>
-                            <StackPanel Orientation="Horizontal">
+                            <WrapPanel Orientation="Horizontal">
                                 <Button Style="{StaticResource PrimaryButtonStyle}"
                                         Content="{DynamicResource Loc_SettingsCheckUpdateBtn}"
                                         Command="{Binding CheckForUpdatesCommand}"
-                                        Margin="0,0,8,0"/>
+                                        Margin="0,0,6,6"/>
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="{DynamicResource Loc_SettingsDownloadUpdateBtn}"
+                                        Command="{Binding DownloadAndInstallUpdateCommand}"
+                                        IsEnabled="{Binding CanDownloadUpdate}"
+                                        Margin="0,0,6,6"/>
                                 <Button Style="{StaticResource SubtleButtonStyle}"
                                         Content="{DynamicResource Loc_SettingsOpenReleasesBtn}"
-                                        Command="{Binding OpenLatestReleasePageCommand}"/>
-                            </StackPanel>
+                                        Command="{Binding OpenLatestReleasePageCommand}"
+                                        Margin="0,0,0,6"/>
+                            </WrapPanel>
+                            <ProgressBar Minimum="0"
+                                         Maximum="100"
+                                         Height="6"
+                                         Margin="0,4,0,0"
+                                         Value="{Binding UpdateDownloadPercent}"
+                                         Foreground="{DynamicResource AccentBlueBrush}"
+                                         Background="{DynamicResource BgPrimaryBrush}"
+                                         Visibility="{Binding IsDownloadingUpdate, Converter={StaticResource BoolToVis}}"/>
                         </StackPanel>
                     </Border>
 

@@ -1,5 +1,8 @@
 using System.Buffers.Binary;
 using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using FreeCleaner.Services;
 using Xunit;
@@ -639,5 +642,189 @@ public class NextGenUpgradesTests
         var reFired = FlagshipTelemetryAndThemeService.EvaluateCriticalAlerts(96, 94, 10, t0.AddMinutes(31), ref lastDisk, ref lastRam, cooldownMinutes: 30);
         Assert.True(reFired.TriggerDiskAlert);
         Assert.True(reFired.TriggerRamAlert);
+    }
+
+    [Fact]
+    public async Task SingleInstanceBridgeService_ForwardsCliArgsOverNamedPipe()
+    {
+        string token = Guid.NewGuid().ToString("N");
+        string mutexName = $"Local\\FreeCleanerTest_{token}";
+        string pipeName = $"FreeCleanerPipeTest_{token}";
+
+        using var primary = new SingleInstanceBridgeService();
+        Assert.True(primary.TryAcquirePrimaryInstance(mutexName));
+
+        var receivedTcs = new TaskCompletionSource<string[]>(TaskCreationOptions.RunContinuationsAsynchronously);
+        primary.StartListening(args => receivedTcs.TrySetResult(args), pipeName);
+
+        using var secondary = new SingleInstanceBridgeService();
+        Assert.False(secondary.TryAcquirePrimaryInstance(mutexName));
+
+        bool sent = await SingleInstanceBridgeService.SendArgsToPrimaryInstanceAsync(
+            ["--treemap", @"C:\Projects"],
+            pipeName,
+            timeoutMs: 2500);
+
+        Assert.True(sent);
+        string[] received = await receivedTcs.Task.WaitAsync(TimeSpan.FromSeconds(3));
+        Assert.Equal(["--treemap", @"C:\Projects"], received);
+    }
+
+    [Fact]
+    public void DiskSnapshotDiffService_SavesLoadsAndComputesGrowthDelta()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"FreeCleanerSnapTest_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            string rootPath = @"C:\SampleDrive\Workspace";
+            var baselineEntries = new List<RawTreemapEntry>
+            {
+                new("Videos", @"C:\SampleDrive\Workspace\Videos", 100_000, IsDirectory: true),
+                new("Cache", @"C:\SampleDrive\Workspace\Cache", 200_000, IsDirectory: true)
+            };
+
+            DiskFolderSnapshot saved = DiskSnapshotDiffService.SaveSnapshot(rootPath, 300_000, baselineEntries, tempDir);
+            DiskFolderSnapshot? loaded = DiskSnapshotDiffService.LoadSnapshot(rootPath, tempDir);
+
+            Assert.NotNull(loaded);
+            Assert.Equal(saved.TotalBytes, loaded.TotalBytes);
+
+            var currentEntries = new List<RawTreemapEntry>
+            {
+                new("Videos", @"C:\SampleDrive\Workspace\Videos", 450_000, IsDirectory: true),
+                new("Cache", @"C:\SampleDrive\Workspace\Cache", 180_000, IsDirectory: true),
+                new("NewDump.dmp", @"C:\SampleDrive\Workspace\NewDump.dmp", 500_000, IsDirectory: false)
+            };
+
+            List<DiskGrowthDiffItem> diff = DiskSnapshotDiffService.ComputeGrowthDiff(loaded, currentEntries, minAbsDeltaBytes: 1024);
+
+            Assert.Equal(3, diff.Count);
+            Assert.Equal("NewDump.dmp", diff[0].Name);
+            Assert.True(diff[0].IsNew);
+            Assert.Equal(500_000, diff[0].DeltaBytes);
+
+            Assert.Equal("Videos", diff[1].Name);
+            Assert.False(diff[1].IsNew);
+            Assert.Equal(350_000, diff[1].DeltaBytes);
+            Assert.StartsWith("+", diff[1].FormattedDelta);
+
+            Assert.Equal("Cache", diff[2].Name);
+            Assert.Equal(-20_000, diff[2].DeltaBytes);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+                Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ProcessLockGuardService_MapsRulesAndVhdxPathsToExpectedConflicts()
+    {
+        var rules = new List<FreeCleaner.Models.CleanerRule>
+        {
+            new() { Id = "chrome_cache", Name = "Google Chrome Cache", Category = "Tarayıcı", Description = "Cache", IconGlyph = "\uE774", Group = FreeCleaner.Models.RuleGroup.Browsers, RiskLevel = FreeCleaner.Models.RiskLevel.Low },
+            new() { Id = "discord_cache", Name = "Discord Cache", Category = "App", Description = "Cache", IconGlyph = "\uE943", Group = FreeCleaner.Models.RuleGroup.DeveloperAndApps, RiskLevel = FreeCleaner.Models.RiskLevel.Low },
+            new() { Id = "win_temp", Name = "Windows Temp", Category = "Sistem", Description = "Temp", IconGlyph = "\uE7F8", Group = FreeCleaner.Models.RuleGroup.System, RiskLevel = FreeCleaner.Models.RiskLevel.Low }
+        };
+
+        List<LockingProcessSpec> ruleSpecs = ProcessLockGuardService.ResolveTargetProcessSpecsForCleanerRules(rules);
+        Assert.Contains(ruleSpecs, s => s.ProcessNames.Contains("chrome", StringComparer.OrdinalIgnoreCase));
+        Assert.Contains(ruleSpecs, s => s.ProcessNames.Contains("Discord", StringComparer.OrdinalIgnoreCase));
+
+        List<LockingProcessSpec> claudeSpecs = ProcessLockGuardService.ResolveTargetProcessSpecsForVhdxPath(
+            @"C:\Users\erkan\AppData\Local\Claude-Data\vm_bundles\claudevm.bundle\rootfs.vhdx");
+        Assert.Contains(claudeSpecs, s => s.ProcessNames.Contains("claude", StringComparer.OrdinalIgnoreCase));
+
+        List<LockingProcessSpec> dockerSpecs = ProcessLockGuardService.ResolveTargetProcessSpecsForVhdxPath(
+            @"C:\Users\erkan\AppData\Local\Docker\wsl\disk\docker_data.vhdx");
+        Assert.Contains(dockerSpecs, s => s.RequiresWslShutdown);
+
+        List<LockingProcessGroup> conflicts = ProcessLockGuardService.DetectRunningConflicts(
+            ruleSpecs,
+            name => name.Equals("chrome", StringComparison.OrdinalIgnoreCase) ? [101, 202] : []);
+
+        LockingProcessGroup single = Assert.Single(conflicts);
+        Assert.Equal("Google Chrome", single.FriendlyName);
+        Assert.Equal(2, single.RunningInstanceCount);
+    }
+
+    [Fact]
+    public void AppUpdateService_ParsesSha256SumsAndBuildsSelfUpdateScript()
+    {
+        string expectedHash = "a1b2c3d4e5f60718293a4b5c6d7e8f90112233445566778899aabbccddeeff00";
+        string sampleSums = $"""
+            # Release Checksums
+            {expectedHash} *FreeCleaner-Portable-win-x64-v4.1.0.zip
+            ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff  OtherTool.exe
+            """;
+
+        string? parsed = AppUpdateService.ParseSha256SumsText(sampleSums, "FreeCleaner-Portable-win-x64-v4.1.0.zip");
+        Assert.Equal(expectedHash, parsed);
+        Assert.Null(AppUpdateService.ParseSha256SumsText(sampleSums, "MissingAsset.exe"));
+
+        string script = AppUpdateService.BuildSafeSelfUpdateScript(98765, @"C:\Apps\FreeCleaner.exe", @"C:\Temp\FreeCleaner.exe");
+        Assert.Contains("98765", script);
+        Assert.Contains("$backupExe", script);
+        Assert.Contains("Start-Process -FilePath $currentExe", script);
+    }
+
+    [Fact]
+    public async Task AppUpdateService_DownloadAndVerifyUpdateAsync_ValidatesHashAndDeletesTamperedFile()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"FreeCleanerUpdTest_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            byte[] payload = "FreeCleanerPortableBinaryPayload_v4.1"u8.ToArray();
+            string validSha = Convert.ToHexString(SHA256.HashData(payload)).ToLowerInvariant();
+            string wrongSha = new string('0', 64);
+
+            using var client = new HttpClient(new StubBytesHttpMessageHandler(payload));
+
+            string okFile = Path.Combine(tempDir, "FreeCleaner_ok.exe");
+            UpdateDownloadResult okResult = await AppUpdateService.DownloadAndVerifyUpdateAsync(
+                "https://example.invalid/FreeCleaner.exe",
+                okFile,
+                validSha,
+                httpClient: client);
+
+            Assert.True(okResult.Success);
+            Assert.True(okResult.HashVerified);
+            Assert.Equal(validSha, okResult.ComputedSha256);
+            Assert.True(File.Exists(okFile));
+
+            string tamperedFile = Path.Combine(tempDir, "FreeCleaner_tampered.exe");
+            UpdateDownloadResult badResult = await AppUpdateService.DownloadAndVerifyUpdateAsync(
+                "https://example.invalid/FreeCleaner.exe",
+                tamperedFile,
+                wrongSha,
+                httpClient: client);
+
+            Assert.False(badResult.Success);
+            Assert.False(badResult.HashVerified);
+            Assert.False(File.Exists(tamperedFile));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+                Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    private sealed class StubBytesHttpMessageHandler(byte[] payload) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var msg = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(payload)
+            };
+            msg.Content.Headers.ContentLength = payload.Length;
+            return Task.FromResult(msg);
+        }
     }
 }

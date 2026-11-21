@@ -1,6 +1,4 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
 
 namespace FreeCleaner;
 
@@ -9,9 +7,29 @@ namespace FreeCleaner;
 /// </summary>
 public partial class App : Application
 {
+    private Services.SingleInstanceBridgeService? _singleInstance;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        _singleInstance = new Services.SingleInstanceBridgeService();
+        if (!_singleInstance.TryAcquirePrimaryInstance())
+        {
+            try
+            {
+                Services.SingleInstanceBridgeService
+                    .SendArgsToPrimaryInstanceAsync(e.Args)
+                    .GetAwaiter()
+                    .GetResult();
+            }
+            catch { }
+
+            _singleInstance.Dispose();
+            _singleInstance = null;
+            Shutdown(0);
+            return;
+        }
 
         var startupConfig = Services.ExclusionAndSettingsService.Load();
         Services.LocalizationService.ApplyLanguage(startupConfig.SelectedLanguage);
@@ -20,6 +38,20 @@ public partial class App : Application
         var window = new MainWindow();
         MainWindow = window;
         window.Show();
+
+        _singleInstance.StartListening(forwardedArgs =>
+        {
+            Dispatcher.BeginInvoke(async () =>
+            {
+                window.BringToFrontFromExternalTrigger();
+                var forwardedAction = Services.ShellIntegrationAndProfilesService.ParseStartupArguments(forwardedArgs);
+                if (forwardedAction.Kind != Services.CliLaunchActionKind.None &&
+                    window.DataContext is ViewModels.MainViewModel vm)
+                {
+                    await vm.ApplyCliLaunchActionAsync(forwardedAction);
+                }
+            });
+        });
 
         var cliAction = Services.ShellIntegrationAndProfilesService.ParseStartupArguments(e.Args);
         if (cliAction.Kind != Services.CliLaunchActionKind.None)
@@ -31,5 +63,11 @@ public partial class App : Application
             };
         }
     }
-}
 
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _singleInstance?.Dispose();
+        _singleInstance = null;
+        base.OnExit(e);
+    }
+}

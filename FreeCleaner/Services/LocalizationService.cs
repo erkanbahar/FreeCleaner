@@ -185,7 +185,11 @@ public static class LocalizationService
         ["Loc_ProfileDevBtn"] = "🛠️ Geliştirici",
         ["Loc_ProfileGamerBtn"] = "🎮 Oyuncu",
         ["Loc_ProfilePrivacyBtn"] = "🕵️ Gizlilik",
-        ["Loc_HardlinkMergeBtn"] = "🔗 Hardlink Birleştir (0 Veri Kaybı)"
+        ["Loc_HardlinkMergeBtn"] = "🔗 Hardlink Birleştir (0 Veri Kaybı)",
+        ["Loc_TreemapSaveSnapBtn"] = "📸 Anlık Görüntü Kaydet",
+        ["Loc_TreemapCompareSnapBtn"] = "📈 Büyüme Farkı (Diff)",
+        ["Loc_TreemapDiffCloseBtn"] = "✕ Farkı Gizle",
+        ["Loc_SettingsDownloadUpdateBtn"] = "⬇️ İndir & Güncelle (SHA-256)"
     };
 
     private static readonly Dictionary<string, string> EnStrings = new(StringComparer.Ordinal)
@@ -356,7 +360,11 @@ public static class LocalizationService
         ["Loc_ProfileDevBtn"] = "🛠️ Developer",
         ["Loc_ProfileGamerBtn"] = "🎮 Gamer Boost",
         ["Loc_ProfilePrivacyBtn"] = "🕵️ Max Privacy",
-        ["Loc_HardlinkMergeBtn"] = "🔗 Merge via Hardlink (Zero Data Loss)"
+        ["Loc_HardlinkMergeBtn"] = "🔗 Merge via Hardlink (Zero Data Loss)",
+        ["Loc_TreemapSaveSnapBtn"] = "📸 Save Snapshot",
+        ["Loc_TreemapCompareSnapBtn"] = "📈 Growth Diff",
+        ["Loc_TreemapDiffCloseBtn"] = "✕ Hide Diff",
+        ["Loc_SettingsDownloadUpdateBtn"] = "⬇️ Download & Update (SHA-256)"
     };
 
     public static IReadOnlyCollection<string> GetAllKeys(string? langCode)

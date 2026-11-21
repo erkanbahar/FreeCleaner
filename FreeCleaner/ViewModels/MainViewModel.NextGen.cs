@@ -426,6 +426,38 @@ public partial class MainViewModel
         }
     }
 
+    public bool IsDownloadingUpdate
+    {
+        get => _isDownloadingUpdate;
+        private set
+        {
+            if (_isDownloadingUpdate != value)
+            {
+                _isDownloadingUpdate = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanDownloadUpdate));
+            }
+        }
+    }
+
+    public int UpdateDownloadPercent
+    {
+        get => _updateDownloadPercent;
+        private set
+        {
+            if (_updateDownloadPercent != value)
+            {
+                _updateDownloadPercent = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool CanDownloadUpdate =>
+        !IsBusy &&
+        !IsDownloadingUpdate &&
+        !string.IsNullOrWhiteSpace(_latestDownloadAssetUrl);
+
     private async Task CheckForUpdatesAsync()
     {
         if (IsBusy) return;
@@ -438,25 +470,140 @@ public partial class MainViewModel
         {
             UpdateCheckResult result = await AppUpdateService.CheckForUpdatesAsync();
             _latestReleaseUrl = result.ReleaseUrl;
+            _latestDownloadAssetUrl = result.DownloadAssetUrl;
+            _latestDownloadAssetName = result.DownloadAssetName;
+            _latestExpectedSha256 = result.ExpectedSha256;
+
             UpdateStatusText = result.StatusMessage;
             StatusMessage = result.StatusMessage;
+            OnPropertyChanged(nameof(CanDownloadUpdate));
             AddLog($"[GÜNCELLEME] {result.StatusMessage}");
 
             if (result.IsUpdateAvailable)
             {
                 TrayNotificationRequested?.Invoke("FreeCleaner Pro — Güncelleme Mevcut", result.StatusMessage, false);
-                var ask = MessageBox.Show(
-                    $"{result.StatusMessage}\n\nGitHub Releases indirme sayfasını tarayıcıda açmak ister misiniz?",
-                    "Yeni Sürüm Mevcut",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Information);
-                if (ask == MessageBoxResult.Yes)
-                    OpenUrlSafe(result.ReleaseUrl);
+                if (!string.IsNullOrWhiteSpace(_latestDownloadAssetUrl))
+                {
+                    var ask = MessageBox.Show(
+                        $"{result.StatusMessage}\n\nDosya: {_latestDownloadAssetName}\nDoğrudan uygulama içinden SHA-256 doğrulamalı indirme ve güncelleme başlatılsın mı?",
+                        "Yeni Sürüm Mevcut",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Information);
+                    if (ask == MessageBoxResult.Yes)
+                    {
+                        IsBusy = false;
+                        await DownloadAndInstallUpdateAsync();
+                    }
+                }
+                else
+                {
+                    var ask = MessageBox.Show(
+                        $"{result.StatusMessage}\n\nGitHub Releases indirme sayfasını tarayıcıda açmak ister misiniz?",
+                        "Yeni Sürüm Mevcut",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Information);
+                    if (ask == MessageBoxResult.Yes)
+                        OpenUrlSafe(result.ReleaseUrl);
+                }
             }
         }
         finally
         {
             IsBusy = false;
+            OnPropertyChanged(nameof(CanDownloadUpdate));
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private async Task DownloadAndInstallUpdateAsync()
+    {
+        if (IsBusy || IsDownloadingUpdate || string.IsNullOrWhiteSpace(_latestDownloadAssetUrl))
+            return;
+
+        string fileName = Path.GetFileName(_latestDownloadAssetName ?? "FreeCleaner-Update.exe");
+        string updateDir = Path.Combine(Path.GetTempPath(), "FreeCleanerUpdate");
+        string destPath = Path.Combine(updateDir, fileName);
+
+        IsBusy = true;
+        IsDownloadingUpdate = true;
+        UpdateDownloadPercent = 0;
+        ProgressPercent = 0;
+        UpdateStatusText = $"Güncelleme paketi indiriliyor: {fileName}...";
+        StatusMessage = UpdateStatusText;
+
+        try
+        {
+            var progress = new Progress<int>(pct =>
+            {
+                UpdateDownloadPercent = pct;
+                ProgressPercent = pct;
+            });
+
+            UpdateDownloadResult dl = await AppUpdateService.DownloadAndVerifyUpdateAsync(
+                _latestDownloadAssetUrl,
+                destPath,
+                _latestExpectedSha256,
+                progress);
+
+            UpdateStatusText = dl.Message;
+            StatusMessage = dl.Message;
+            AddLog($"[GÜNCELLEME İNDİRME] {dl.Message}");
+
+            if (!dl.Success || string.IsNullOrEmpty(dl.FilePath))
+            {
+                MessageBox.Show(dl.Message, "Güncelleme Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            string? currentExe = Environment.ProcessPath;
+            bool canSelfReplace = !string.IsNullOrWhiteSpace(currentExe) &&
+                                  File.Exists(currentExe) &&
+                                  Path.GetFileName(currentExe).StartsWith("FreeCleaner", StringComparison.OrdinalIgnoreCase);
+
+            if (!canSelfReplace)
+            {
+                MessageBox.Show(
+                    $"{dl.Message}\n\nDoğrulanan dosya indirildi:\n{dl.FilePath}\n\nGeliştirme ortamında çalışıldığı için klasör Gezgin'de açılacak.",
+                    "Güncelleme Hazır",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+                OpenExplorerPath(dl.FilePath);
+                return;
+            }
+
+            string verifyNote = dl.HashVerified
+                ? $"SHA-256 doğrulandı: {dl.ComputedSha256?[..16]}..."
+                : "Not: Yayında SHA-256 dosyası bulunamadı, kullanıcı onayıyla devam ediliyor.";
+
+            var installAsk = MessageBox.Show(
+                $"Yeni sürüm hazır!\n{verifyNote}\n\nUygulama kapatılıp yeni sürüm otomatik kurulup yeniden başlatılsın mı?",
+                "Güncellemeyi Uygula",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (installAsk != MessageBoxResult.Yes)
+                return;
+
+            string scriptPath = Path.Combine(updateDir, "apply_update.ps1");
+            string scriptBody = AppUpdateService.BuildSafeSelfUpdateScript(Environment.ProcessId, currentExe!, dl.FilePath);
+            await File.WriteAllTextAsync(scriptPath, scriptBody);
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "powershell.exe",
+                Arguments = $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{scriptPath}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+
+            Application.Current?.Shutdown();
+        }
+        finally
+        {
+            IsDownloadingUpdate = false;
+            IsBusy = false;
+            OnPropertyChanged(nameof(CanDownloadUpdate));
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 

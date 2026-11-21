@@ -47,7 +47,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           $zipPath = "dist/FreeCleaner-Portable-win-x64-$tag.zip"
           Compress-Archive -Path "release_out/FreeCleaner.exe" -DestinationPath $zipPath -Force
-          Write-Host "Packaged portable archive: $zipPath"
+          $exeHash = (Get-FileHash -Path "release_out/FreeCleaner.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
+          $zipHash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $zipName = [System.IO.Path]::GetFileName($zipPath)
+          @("$exeHash  FreeCleaner.exe", "$zipHash  $zipName") | Set-Content -Path "dist/SHA256SUMS.txt" -Encoding UTF8
+          Write-Host "Packaged portable archive & SHA256SUMS: $zipPath"
 
       - name: Upload Artifacts & Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -55,4 +59,5 @@ jobs:
           generate_release_notes: true
           files: |
             dist/FreeCleaner-Portable-win-x64-*.zip
+            dist/SHA256SUMS.txt
             release_out/FreeCleaner.exe

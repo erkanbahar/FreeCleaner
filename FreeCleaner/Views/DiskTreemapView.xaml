@@ -15,7 +15,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*" MinHeight="250"/>
+                <RowDefinition Height="*" MinHeight="220"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="155"/>
             </Grid.RowDefinitions>
 
@@ -91,43 +92,62 @@
                         Command="{Binding OpenTreemapCurrentFolderCommand}"/>
             </Grid>
 
-            <!-- Row 2: Quick Jump Location Chips -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,10">
-                <Button Style="{StaticResource SubtleButtonStyle}"
-                        Content="💿 C:\"
-                        Padding="9,4"
-                        FontSize="11"
-                        Margin="0,0,6,0"
-                        Command="{Binding QuickSelectTreemapPathCommand}"
-                        CommandParameter="C"/>
-                <Button Style="{StaticResource SubtleButtonStyle}"
-                        Content="{DynamicResource Loc_TreemapQuickUser}"
-                        Padding="9,4"
-                        FontSize="11"
-                        Margin="0,0,6,0"
-                        Command="{Binding QuickSelectTreemapPathCommand}"
-                        CommandParameter="User"/>
-                <Button Style="{StaticResource SubtleButtonStyle}"
-                        Content="{DynamicResource Loc_TreemapQuickDownloads}"
-                        Padding="9,4"
-                        FontSize="11"
-                        Margin="0,0,6,0"
-                        Command="{Binding QuickSelectTreemapPathCommand}"
-                        CommandParameter="Downloads"/>
-                <Button Style="{StaticResource SubtleButtonStyle}"
-                        Content="{DynamicResource Loc_TreemapQuickDesktop}"
-                        Padding="9,4"
-                        FontSize="11"
-                        Margin="0,0,6,0"
-                        Command="{Binding QuickSelectTreemapPathCommand}"
-                        CommandParameter="Desktop"/>
-                <Button Style="{StaticResource SubtleButtonStyle}"
-                        Content="{DynamicResource Loc_TreemapQuickAppData}"
-                        Padding="9,4"
-                        FontSize="11"
-                        Command="{Binding QuickSelectTreemapPathCommand}"
-                        CommandParameter="AppData"/>
-            </StackPanel>
+            <!-- Row 2: Quick Jump Location Chips & Disk Growth Snapshot Controls -->
+            <Grid Grid.Row="2" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="💿 C:\"
+                            Padding="9,4"
+                            FontSize="11"
+                            Margin="0,0,6,0"
+                            Command="{Binding QuickSelectTreemapPathCommand}"
+                            CommandParameter="C"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="{DynamicResource Loc_TreemapQuickUser}"
+                            Padding="9,4"
+                            FontSize="11"
+                            Margin="0,0,6,0"
+                            Command="{Binding QuickSelectTreemapPathCommand}"
+                            CommandParameter="User"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="{DynamicResource Loc_TreemapQuickDownloads}"
+                            Padding="9,4"
+                            FontSize="11"
+                            Margin="0,0,6,0"
+                            Command="{Binding QuickSelectTreemapPathCommand}"
+                            CommandParameter="Downloads"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="{DynamicResource Loc_TreemapQuickDesktop}"
+                            Padding="9,4"
+                            FontSize="11"
+                            Margin="0,0,6,0"
+                            Command="{Binding QuickSelectTreemapPathCommand}"
+                            CommandParameter="Desktop"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="{DynamicResource Loc_TreemapQuickAppData}"
+                            Padding="9,4"
+                            FontSize="11"
+                            Command="{Binding QuickSelectTreemapPathCommand}"
+                            CommandParameter="AppData"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="{DynamicResource Loc_TreemapSaveSnapBtn}"
+                            Padding="10,4"
+                            FontSize="11"
+                            Margin="0,0,6,0"
+                            Command="{Binding SaveTreemapSnapshotCommand}"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="{DynamicResource Loc_TreemapCompareSnapBtn}"
+                            Padding="10,4"
+                            FontSize="11"
+                            Command="{Binding CompareTreemapSnapshotCommand}"/>
+                </StackPanel>
+            </Grid>
 
             <!-- Row 3: Live Scanning Progress & Status Banner -->
             <Border Grid.Row="3"
@@ -321,8 +341,74 @@
                 </Grid>
             </Border>
 
-            <!-- Row 5: Compact Detail Table -->
-            <DataGrid Grid.Row="5"
+            <!-- Row 5: Disk Growth Snapshot Diff Panel -->
+            <Border Grid.Row="5"
+                    Visibility="{Binding HasTreemapDiffResults, Converter={StaticResource BoolToVis}}"
+                    Background="{DynamicResource BgCardBrush}"
+                    BorderBrush="{DynamicResource AccentBlueBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="10"
+                    Margin="0,8,0,8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,6">
+                        <TextBlock Text="{Binding TreemapDiffSummaryText}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource AccentBlueBrush}"
+                                   VerticalAlignment="Center"/>
+                        <Button Style="{StaticResource SubtleButtonStyle}"
+                                Content="{DynamicResource Loc_TreemapDiffCloseBtn}"
+                                HorizontalAlignment="Right"
+                                Padding="8,3"
+                                FontSize="11"
+                                Command="{Binding ClearTreemapDiffCommand}"/>
+                    </Grid>
+                    <DataGrid Grid.Row="1"
+                              MaxHeight="135"
+                              ItemsSource="{Binding TreemapDiffItems}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              IsReadOnly="True"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="None"
+                              Background="{DynamicResource BgPrimaryBrush}"
+                              RowBackground="{DynamicResource BgSecondaryBrush}"
+                              AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                              Foreground="{DynamicResource TextPrimaryBrush}"
+                              BorderBrush="{DynamicResource BorderSubtleBrush}"
+                              BorderThickness="1"
+                              RowHeight="28">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Durum" Binding="{Binding StatusBadge}" Width="95"/>
+                            <DataGridTextColumn Header="Klasör / Dosya" Binding="{Binding Name}" Width="210"/>
+                            <DataGridTextColumn Header="Önceki" Binding="{Binding FormattedPrevious}" Width="105"/>
+                            <DataGridTextColumn Header="Şimdiki" Binding="{Binding FormattedCurrent}" Width="105"/>
+                            <DataGridTextColumn Header="Değişim" Binding="{Binding FormattedDelta}" Width="115"/>
+                            <DataGridTextColumn Header="Tam Yol" Binding="{Binding FullPath}" Width="*"/>
+                            <DataGridTemplateColumn Header="Aç" Width="56">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource SubtleButtonStyle}"
+                                                Content="🔍"
+                                                Padding="6,2"
+                                                FontSize="11"
+                                                Command="{Binding DataContext.OpenTreemapDiffPathCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <!-- Row 6: Compact Detail Table -->
+            <DataGrid Grid.Row="6"
                       ItemsSource="{Binding TreemapNodes}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

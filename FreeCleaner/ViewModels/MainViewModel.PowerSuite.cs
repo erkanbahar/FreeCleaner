@@ -627,4 +627,115 @@ public partial class MainViewModel
         }
     }
 
+    // ==================== 21. DISK SNAPSHOT GROWTH DIFF ====================
+
+    public bool HasTreemapDiffResults
+    {
+        get => _hasTreemapDiffResults;
+        private set
+        {
+            if (_hasTreemapDiffResults != value)
+            {
+                _hasTreemapDiffResults = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public string TreemapDiffSummaryText
+    {
+        get => _treemapDiffSummaryText;
+        private set
+        {
+            if (_treemapDiffSummaryText != value)
+            {
+                _treemapDiffSummaryText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private void ExecuteSaveTreemapSnapshot()
+    {
+        if (_lastTreemapRawEntries.Count == 0 || string.IsNullOrWhiteSpace(TreemapActiveScanPath))
+        {
+            StatusMessage = "Anlık görüntü kaydetmek için önce 'Haritayı Oluştur' ile klasörü tarayın.";
+            return;
+        }
+
+        long totalBytes = _lastTreemapRawEntries.Sum(x => x.SizeBytes);
+        DiskFolderSnapshot saved = DiskSnapshotDiffService.SaveSnapshot(
+            TreemapActiveScanPath,
+            totalBytes,
+            _lastTreemapRawEntries);
+
+        string msg = $"📸 Anlık görüntü kaydedildi: {saved.RootPath} ({CleanerRule.FormatBytes(saved.TotalBytes)}, {saved.Entries.Count} öğe).";
+        StatusMessage = msg;
+        AddLog($"[SNAPSHOT] {msg}");
+    }
+
+    private async Task ExecuteCompareTreemapSnapshotAsync()
+    {
+        string targetPath = string.IsNullOrWhiteSpace(TreemapCurrentPath)
+            ? TreemapActiveScanPath
+            : TreemapCurrentPath;
+
+        if (string.IsNullOrWhiteSpace(targetPath) || !Directory.Exists(targetPath))
+        {
+            StatusMessage = "Karşılaştırma için geçerli bir hedef klasör seçin.";
+            return;
+        }
+
+        DiskFolderSnapshot? baseline = DiskSnapshotDiffService.LoadSnapshot(targetPath);
+        if (baseline is null)
+        {
+            StatusMessage = "Bu klasör için kayıtlı anlık görüntü yok; şimdi taranıp ilk temel görüntü oluşturuluyor...";
+            await LoadTreemapAsync(forceRefresh: true);
+            if (_lastTreemapRawEntries.Count > 0)
+            {
+                long total = _lastTreemapRawEntries.Sum(x => x.SizeBytes);
+                DiskSnapshotDiffService.SaveSnapshot(targetPath, total, _lastTreemapRawEntries);
+                StatusMessage = $"İlk anlık görüntü oluşturuldu ({CleanerRule.FormatBytes(total)}). Daha sonra büyüme farkı için tekrar tıklayın.";
+            }
+            return;
+        }
+
+        if (_lastTreemapRawEntries.Count == 0 ||
+            !string.Equals(TreemapActiveScanPath, targetPath, StringComparison.OrdinalIgnoreCase))
+        {
+            await LoadTreemapAsync(forceRefresh: true);
+        }
+
+        List<DiskGrowthDiffItem> diffs = DiskSnapshotDiffService.ComputeGrowthDiff(
+            baseline,
+            _lastTreemapRawEntries,
+            minAbsDeltaBytes: 1024);
+
+        TreemapDiffItems.Clear();
+        foreach (DiskGrowthDiffItem item in diffs.Take(80))
+            TreemapDiffItems.Add(item);
+
+        HasTreemapDiffResults = TreemapDiffItems.Count > 0;
+
+        long currentTotal = _lastTreemapRawEntries.Sum(x => x.SizeBytes);
+        long netDelta = currentTotal - baseline.TotalBytes;
+        string netText = netDelta >= 0
+            ? $"+{CleanerRule.FormatBytes(netDelta)}"
+            : $"-{CleanerRule.FormatBytes(Math.Abs(netDelta))}";
+
+        TreemapDiffSummaryText = TreemapDiffItems.Count > 0
+            ? $"📈 Büyüme Farkı ({baseline.CapturedUtc.ToLocalTime():dd.MM HH:mm} → Şimdi): Net {netText} • {TreemapDiffItems.Count} değişen öğe"
+            : $"✅ {baseline.CapturedUtc.ToLocalTime():dd.MM HH:mm} anlık görüntüsüne göre anlamlı boyut farkı bulunmadı.";
+
+        StatusMessage = TreemapDiffSummaryText;
+        AddLog($"[SNAPSHOT DIFF] {TreemapDiffSummaryText}");
+    }
+
+    private void ExecuteClearTreemapDiff()
+    {
+        TreemapDiffItems.Clear();
+        HasTreemapDiffResults = false;
+        TreemapDiffSummaryText = string.Empty;
+    }
+
 }
