@@ -15,7 +15,7 @@ public class ScannedFileItem : INotifyPropertyChanged
     public required string FileName { get; init; }
     public required long SizeBytes { get; init; }
     public required DateTime LastModified { get; init; }
-    public RiskLevel RiskLevel { get; init; } = RiskLevel.Medium;
+    public RiskLevel RiskLevel { get => Risk; init => Risk = value; }
     public bool IsRecycleBinItem { get; init; }
     public RiskLevel Risk { get; init; } = RiskLevel.Medium;
     public string RiskLabel => Risk switch
@@ -53,12 +53,6 @@ public class ScannedFileItem : INotifyPropertyChanged
 
     public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
     public string FormattedDate => LastModified.ToString("dd.MM.yyyy HH:mm");
-    public string RiskLabel => RiskLevel switch
-    {
-        RiskLevel.Low => "Düşük",
-        RiskLevel.High => "Yüksek",
-        _ => "Orta"
-    };
 
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

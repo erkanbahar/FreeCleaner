@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using FreeCleaner.Models;
 using FreeCleaner.Services;
@@ -27,13 +28,32 @@ public class MainViewModel : INotifyPropertyChanged
 {
     private readonly CleanerEngine _engine = new();
     private readonly DispatcherTimer _autoMonitorTimer;
+    private readonly DispatcherTimer _liveTelemetryTimer;
+    private readonly LiveSystemTelemetrySampler _telemetrySampler = new();
+    private readonly List<double> _cpuHistory = [];
+    private readonly List<double> _ramHistory = [];
+    private readonly List<double> _netDownHistory = [];
+    private readonly List<double> _netUpHistory = [];
+    private readonly List<string> _favoriteSectionKeys = [];
     private static readonly string ActivityLogPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "FreeCleaner",
         "activity.log");
     private CancellationTokenSource? _cts;
 
-    private string _activeSection = "All";
+    private string _activeSection = "Dashboard";
+    private string _selectedTheme = "ObsidianNeon";
+    private int _healthScore = 100;
+    private string _healthGradeBadge = "🌟 Hazır";
+    private string _healthAdviceText = "Tek tıkla tüm sistemin sağlık kontrolünü, gereksiz dosya taramasını ve bellek optimizasyonunu başlatın.";
+    private double _liveCpuPercent;
+    private double _liveRamPercent;
+    private string _liveNetDownText = "0 KB/s";
+    private string _liveNetUpText = "0 KB/s";
+    private PointCollection _cpuSparklinePoints = new();
+    private PointCollection _ramSparklinePoints = new();
+    private PointCollection _netDownSparklinePoints = new();
+    private PointCollection _netUpSparklinePoints = new();
     private string _searchFilter = string.Empty;
     private string _riskFilter = "Tümü";
     private string _statusMessage = "Sistem analizi için 'Analiz Et (Simülasyon)' butonuna tıklayın.";
@@ -150,6 +170,10 @@ public class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<DefenderSecurityAuditItem> DefenderAuditItems { get; } = [];
     public ObservableCollection<MonitorAndDisplayItem> MonitorAndDisplayItems { get; } = [];
     public ObservableCollection<GitRepoCompressionItem> GitRepoItems { get; } = [];
+    public ObservableCollection<HealthCheckStepItem> HealthCheckResults { get; } = [];
+    public ObservableCollection<NavShortcutItem> FavoriteNavItems { get; } = [];
+    public ObservableCollection<LiveProcessMetricItem> LiveTopProcesses { get; } = [];
+    public ObservableCollection<NavShortcutItem> AllModuleCatalog { get; } = [];
     public ObservableCollection<string> ExcludedPaths { get; } = [];
     public ObservableCollection<string> ActivityLogs { get; } = [];
 
@@ -164,6 +188,9 @@ public class MainViewModel : INotifyPropertyChanged
     public int[] AvailableBenchmarkBlockSizesMb { get; } = [64, 128, 256, 512, 1024];
     public string[] AvailableRenameCaseModes { get; } = ["Değiştirme (Olduğu Gibi)", "küçük harf (lowercase)", "BÜYÜK HARF (UPPERCASE)", "Baş Harfler Büyük (Title Case)"];
     public string[] AvailableRiskFilters { get; } = ["Tümü", "Düşük", "Orta", "Yüksek"];
+    public string[] AvailableThemes => ThemeManagerService.AvailableThemes;
+
+    public event Action<string, string, bool>? TrayNotificationRequested;
 
     // Cleaner Commands
     public ICommand AnalyzeCommand { get; }
@@ -375,6 +402,11 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand CompressSelectedGitReposCommand { get; }
     public ICommand OpenGitRepoFolderCommand { get; }
 
+    // Flagship Dashboard, Health Check, Favorites, Live Telemetry & Theme Commands
+    public ICommand RunOneClickHealthCheckCommand { get; }
+    public ICommand ToggleCurrentFavoriteCommand { get; }
+    public ICommand ApplyThemeCommand { get; }
+
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
     public string AdminStatusBadge => IsAdmin ? "Yönetici Modu (Admin)" : "Standart Kullanıcı Modu";
@@ -398,8 +430,18 @@ public class MainViewModel : INotifyPropertyChanged
         _riskFilter = savedConfig.RiskFilter is "Düşük" or "Orta" or "Yüksek"
             ? savedConfig.RiskFilter
             : "Tümü";
+        _selectedTheme = ThemeManagerService.AvailableThemes.Contains(savedConfig.SelectedTheme, StringComparer.OrdinalIgnoreCase)
+            ? savedConfig.SelectedTheme
+            : "ObsidianNeon";
         _lastScheduledMaintenanceUtc = DateTime.UtcNow;
         LoadActivityLogs();
+
+        PopulateModuleCatalog();
+        var initialFavs = savedConfig.FavoriteSections is { Count: > 0 }
+            ? savedConfig.FavoriteSections
+            : ["Dashboard", "All", "LiveMonitor", "DiskBench", "WingetUpdater"];
+        _favoriteSectionKeys.AddRange(initialFavs.Distinct(StringComparer.OrdinalIgnoreCase));
+        RebuildFavoriteNavItems();
 
         foreach (var rule in CleanerEngine.GetDefaultRules())
         {
@@ -769,6 +811,21 @@ public class MainViewModel : INotifyPropertyChanged
                 OpenExplorerPath(repo.RepoRootPath);
         });
 
+        // Flagship Dashboard, Favorites, Live Telemetry & Theme Commands
+        RunOneClickHealthCheckCommand = new RelayCommand(async _ => await RunOneClickHealthCheckAsync(), _ => !IsBusy);
+        ToggleCurrentFavoriteCommand = new RelayCommand(_ => ToggleCurrentSectionFavorite());
+        ApplyThemeCommand = new RelayCommand(param =>
+        {
+            if (param is string themeKey)
+                SelectedTheme = themeKey;
+        });
+
+        _liveTelemetryTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _liveTelemetryTimer.Tick += (_, _) => TickLiveTelemetry();
+
         // Background Auto-Monitor Timer (checks every 5 minutes if enabled)
         _autoMonitorTimer = new DispatcherTimer
         {
@@ -782,7 +839,9 @@ public class MainViewModel : INotifyPropertyChanged
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();
 
-        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Tüm 51 uzman modül kullanıma hazır.");
+        ThemeManagerService.ApplyTheme(_selectedTheme);
+        UpdateHealthScoreSummary(0, StartupItems.Count);
+        AddLog("FreeCleaner Pro Flagship (.NET 10) başlatıldı: Dashboard, Sistem Tepsisi, Ctrl+K Paleti, Canlı Telemetri & 53 Modül hazır.");
     }
 
     public SystemMetricsSnapshot SystemMetrics
@@ -804,11 +863,15 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 _activeSection = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(IsDashboardSection));
+                OnPropertyChanged(nameof(IsLiveMonitorSection));
                 OnPropertyChanged(nameof(IsAllSection));
                 OnPropertyChanged(nameof(IsSystemSection));
                 OnPropertyChanged(nameof(IsBrowsersSection));
                 OnPropertyChanged(nameof(IsAppsSection));
                 OnPropertyChanged(nameof(IsCleanerViewVisible));
+                OnPropertyChanged(nameof(IsCurrentSectionFavorite));
+                OnPropertyChanged(nameof(FavoriteButtonText));
                 OnPropertyChanged(nameof(IsStartupSection));
                 OnPropertyChanged(nameof(IsRegistrySection));
                 OnPropertyChanged(nameof(IsDiskAnalyzerSection));
@@ -955,10 +1018,26 @@ public class MainViewModel : INotifyPropertyChanged
                     _ = LoadMonitorsAndGpuAsync();
                 else if (_activeSection == "GitRepoCompressor" && GitRepoItems.Count == 0)
                     _ = LoadGitReposAsync();
+
+                if (_activeSection == "LiveMonitor")
+                {
+                    TickLiveTelemetry();
+                    if (!_liveTelemetryTimer.IsEnabled)
+                        _liveTelemetryTimer.Start();
+                }
+                else if (_liveTelemetryTimer.IsEnabled)
+                {
+                    _liveTelemetryTimer.Stop();
+                }
+
+                if (_activeSection == "Dashboard")
+                    UpdateHealthScoreSummary(TotalDetectedBytes, StartupItems.Count);
             }
         }
     }
 
+    public bool IsDashboardSection => ActiveSection == "Dashboard";
+    public bool IsLiveMonitorSection => ActiveSection == "LiveMonitor";
     public bool IsAllSection => ActiveSection == "All";
     public bool IsSystemSection => ActiveSection == "System";
     public bool IsBrowsersSection => ActiveSection == "Browsers";
@@ -1018,6 +1097,8 @@ public class MainViewModel : INotifyPropertyChanged
 
     public string SectionTitle => ActiveSection switch
     {
+        "Dashboard" => "Genel Bakış (Dashboard) & 100 Puanlık PC Sağlık Kontrolü",
+        "LiveMonitor" => "Canlı CPU, RAM & Ağ Hızı Telemetri Monitörü (Sparkline)",
         "System" => "Sistem Temizleyici (Temp, Loglar & Geri Dönüşüm)",
         "Browsers" => "Web Tarayıcıları (Chrome, Edge, Brave, Firefox)",
         "Apps" => "Uygulama & Geliştirici Önbellekleri",
@@ -2215,7 +2296,9 @@ public class MainViewModel : INotifyPropertyChanged
             RiskFilter = RiskFilter,
             ScheduledMaintenanceEnabled = ScheduledMaintenanceEnabled,
             ScheduledMaintenanceIntervalHours = ScheduledMaintenanceIntervalHours,
-            SelectedRuleIds = AllRules.Where(rule => rule.IsSelected).Select(rule => rule.Id).ToList()
+            SelectedRuleIds = AllRules.Where(rule => rule.IsSelected).Select(rule => rule.Id).ToList(),
+            FavoriteSections = _favoriteSectionKeys.ToList(),
+            SelectedTheme = SelectedTheme
         });
     }
 
@@ -2229,8 +2312,10 @@ public class MainViewModel : INotifyPropertyChanged
             long thresholdBytes = AutoMonitorThresholdMb * 1024L * 1024L;
             if (totalBytes >= thresholdBytes)
             {
-                StatusMessage = $"[OTOMATİK İZLEME] Sistemde {CleanerRule.FormatBytes(totalBytes)} gereksiz dosya birikti!";
+                string msg = $"Sistemde {CleanerRule.FormatBytes(totalBytes)} gereksiz dosya birikti!";
+                StatusMessage = $"[OTOMATİK İZLEME] {msg}";
                 AddLog($"[OTOMATİK UYARI] Eşik ({AutoMonitorThresholdMb} MB) aşıldı: {CleanerRule.FormatBytes(totalBytes)} çöp tespit edildi.");
+                TrayNotificationRequested?.Invoke("FreeCleaner Pro — Çöp Dosya Uyarısı", msg, true);
             }
         }
         catch (Exception ex)
@@ -5182,6 +5267,367 @@ public class MainViewModel : INotifyPropertyChanged
             StatusMessage = $"Geri Dönüşüm Kutusu açılamadı: {ex.Message}";
             AddLog($"[HATA] Geri Dönüşüm Kutusu açılamadı: {ex.Message}");
         }
+    }
+
+    // ==================== 17. FLAGSHIP DASHBOARD, FAVORITES, PALETTE, LIVE TELEMETRY & THEMES ====================
+
+    public string SelectedTheme
+    {
+        get => _selectedTheme;
+        set
+        {
+            if (_selectedTheme != value && !string.IsNullOrWhiteSpace(value))
+            {
+                _selectedTheme = value;
+                ThemeManagerService.ApplyTheme(_selectedTheme);
+                OnPropertyChanged();
+                SaveCurrentSettings();
+                StatusMessage = $"Tema değiştirildi: {_selectedTheme}";
+                AddLog($"[TEMA] Uygulama görünümü '{_selectedTheme}' olarak güncellendi.");
+            }
+        }
+    }
+
+    public int HealthScore
+    {
+        get => _healthScore;
+        set { if (_healthScore != value) { _healthScore = value; OnPropertyChanged(); } }
+    }
+
+    public string HealthGradeBadge
+    {
+        get => _healthGradeBadge;
+        set { if (_healthGradeBadge != value) { _healthGradeBadge = value; OnPropertyChanged(); } }
+    }
+
+    public string HealthAdviceText
+    {
+        get => _healthAdviceText;
+        set { if (_healthAdviceText != value) { _healthAdviceText = value; OnPropertyChanged(); } }
+    }
+
+    public double LiveCpuPercent
+    {
+        get => _liveCpuPercent;
+        set { _liveCpuPercent = value; OnPropertyChanged(); }
+    }
+
+    public double LiveRamPercent
+    {
+        get => _liveRamPercent;
+        set { _liveRamPercent = value; OnPropertyChanged(); }
+    }
+
+    public string LiveNetDownText
+    {
+        get => _liveNetDownText;
+        set { _liveNetDownText = value; OnPropertyChanged(); }
+    }
+
+    public string LiveNetUpText
+    {
+        get => _liveNetUpText;
+        set { _liveNetUpText = value; OnPropertyChanged(); }
+    }
+
+    public PointCollection CpuSparklinePoints
+    {
+        get => _cpuSparklinePoints;
+        set { _cpuSparklinePoints = value; OnPropertyChanged(); }
+    }
+
+    public PointCollection RamSparklinePoints
+    {
+        get => _ramSparklinePoints;
+        set { _ramSparklinePoints = value; OnPropertyChanged(); }
+    }
+
+    public PointCollection NetDownSparklinePoints
+    {
+        get => _netDownSparklinePoints;
+        set { _netDownSparklinePoints = value; OnPropertyChanged(); }
+    }
+
+    public PointCollection NetUpSparklinePoints
+    {
+        get => _netUpSparklinePoints;
+        set { _netUpSparklinePoints = value; OnPropertyChanged(); }
+    }
+
+    public bool IsCurrentSectionFavorite => _favoriteSectionKeys.Contains(ActiveSection, StringComparer.OrdinalIgnoreCase);
+
+    public string FavoriteButtonText => IsCurrentSectionFavorite ? "★ Favorilerde" : "☆ Favoriye Ekle";
+
+    public void ExecuteCommandPaletteShortcut(NavShortcutItem item)
+    {
+        switch (item.SectionKey)
+        {
+            case "CMD:HealthCheck":
+                ActiveSection = "Dashboard";
+                if (RunOneClickHealthCheckCommand.CanExecute(null))
+                    RunOneClickHealthCheckCommand.Execute(null);
+                break;
+            case "CMD:Analyze":
+                ActiveSection = "All";
+                if (AnalyzeCommand.CanExecute(null))
+                    AnalyzeCommand.Execute(null);
+                break;
+            case "CMD:OptimizeRam":
+                if (OptimizeRamCommand.CanExecute(null))
+                    OptimizeRamCommand.Execute(null);
+                break;
+            case "CMD:FlushDns":
+                if (FlushDnsCommand.CanExecute(null))
+                    FlushDnsCommand.Execute(null);
+                break;
+            default:
+                ActiveSection = item.SectionKey;
+                break;
+        }
+    }
+
+    private void ToggleCurrentSectionFavorite()
+    {
+        int existingIdx = _favoriteSectionKeys.FindIndex(k => k.Equals(ActiveSection, StringComparison.OrdinalIgnoreCase));
+        if (existingIdx >= 0)
+        {
+            _favoriteSectionKeys.RemoveAt(existingIdx);
+            StatusMessage = $"'{SectionTitle}' favorilerden çıkarıldı.";
+        }
+        else
+        {
+            _favoriteSectionKeys.Add(ActiveSection);
+            StatusMessage = $"'{SectionTitle}' favorilere sabitlendi!";
+        }
+
+        RebuildFavoriteNavItems();
+        OnPropertyChanged(nameof(IsCurrentSectionFavorite));
+        OnPropertyChanged(nameof(FavoriteButtonText));
+        SaveCurrentSettings();
+    }
+
+    private void RebuildFavoriteNavItems()
+    {
+        FavoriteNavItems.Clear();
+        foreach (string key in _favoriteSectionKeys)
+        {
+            var match = AllModuleCatalog.FirstOrDefault(m => m.SectionKey.Equals(key, StringComparison.OrdinalIgnoreCase));
+            if (match is not null)
+                FavoriteNavItems.Add(match);
+        }
+    }
+
+    private void UpdateHealthScoreSummary(long junkBytes, int startupCount)
+    {
+        RefreshSystemMetrics();
+        var (score, badge, advice) = FlagshipTelemetryAndThemeService.ComputeHealthScore(SystemMetrics, junkBytes, startupCount);
+        HealthScore = score;
+        HealthGradeBadge = badge;
+        HealthAdviceText = advice;
+    }
+
+    public async Task RunOneClickHealthCheckAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        ActiveSection = "Dashboard";
+        HealthCheckResults.Clear();
+        ProgressPercent = 10;
+        StatusMessage = "Tek Tıkla 100 Puanlık PC Sağlık Kontrolü başlatıldı: Sistem analiz ediliyor...";
+        AddLog("[SAĞLIK KONTROLÜ] Kapsamlı sistem taraması ve hızlı optimizasyon başlatıldı.");
+
+        try
+        {
+            // 1. System Disk & RAM check
+            RefreshSystemMetrics();
+            HealthCheckResults.Add(new HealthCheckStepItem
+            {
+                Category = "Depolama",
+                CheckName = $"Sistem Diski ({SystemMetrics.DriveName})",
+                StatusBadge = SystemMetrics.DriveUsedPercent > 85 ? "⚠️ Dolu" : "✅ Sağlıklı",
+                Details = SystemMetrics.DriveSummaryText
+            });
+            ProgressPercent = 30;
+
+            // 2. Junk Files Analysis (Simulation)
+            var junkResults = await _engine.AnalyzeAsync(AllRules, ExcludedPaths.ToList());
+            long junkBytes = junkResults.Sum(x => x.SizeBytes);
+            TotalDetectedFiles = junkResults.Count;
+            TotalDetectedBytes = junkBytes;
+            HasAnalyzed = true;
+
+            HealthCheckResults.Add(new HealthCheckStepItem
+            {
+                Category = "Gereksiz Dosyalar",
+                CheckName = "Sistem & Tarayıcı Çöp Taraması",
+                StatusBadge = junkBytes > 512L * 1024 * 1024 ? "🧹 Temizlik Önerilir" : "✅ Temiz",
+                Details = $"{junkResults.Count:N0} geçici dosya ({CleanerRule.FormatBytes(junkBytes)}) tespit edildi."
+            });
+            ProgressPercent = 55;
+
+            // 3. Startup items audit
+            int startupCount = await Task.Run(() => StartupManagerService.GetStartupItems().Count);
+            HealthCheckResults.Add(new HealthCheckStepItem
+            {
+                Category = "Açılış Hızı",
+                CheckName = "Başlangıç (Startup) Uygulamaları",
+                StatusBadge = startupCount > 15 ? "⚠️ Yüksek" : "✅ Dengeli",
+                Details = $"{startupCount} adet başlangıç kaydı bulundu."
+            });
+            ProgressPercent = 75;
+
+            // 4. RAM Working Set Boost & DNS Cache Flush
+            var (freedRamBytes, trimmedProcCount) = await SystemBoosterAndReportService.OptimizeRamWorkingSetAsync();
+            await SystemBoosterAndReportService.FlushDnsCacheAsync();
+            RefreshSystemMetrics();
+            string reclaimedFormatted = CleanerRule.FormatBytes(freedRamBytes);
+
+            HealthCheckResults.Add(new HealthCheckStepItem
+            {
+                Category = "Bellek (RAM)",
+                CheckName = "Çalışma Kümesi (Working Set) Optimizasyonu",
+                StatusBadge = "⚡ Hızlandırıldı",
+                Details = $"{trimmedProcCount} işlemden {reclaimedFormatted} önbellek belleği serbest bırakıldı. Güncel kullanım: {SystemMetrics.RamUsedPercent:F0}%"
+            });
+
+            HealthCheckResults.Add(new HealthCheckStepItem
+            {
+                Category = "Ağ & DNS",
+                CheckName = "Windows DNS Çözümleyici Önbelleği",
+                StatusBadge = "✅ Yenilendi",
+                Details = "DNS çözümleyici önbelleği (ipconfig /flushdns) tazelendi."
+            });
+
+            UpdateHealthScoreSummary(junkBytes, startupCount);
+            ProgressPercent = 100;
+
+            string summary = $"Sağlık Kontrolü Tamamlandı: Skor {HealthScore}/100 ({HealthGradeBadge}) • {reclaimedFormatted} RAM açıldı.";
+            StatusMessage = summary;
+            AddLog($"[SAĞLIK KONTROLÜ] {summary}");
+            TrayNotificationRequested?.Invoke("FreeCleaner Pro — Sağlık Kontrolü", summary, HealthScore < 60);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void TickLiveTelemetry()
+    {
+        var (cpu, ram, downKbps, upKbps) = _telemetrySampler.SampleNext();
+        LiveCpuPercent = cpu;
+        LiveRamPercent = ram;
+        LiveNetDownText = FormatNetRate(downKbps);
+        LiveNetUpText = FormatNetRate(upKbps);
+
+        _cpuHistory.Add(cpu);
+        _ramHistory.Add(ram);
+        _netDownHistory.Add(downKbps);
+        _netUpHistory.Add(upKbps);
+
+        TrimHistory(_cpuHistory);
+        TrimHistory(_ramHistory);
+        TrimHistory(_netDownHistory);
+        TrimHistory(_netUpHistory);
+
+        CpuSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_cpuHistory, 100.0, 260, 74);
+        RamSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_ramHistory, 100.0, 260, 74);
+        double maxNet = Math.Max(50.0, Math.Max(_netDownHistory.Max(), _netUpHistory.Max()));
+        NetDownSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_netDownHistory, maxNet, 260, 74);
+        NetUpSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_netUpHistory, maxNet, 260, 74);
+
+        var topProcs = FlagshipTelemetryAndThemeService.GetTopProcessesSnapshot(10);
+        LiveTopProcesses.Clear();
+        foreach (var p in topProcs)
+            LiveTopProcesses.Add(p);
+    }
+
+    private static void TrimHistory(List<double> list, int maxPoints = 40)
+    {
+        if (list.Count > maxPoints)
+            list.RemoveRange(0, list.Count - maxPoints);
+    }
+
+    private static string FormatNetRate(double kbps)
+        => kbps >= 1024.0 ? $"{kbps / 1024.0:F2} MB/s" : $"{kbps:F1} KB/s";
+
+    private void PopulateModuleCatalog()
+    {
+        AllModuleCatalog.Clear();
+        void AddEntry(string key, string title, string glyph, string cat, string keywords)
+            => AllModuleCatalog.Add(new NavShortcutItem
+            {
+                SectionKey = key,
+                Title = title,
+                IconGlyph = glyph,
+                CategoryName = cat,
+                Keywords = keywords
+            });
+
+        // Quick Actions (Ctrl+K)
+        AddEntry("CMD:HealthCheck", "⚡ Hızlı Eylem: Tek Tıkla PC Sağlık Kontrolü Başlat", "\uE95E", "Hızlı Komut", "saglik skor health check tarama hizlandir");
+        AddEntry("CMD:Analyze", "🔍 Hızlı Eylem: Akıllı Gereksiz Dosya Analizini Başlat", "\uE721", "Hızlı Komut", "analiz tara temizlik cop");
+        AddEntry("CMD:OptimizeRam", "🧠 Hızlı Eylem: RAM Belleğini Şimdi Boşalt", "\uE945", "Hızlı Komut", "ram bellek bosalt memory boost");
+        AddEntry("CMD:FlushDns", "🌐 Hızlı Eylem: DNS Önbelleğini Temizle (flushdns)", "\uE701", "Hızlı Komut", "dns flush ip yenile");
+
+        // All 53 Modules
+        AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "\uE80F", "Temizlik & Bakış", "dashboard ana sayfa saglik skoru");
+        AddEntry("LiveMonitor", "Canlı CPU, RAM & Ağ Grafikleri", "\uE9D9", "Performans & Donanım", "canli grafik cpu ram ag hizi monitor sparkline");
+        AddEntry("All", "Akıllı Temizlik (Tümü)", "\uE770", "Temizlik & Disk", "temizlik cop temp gecici");
+        AddEntry("System", "Windows & Sistem Temizliği", "\uE7F8", "Temizlik & Disk", "windows temp log recycle bin");
+        AddEntry("Browsers", "Web Tarayıcıları Temizliği", "\uE774", "Temizlik & Disk", "chrome edge firefox brave cache cookie");
+        AddEntry("Apps", "Uygulama & Geliştirici Önbelleği", "\uE943", "Temizlik & Disk", "app cache discord steam vscode");
+        AddEntry("DiskAnalyzer", "Büyük & Kopya Dosya Bulucu", "\uEDA2", "Temizlik & Disk", "buyuk dosya duplicate sha256 kopya");
+        AddEntry("Downloads", "İndirilenler & Boş Klasör Temizleyici", "\uE896", "Temizlik & Disk", "downloads kurulum setup iso bos klasor");
+        AddEntry("Bloatware", "Bloatware (UWP Appx) Kaldırıcı", "\uE74D", "Temizlik & Disk", "bloatware appx uwp xbox windows 11");
+        AddEntry("Shredder", "Dosya Öğütücü (DoD 5220.22-M)", "\uE74D", "Temizlik & Disk", "shredder kalici silme bos alan");
+        AddEntry("Startup", "Başlangıç (Startup) Yöneticisi", "\uE7E8", "Performans & Donanım", "startup acilis baslangic");
+        AddEntry("BootPerformance", "Açılış Süresi (Boot Time) Analizi", "\uE916", "Performans & Donanım", "boot acilis suresi darbogaz");
+        AddEntry("Booster", "RAM & Ağ Hızlandırıcı", "\uE945", "Performans & Donanım", "ram booster hizlandirici dns");
+        AddEntry("ProcessPriority", "Canlı CPU Önceliği & Eco Mod", "\uEC4A", "Performans & Donanım", "cpu oncelik priority eco game boost");
+        AddEntry("DiskBench", "SSD / NVMe Disk Hız Testi", "\uEC4A", "Performans & Donanım", "ssd nvme benchmark okuma yazma hiz");
+        AddEntry("SmartPower", "Disk Sağlığı (S.M.A.R.T.) & Güç Planı", "\uE945", "Performans & Donanım", "smart disk saglik pil guc oyun modu");
+        AddEntry("HardwareSpecs", "Donanım, BIOS & OEM Lisans", "\uE950", "Performans & Donanım", "cpu gpu ram bios anakart lisans product key");
+        AddEntry("MonitorGpu", "Monitör (Hz) & GPU Doktoru", "\uE7F4", "Performans & Donanım", "monitor edid hz yenileme gpu reset");
+        AddEntry("WingetUpdater", "Winget Program Güncelleyici", "\uE896", "Sistem & Windows 11", "winget guncelle update yazilim");
+        AddEntry("Win11Tweaker", "Windows 11 İnce Ayar (Tweaker)", "\uE90F", "Sistem & Windows 11", "win11 sag tik explorer bing saniye");
+        AddEntry("Registry", "Kayıt Defteri (Registry) Temizleyici", "\uE90F", "Sistem & Windows 11", "registry regedit yedek");
+        AddEntry("Uninstaller", "Program Kaldırıcı & Yetim Kalıntılar", "\uE7B8", "Sistem & Windows 11", "uninstall program kaldir appdata");
+        AddEntry("Services", "Windows Servisleri Yöneticisi", "\uE912", "Sistem & Windows 11", "services hizmetler telemetri");
+        AddEntry("RepairCenter", "Sistem Onarım Merkezi (SFC/DISM)", "\uE90F", "Sistem & Windows 11", "sfc dism onarim windows.old fontcache");
+        AddEntry("RestoreGodMode", "Geri Yükleme Noktası & God Mode", "\uE81C", "Sistem & Windows 11", "restore point tanri modu god mode");
+        AddEntry("ContextMenu", "Sağ Tık Bağlam Menüsü (Shell)", "\uE700", "Sistem & Windows 11", "context menu shell sag tik");
+        AddEntry("FileAssoc", "Dosya Uzantısı Doktoru (UserChoice)", "\uE8A5", "Sistem & Windows 11", "uzanti file association progid");
+        AddEntry("FontManager", "Font (Yazı Tipi) Yöneticisi", "\uE8D2", "Sistem & Windows 11", "font yazi tipi ttf otf");
+        AddEntry("LanScanner", "Yerel Ağ (LAN / Wi-Fi) Radarı", "\uE701", "Ağ & Firewall", "lan arp ping modem wifi cihaz");
+        AddEntry("WifiDns", "Wi-Fi Şifreleri & DNS Ping Testi", "\uE701", "Ağ & Firewall", "wifi sifre password dns ping");
+        AddEntry("Network", "Canlı Ağ Bağlantıları & Hosts", "\uE968", "Ağ & Firewall", "tcp udp netstat hosts");
+        AddEntry("NetworkAdapterDoctor", "Ağ Adaptörü, MAC & Winsock Doktoru", "\uE839", "Ağ & Firewall", "mac ip gateway dhcp winsock arp");
+        AddEntry("FirewallBlocker", "Firewall & Uygulama İnternet Kesici", "\uE72E", "Ağ & Firewall", "firewall guvenlik duvari engel");
+        AddEntry("PortHunter", "Geliştirici Port Avcısı (Port Killer)", "\uE968", "Ağ & Firewall", "port 3000 8080 5000 pid kill");
+        AddEntry("DefenderAuditor", "Windows Defender & İstisna Denetçisi", "\uE83D", "Güvenlik & Gizlilik", "defender antivirus tarama exclusion");
+        AddEntry("ProcessSecurity", "Süreç & Dijital İmza Denetçisi", "\uEA18", "Güvenlik & Gizlilik", "imza x509 sha256 unsigned process");
+        AddEntry("CryptoVault", "AES-256 Dosya Kasası & Çoklu Hash", "\uE8D7", "Güvenlik & Gizlilik", "aes256 sifrele fcvault md5 sha256 sha512");
+        AddEntry("Privacy", "Windows Gizlilik & Telemetri Kalkanı", "\uE72E", "Güvenlik & Gizlilik", "gizlilik mru jumplist telemetri");
+        AddEntry("ClipboardShield", "Akıllı Pano & Takip URL Temizleyici", "\uE77F", "Güvenlik & Gizlilik", "clipboard pano utm api key iban");
+        AddEntry("BitLocker", "BitLocker & ISO/VHD Sanal Disk", "\uEDA2", "Güvenlik & Gizlilik", "bitlocker iso vhd vhdx mount");
+        AddEntry("CredentialSsh", "Kimlik Kasası (cmdkey) & SSH", "\uE8D7", "Güvenlik & Gizlilik", "ssh credential cmdkey git key");
+        AddEntry("UsbForensics", "USB Depolama Geçmişi (USBSTOR)", "\uE88E", "Güvenlik & Gizlilik", "usb usbstor adli analiz");
+        AddEntry("CrashLogs", "Mavi Ekran (BSOD) & Olay Günlüğü", "\uE7BA", "Güvenlik & Gizlilik", "bsod dmp eventlog cokme");
+        AddEntry("AiModelCleaner", "Yapay Zeka (AI / LLM) Model Avcısı", "\uE99A", "Geliştirici & AI", "ollama huggingface lmstudio gguf safetensors ai llm");
+        AddEntry("DockerWsl", "WSL2 & Docker Yöneticisi", "\uE756", "Geliştirici & AI", "wsl wsl2 docker container prune");
+        AddEntry("GitRepoCompressor", "Git Depo (.git) Sıkıştırıcı (git gc)", "\uE8B7", "Geliştirici & AI", "git gc branch repo");
+        AddEntry("DevCleaner", "VS Debug/Retail & DevCleaner", "\uE943", "Geliştirici & AI", "visual studio debug release obj node_modules");
+        AddEntry("PackageCaches", "NuGet / NPM & WSL2 VHDX Önbelleği", "\uE7B8", "Geliştirici & AI", "nuget npm pip cargo gradle maven vhdx");
+        AddEntry("SqliteOptimizer", "Tarayıcı & IDE SQLite Sıkıştırıcı", "\uEE94", "Geliştirici & AI", "sqlite veritabani wal chrome vscode cursor");
+        AddEntry("BatchRenamer", "Toplu Dosya Adlandırıcı (PowerRename)", "\uE8AC", "Geliştirici & AI", "rename toplu adlandirma prefix suffix");
+        AddEntry("Unlocker", "Kilitli Dosya Çözücü (File Unlocker)", "\uE785", "Geliştirici & AI", "kilitli dosya unlocker restart manager");
+        AddEntry("PathDoctor", "PATH Doktoru & Kırık Kısayollar", "\uE950", "Geliştirici & AI", "path ortam degiskeni lnk kisayol");
+        AddEntry("TasksAndTree", "Zamanlanmış Görevler & Klasör Ağacı", "\uE823", "Geliştirici & AI", "task scheduler klasor boyutu");
+        AddEntry("BrowserExtensions", "Tarayıcı Eklentileri Denetçisi", "\uEA86", "Geliştirici & AI", "extension eklenti chrome edge");
+        AddEntry("DriversUpdates", "KB Güncellemeler & Sürücü Deposu", "\uE777", "Geliştirici & AI", "hotfix kb driverstore pnputil");
+        AddEntry("Settings", "Tema, Beyaz Liste, Tepsi & Raporlar", "\uE713", "Ayarlar & Tema", "tema theme tray sistem tepsisi whitelist ayarlar rapor");
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

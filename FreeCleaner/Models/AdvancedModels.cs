@@ -1170,3 +1170,32 @@ public class GitRepoCompressionItem : INotifyPropertyChanged
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
+
+
+// ==================== FLAGSHIP DASHBOARD, TELEMETRY SPARKLINE & COMMAND PALETTE MODELS ====================
+
+public class HealthCheckStepItem
+{
+    public required string Category { get; init; }
+    public required string CheckName { get; init; }
+    public required string StatusBadge { get; init; }
+    public required string Details { get; init; }
+}
+
+public class NavShortcutItem
+{
+    public required string SectionKey { get; init; }
+    public required string Title { get; init; }
+    public required string IconGlyph { get; init; }
+    public required string CategoryName { get; init; }
+    public required string Keywords { get; init; }
+}
+
+public class LiveProcessMetricItem
+{
+    public required int ProcessId { get; init; }
+    public required string ProcessName { get; init; }
+    public required string RamFormatted { get; init; }
+    public required int Threads { get; init; }
+    public required string PriorityText { get; init; }
+}

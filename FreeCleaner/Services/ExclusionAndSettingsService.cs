@@ -19,6 +19,8 @@ public class CleanerConfigData
     public bool ScheduledMaintenanceEnabled { get; set; }
     public int ScheduledMaintenanceIntervalHours { get; set; } = 168;
     public List<string> SelectedRuleIds { get; set; } = [];
+    public List<string> FavoriteSections { get; set; } = ["Dashboard", "All", "LiveMonitor", "DiskBench", "WingetUpdater"];
+    public string SelectedTheme { get; set; } = "ObsidianNeon";
 }
 
 public static class ExclusionAndSettingsService
