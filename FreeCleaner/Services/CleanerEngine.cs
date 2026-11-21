@@ -212,6 +212,28 @@ public class CleanerEngine
                 IsSelected = true,
                 Targets = GetFirefoxCacheTargets(Path.Combine(localAppData, "Mozilla", "Firefox", "Profiles"))
             },
+            new CleanerRule
+            {
+                Id = "brw_ondevice_ai_models",
+                Name = "Tarayıcı Yerel AI Modelleri (Chrome Gemini Nano / Edge Phi)",
+                Category = "Tarayıcı AI Modelleri",
+                Description = "Chrome, Edge, Brave, Vivaldi ve Opera'nın arka planda indirdiği 2–4 GB cihaz içi AI modelleri (OptGuideOnDeviceModel / weights.bin)",
+                IconGlyph = "\uE99A",
+                Group = RuleGroup.Browsers,
+                Risk = RiskLevel.Medium,
+                IsSelected = true,
+                Targets =
+                [
+                    new ScanTarget(Path.Combine(localAppData, "Google", "Chrome", "User Data", "OptGuideOnDeviceModel")),
+                    new ScanTarget(Path.Combine(localAppData, "Google", "Chrome Beta", "User Data", "OptGuideOnDeviceModel")),
+                    new ScanTarget(Path.Combine(localAppData, "Google", "Chrome SxS", "User Data", "OptGuideOnDeviceModel")),
+                    new ScanTarget(Path.Combine(localAppData, "Microsoft", "Edge", "User Data", "OptGuideOnDeviceModel")),
+                    new ScanTarget(Path.Combine(localAppData, "Microsoft", "Edge", "User Data", "EdgeOnDeviceModel")),
+                    new ScanTarget(Path.Combine(localAppData, "BraveSoftware", "Brave-Browser", "User Data", "OptGuideOnDeviceModel")),
+                    new ScanTarget(Path.Combine(localAppData, "Vivaldi", "User Data", "OptGuideOnDeviceModel")),
+                    new ScanTarget(Path.Combine(localAppData, "Opera Software", "Opera Stable", "OptGuideOnDeviceModel"))
+                ]
+            },
 
             // ==================== DEVELOPER & APPS ====================
             new CleanerRule

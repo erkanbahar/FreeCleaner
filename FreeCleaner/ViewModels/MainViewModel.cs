@@ -5620,7 +5620,7 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("LiveMonitor", "Canlı CPU, RAM & Ağ Grafikleri", "\uE9D9", "Performans & Donanım", "canli grafik cpu ram ag hizi monitor sparkline");
         AddEntry("All", "Akıllı Temizlik (Tümü)", "\uE770", "Temizlik & Disk", "temizlik cop temp gecici");
         AddEntry("System", "Windows & Sistem Temizliği", "\uE7F8", "Temizlik & Disk", "windows temp log recycle bin");
-        AddEntry("Browsers", "Web Tarayıcıları Temizliği", "\uE774", "Temizlik & Disk", "chrome edge firefox brave cache cookie");
+        AddEntry("Browsers", "Web Tarayıcıları Temizliği", "\uE774", "Temizlik & Disk", "chrome edge firefox brave cache cookie gemini nano optguideondevicemodel weights.bin");
         AddEntry("Apps", "Uygulama & Geliştirici Önbelleği", "\uE943", "Temizlik & Disk", "app cache discord steam vscode");
         AddEntry("DiskAnalyzer", "Büyük & Kopya Dosya Bulucu", "\uEDA2", "Temizlik & Disk", "buyuk dosya duplicate sha256 kopya");
         AddEntry("Downloads", "İndirilenler & Boş Klasör Temizleyici", "\uE896", "Temizlik & Disk", "downloads kurulum setup iso bos klasor");
@@ -5635,7 +5635,7 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("HardwareSpecs", "Donanım, BIOS & OEM Lisans", "\uE950", "Performans & Donanım", "cpu gpu ram bios anakart lisans product key");
         AddEntry("MonitorGpu", "Monitör (Hz) & GPU Doktoru", "\uE7F4", "Performans & Donanım", "monitor edid hz yenileme gpu reset");
         AddEntry("WingetUpdater", "Winget Program Güncelleyici", "\uE896", "Sistem & Windows 11", "winget guncelle update yazilim");
-        AddEntry("Win11Tweaker", "Windows 11 İnce Ayar (Tweaker)", "\uE90F", "Sistem & Windows 11", "win11 sag tik explorer bing saniye");
+        AddEntry("Win11Tweaker", "Windows 11 İnce Ayar (Tweaker)", "\uE90F", "Sistem & Windows 11", "win11 sag tik explorer bing saniye gemini nano optguideondevicemodel weights.bin chrome ai");
         AddEntry("Registry", "Kayıt Defteri (Registry) Temizleyici", "\uE90F", "Sistem & Windows 11", "registry regedit yedek");
         AddEntry("Uninstaller", "Program Kaldırıcı & Yetim Kalıntılar", "\uE7B8", "Sistem & Windows 11", "uninstall program kaldir appdata");
         AddEntry("Services", "Windows Servisleri Yöneticisi", "\uE912", "Sistem & Windows 11", "services hizmetler telemetri");
@@ -5660,7 +5660,7 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("CredentialSsh", "Kimlik Kasası (cmdkey) & SSH", "\uE8D7", "Güvenlik & Gizlilik", "ssh credential cmdkey git key");
         AddEntry("UsbForensics", "USB Depolama Geçmişi (USBSTOR)", "\uE88E", "Güvenlik & Gizlilik", "usb usbstor adli analiz");
         AddEntry("CrashLogs", "Mavi Ekran (BSOD) & Olay Günlüğü", "\uE7BA", "Güvenlik & Gizlilik", "bsod dmp eventlog cokme");
-        AddEntry("AiModelCleaner", "Yapay Zeka (AI / LLM) Model Avcısı", "\uE99A", "Geliştirici & AI", "ollama huggingface lmstudio gguf safetensors ai llm");
+        AddEntry("AiModelCleaner", "Yapay Zeka (AI / LLM) Model Avcısı", "\uE99A", "Geliştirici & AI", "ollama huggingface lmstudio gguf safetensors ai llm chrome gemini nano optguideondevicemodel weights.bin");
         AddEntry("DockerWsl", "WSL2 & Docker Yöneticisi", "\uE756", "Geliştirici & AI", "wsl wsl2 docker container prune");
         AddEntry("GitRepoCompressor", "Git Depo (.git) Sıkıştırıcı (git gc)", "\uE8B7", "Geliştirici & AI", "git gc branch repo");
         AddEntry("DevCleaner", "VS Debug/Retail & DevCleaner", "\uE943", "Geliştirici & AI", "visual studio debug release obj node_modules");

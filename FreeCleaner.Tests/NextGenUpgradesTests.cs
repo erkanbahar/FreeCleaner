@@ -222,6 +222,24 @@ public class NextGenUpgradesTests
         Assert.Null(registry.GetOrCreate("UnknownSection"));
     }
 
+    [Fact]
+    public void BrowserOnDeviceAiModels_RuleAndAiHunter_DetectOptGuideAndWeightsBin()
+    {
+        var rules = CleanerEngine.GetDefaultRules();
+        var aiBrowserRule = Assert.Single(rules, r => r.Id == "brw_ondevice_ai_models");
+
+        Assert.Equal(FreeCleaner.Models.RuleGroup.Browsers, aiBrowserRule.Group);
+        Assert.Equal(FreeCleaner.Models.RiskLevel.Medium, aiBrowserRule.Risk);
+        Assert.Contains(aiBrowserRule.Targets, t => t.BasePath.Contains("OptGuideOnDeviceModel", StringComparison.OrdinalIgnoreCase));
+
+        Assert.True(EighthGenAiAndSecuritySuiteService.IsStandaloneAiWeightFile(@"C:\temp\weights.bin", 60L * 1024 * 1024));
+        Assert.False(EighthGenAiAndSecuritySuiteService.IsStandaloneAiWeightFile(@"C:\temp\weights.bin", 1024));
+        Assert.True(EighthGenAiAndSecuritySuiteService.IsStandaloneAiWeightFile(@"C:\models\llama.gguf", 20L * 1024 * 1024));
+
+        var tweaks = EighthGenAiAndSecuritySuiteService.GetWindowsTweaksState();
+        Assert.Contains(tweaks, t => t.TweakId == "DISABLE_BROWSER_ONDEVICE_AI");
+    }
+
     private static void CreateSyntheticJpegWithExifAndGps(string path, int width, int height)
     {
         byte[] cleanJpegBytes;

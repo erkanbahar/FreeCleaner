@@ -16,6 +16,19 @@ public static class EighthGenAiAndSecuritySuiteService
         ".gguf", ".safetensors", ".onnx", ".pt", ".pth", ".ckpt", ".tflite", ".ggml"
     };
 
+    public static bool IsStandaloneAiWeightFile(string filePath, long fileSizeBytes)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+            return false;
+
+        string fileName = Path.GetFileName(filePath);
+        if (fileName.Equals("weights.bin", StringComparison.OrdinalIgnoreCase))
+            return fileSizeBytes >= 50L * 1024 * 1024;
+
+        string ext = Path.GetExtension(filePath);
+        return AiWeightExtensions.Contains(ext) && fileSizeBytes >= 10L * 1024 * 1024;
+    }
+
     public static async Task<List<AiModelCacheItem>> ScanAiModelCachesAsync(string? customSearchDir = null)
     {
         return await Task.Run(() =>
@@ -35,7 +48,15 @@ public static class EighthGenAiAndSecuritySuiteService
                 ("OpenAI Whisper", "Whisper Ses Tanıma Model Önbelleği", Path.Combine(userProfile, ".cache", "whisper")),
                 ("Matplotlib / SciPy", "Bilimsel Python & AI Grafik Önbelleği", Path.Combine(userProfile, ".matplotlib")),
                 ("Ultralytics YOLO", "YOLO Görsel AI Model Önbelleği", Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Ultralytics")),
-                ("UV Python AI", "Astral UV Paket & AI Wheel Önbelleği", Path.Combine(localAppData, "uv", "cache"))
+                ("UV Python AI", "Astral UV Paket & AI Wheel Önbelleği", Path.Combine(localAppData, "uv", "cache")),
+                ("Google Chrome AI", "Chrome Cihaz İçi Gemini Nano Modeli (OptGuideOnDeviceModel)", Path.Combine(localAppData, "Google", "Chrome", "User Data", "OptGuideOnDeviceModel")),
+                ("Chrome Beta AI", "Chrome Beta Cihaz İçi AI Modeli (OptGuideOnDeviceModel)", Path.Combine(localAppData, "Google", "Chrome Beta", "User Data", "OptGuideOnDeviceModel")),
+                ("Chrome Canary AI", "Chrome Canary Cihaz İçi AI Modeli (OptGuideOnDeviceModel)", Path.Combine(localAppData, "Google", "Chrome SxS", "User Data", "OptGuideOnDeviceModel")),
+                ("Microsoft Edge AI", "Edge Cihaz İçi AI Modeli (OptGuideOnDeviceModel)", Path.Combine(localAppData, "Microsoft", "Edge", "User Data", "OptGuideOnDeviceModel")),
+                ("Microsoft Edge AI", "Edge Phi Yerel AI Modeli (EdgeOnDeviceModel)", Path.Combine(localAppData, "Microsoft", "Edge", "User Data", "EdgeOnDeviceModel")),
+                ("Brave Browser AI", "Brave Cihaz İçi AI Modeli (OptGuideOnDeviceModel)", Path.Combine(localAppData, "BraveSoftware", "Brave-Browser", "User Data", "OptGuideOnDeviceModel")),
+                ("Vivaldi Browser AI", "Vivaldi Cihaz İçi AI Modeli (OptGuideOnDeviceModel)", Path.Combine(localAppData, "Vivaldi", "User Data", "OptGuideOnDeviceModel")),
+                ("Opera Browser AI", "Opera Cihaz İçi AI Modeli (OptGuideOnDeviceModel)", Path.Combine(localAppData, "Opera Software", "Opera Stable", "OptGuideOnDeviceModel"))
             };
 
             foreach (var (framework, title, dirPath) in knownAiDirs)
@@ -59,7 +80,7 @@ public static class EighthGenAiAndSecuritySuiteService
                 catch { }
             }
 
-            // Scan custom folder or Downloads/UserProfile for standalone .gguf / .safetensors / .onnx model files (> 20 MB)
+            // Scan custom folder or Downloads/UserProfile for standalone .gguf / .safetensors / .onnx / weights.bin model files
             var fileSearchRoots = new List<string>();
             if (!string.IsNullOrWhiteSpace(customSearchDir) && Directory.Exists(customSearchDir))
                 fileSearchRoots.Add(customSearchDir);
@@ -79,15 +100,18 @@ public static class EighthGenAiAndSecuritySuiteService
                         MaxRecursionDepth = 4
                     }))
                     {
-                        string ext = Path.GetExtension(file);
-                        if (!AiWeightExtensions.Contains(ext)) continue;
-
                         var fi = new FileInfo(file);
-                        if (fi.Length < 10 * 1024 * 1024) continue; // Only >= 10 MB model weights
+                        if (!IsStandaloneAiWeightFile(fi.FullName, fi.Length))
+                            continue;
+
+                        string ext = Path.GetExtension(fi.Name);
+                        string badge = fi.Name.Equals("weights.bin", StringComparison.OrdinalIgnoreCase)
+                            ? "AI Model Ağırlığı (WEIGHTS.BIN)"
+                            : $"AI Model Ağırlığı ({ext.ToUpperInvariant()})";
 
                         results.Add(new AiModelCacheItem
                         {
-                            AiFramework = $"AI Model Ağırlığı ({ext.ToUpperInvariant()})",
+                            AiFramework = badge,
                             ModelOrCacheName = fi.Name,
                             FullPath = fi.FullName,
                             SizeBytes = fi.Length,
@@ -555,6 +579,18 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
             CurrentStateText = disableGameDvr ? "✅ Optimize Edildi (GameDVR Kapalı)" : "⚪ Açık (Varsayılan)"
         });
 
+        // 7. Block silent 3-4 GB Chrome/Edge On-Device AI model downloads
+        bool blockBrowserOnDeviceAi = ReadHkcuDword(@"Software\Policies\Google\Chrome", "GenAILocalFoundationalModelSettings", 0) == 1;
+        list.Add(new WindowsTweakItem
+        {
+            TweakId = "DISABLE_BROWSER_ONDEVICE_AI",
+            Category = "Tarayıcı & Disk Tasarrufu",
+            Title = "Chrome / Edge 4 GB Yerel AI Modeli (Gemini Nano) İndirmesini Engelle",
+            Description = "Chrome ve Edge'in arka planda 3–4 GB boyutunda OptGuideOnDeviceModel (weights.bin) indirmesini kullanıcı politikası ile kalıcı engeller.",
+            IsEnabled = blockBrowserOnDeviceAi,
+            CurrentStateText = blockBrowserOnDeviceAi ? "✅ Model İndirme Engelli (Disk Korunuyor)" : "⚪ Varsayılan (Tarayıcı Otomatik İndirebilir)"
+        });
+
         return list;
     }
 
@@ -596,6 +632,11 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
                 case "DISABLE_GAMEDVR":
                     WriteHkcuDword(@"System\GameConfigStore", "GameDVR_Enabled", targetState ? 0 : 1);
                     WriteHkcuDword(@"Software\Microsoft\Windows\CurrentVersion\GameDVR", "AppCaptureEnabled", targetState ? 0 : 1);
+                    break;
+
+                case "DISABLE_BROWSER_ONDEVICE_AI":
+                    WriteHkcuDword(@"Software\Policies\Google\Chrome", "GenAILocalFoundationalModelSettings", targetState ? 1 : 0);
+                    WriteHkcuDword(@"Software\Policies\Microsoft\Edge", "GenAILocalFoundationalModelSettings", targetState ? 1 : 0);
                     break;
             }
 
