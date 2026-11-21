@@ -134,6 +134,52 @@ public static class FlagshipTelemetryAndThemeService
             .Select(x => x.Item)
             .ToList();
     }
+
+    public sealed record CriticalHealthAlert(
+        bool TriggerDiskAlert,
+        bool TriggerRamAlert,
+        string? Title,
+        string? Message);
+
+    public static CriticalHealthAlert EvaluateCriticalAlerts(
+        double ramPercent,
+        double diskUsedPercent,
+        double freeDiskGb,
+        DateTime utcNow,
+        ref DateTime lastDiskAlertUtc,
+        ref DateTime lastRamAlertUtc,
+        int cooldownMinutes = 30)
+    {
+        TimeSpan cooldown = TimeSpan.FromMinutes(Math.Max(1, cooldownMinutes));
+        bool fireDisk = diskUsedPercent >= 90.0 &&
+                        (lastDiskAlertUtc == DateTime.MinValue || (utcNow - lastDiskAlertUtc) >= cooldown);
+        bool fireRam = ramPercent >= 92.0 &&
+                       (lastRamAlertUtc == DateTime.MinValue || (utcNow - lastRamAlertUtc) >= cooldown);
+
+        if (fireDisk)
+            lastDiskAlertUtc = utcNow;
+        if (fireRam)
+            lastRamAlertUtc = utcNow;
+
+        if (!fireDisk && !fireRam)
+            return new CriticalHealthAlert(false, false, null, null);
+
+        string title = (fireDisk, fireRam) switch
+        {
+            (true, true) => "Kritik Sistem Uyarısı (Disk & RAM)",
+            (true, false) => "Kritik Disk Alanı Uyarısı",
+            _ => "Kritik Bellek (RAM) Uyarısı"
+        };
+
+        string message = (fireDisk, fireRam) switch
+        {
+            (true, true) => $"C: diski %{diskUsedPercent:F0} dolu ({freeDiskGb:F1} GB boş) ve RAM kullanımı %{ramPercent:F0}. Hızlı temizlik önerilir.",
+            (true, false) => $"Sistem sürücüsü %{diskUsedPercent:F0} doluluğa ulaştı (kalan: {freeDiskGb:F1} GB). Derin temizlik veya Treemap başlatın.",
+            _ => $"Bellek kullanımı %{ramPercent:F0} seviyesine yükseldi. Tek tıkla RAM Optimizasyonu yapabilirsiniz."
+        };
+
+        return new CriticalHealthAlert(fireDisk, fireRam, title, message);
+    }
 }
 
 /// <summary>

@@ -53,6 +53,38 @@ public sealed class SystemTrayService : IDisposable
         catch { }
     }
 
+    public static string FormatTrayTooltip(double cpuPercent, double ramPercent, double freeDiskGb)
+    {
+        double clampedCpu = Math.Clamp(cpuPercent, 0, 100);
+        double clampedRam = Math.Clamp(ramPercent, 0, 100);
+        double safeFreeGb = Math.Max(0, freeDiskGb);
+
+        string formatted = $"FreeCleaner | CPU %{clampedCpu:F0} | RAM %{clampedRam:F0} | Boş {safeFreeGb:F0}GB";
+        if (formatted.Length > 63)
+            formatted = formatted[..63];
+
+        return formatted;
+    }
+
+    public void UpdateStatusTooltip(double cpuPercent, double ramPercent, double freeDiskGb)
+    {
+        if (_disposed)
+            return;
+
+        string tooltip = FormatTrayTooltip(cpuPercent, ramPercent, freeDiskGb);
+        InvokeOnUi(() =>
+        {
+            if (!_disposed)
+            {
+                try
+                {
+                    _notifyIcon.Text = tooltip;
+                }
+                catch { }
+            }
+        });
+    }
+
     private static void InvokeOnUi(Action action)
     {
         if (Application.Current?.Dispatcher is { } dispatcher)

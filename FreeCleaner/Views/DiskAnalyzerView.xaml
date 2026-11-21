@@ -1,0 +1,88 @@
+<UserControl x:Class="FreeCleaner.Views.DiskAnalyzerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Hedef Klasör:" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
+                    <TextBox Text="{Binding DiskScanTargetFolder, UpdateSourceTrigger=PropertyChanged}"
+                             Width="250"
+                             Background="{DynamicResource BgCardBrush}"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             BorderBrush="{DynamicResource BorderSubtleBrush}"
+                             Padding="8,6"
+                             VerticalContentAlignment="Center"
+                             Margin="0,0,6,0"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="Gözat..."
+                            Command="{Binding BrowseDiskFolderCommand}"
+                            Margin="0,0,12,0"/>
+
+                    <TextBlock Text="Min Boyut (MB):" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
+                    <ComboBox ItemsSource="{Binding AvailableSizeThresholdsMb}"
+                              SelectedItem="{Binding SelectedMinSizeMb}"
+                              Width="72"
+                              VerticalContentAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="Büyük Dosyaları Bul"
+                            Command="{Binding ScanLargeFilesCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="Çift (Kopya) Dosyaları Bul"
+                            Command="{Binding ScanDuplicatesCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="{DynamicResource Loc_HardlinkMergeBtn}"
+                            ToolTip="Aynı NTFS birimindeki birebir aynı dosyaları veri kaybetmeden tek fiziksel bloğa bağlar"
+                            Command="{Binding MergeDuplicatesWithHardlinksCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="Seçilileri Geri Dönüşüm'e Taşı"
+                            Command="{Binding DeleteSelectedDiskFilesCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding DiskAnalyzerItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="31"
+                      MouseDoubleClick="DiskDataGrid_MouseDoubleClick">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
+                    <DataGridTextColumn Header="Tür / Kopya Grubu" Binding="{Binding TypeBadge}" IsReadOnly="True" Width="135"/>
+                    <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="105"/>
+                    <DataGridTextColumn Header="Dosya Adı" Binding="{Binding FileName}" IsReadOnly="True" Width="210"/>
+                    <DataGridTextColumn Header="Değiştirilme" Binding="{Binding FormattedDate}" IsReadOnly="True" Width="125"/>
+                    <DataGridTextColumn Header="Tam Yol (Çift tıklayarak Gezgin'de açın)" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

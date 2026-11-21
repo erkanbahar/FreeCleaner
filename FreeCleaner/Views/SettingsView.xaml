@@ -216,7 +216,7 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14">
+                    <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">
                         <StackPanel>
                             <TextBlock Text="{DynamicResource Loc_SettingsReportTitle}" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
                             <TextBlock Text="{DynamicResource Loc_SettingsReportDesc}"
@@ -227,6 +227,51 @@
                             <Button Style="{StaticResource PrimaryButtonStyle}"
                                     Content="{DynamicResource Loc_SettingsExportReportBtn}"
                                     Command="{Binding ExportReportCommand}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Loc_SettingsShellTitle}" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{DynamicResource Loc_SettingsShellDesc}"
+                                       FontSize="11.5"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,4,0,8"/>
+                            <TextBlock Text="{Binding ExplorerContextMenuStatusText}"
+                                       FontSize="11.5"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AccentBlueBrush}"
+                                       Margin="0,0,0,10"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="{DynamicResource Loc_SettingsShellInstallBtn}"
+                                        Command="{Binding InstallExplorerContextMenuCommand}"
+                                        Margin="0,0,8,0"/>
+                                <Button Style="{StaticResource SubtleButtonStyle}"
+                                        Content="{DynamicResource Loc_SettingsShellRemoveBtn}"
+                                        Command="{Binding RemoveExplorerContextMenuCommand}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Loc_SettingsBackupTitle}" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            <TextBlock Text="{DynamicResource Loc_SettingsBackupDesc}"
+                                       FontSize="11.5"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       TextWrapping="Wrap"
+                                       Margin="0,4,0,12"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Content="{DynamicResource Loc_SettingsExportCfgBtn}"
+                                        Command="{Binding ExportSettingsConfigCommand}"
+                                        Margin="0,0,8,0"/>
+                                <Button Style="{StaticResource SubtleButtonStyle}"
+                                        Content="{DynamicResource Loc_SettingsImportCfgBtn}"
+                                        Command="{Binding ImportSettingsConfigCommand}"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>

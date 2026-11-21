@@ -1,0 +1,630 @@
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
+using System.Windows;
+using System.Windows.Input;
+using FreeCleaner.Models;
+using FreeCleaner.Services;
+
+namespace FreeCleaner.ViewModels;
+
+public partial class MainViewModel
+{
+    // ==================== 19. SMART TREEMAP DELETE, LIFETIME HISTORY, DEEP SPACE RECOVERY & DHASH PHOTO FINDER ====================
+
+    public string LifetimeFreedFormatted
+    {
+        get => _lifetimeFreedFormatted;
+        set { if (_lifetimeFreedFormatted != value) { _lifetimeFreedFormatted = value; OnPropertyChanged(); } }
+    }
+
+    public string LifetimeSessionsSummary
+    {
+        get => _lifetimeSessionsSummary;
+        set { if (_lifetimeSessionsSummary != value) { _lifetimeSessionsSummary = value; OnPropertyChanged(); } }
+    }
+
+    public string DeepSpaceSummaryText
+    {
+        get => _deepSpaceSummaryText;
+        set { if (_deepSpaceSummaryText != value) { _deepSpaceSummaryText = value; OnPropertyChanged(); } }
+    }
+
+    public string SimilarPhotosFolderPath
+    {
+        get => _similarPhotosFolderPath;
+        set { if (_similarPhotosFolderPath != value) { _similarPhotosFolderPath = value; OnPropertyChanged(); } }
+    }
+
+    public bool SimilarPhotosIncludeSubfolders
+    {
+        get => _similarPhotosIncludeSubfolders;
+        set { if (_similarPhotosIncludeSubfolders != value) { _similarPhotosIncludeSubfolders = value; OnPropertyChanged(); } }
+    }
+
+    public int SimilarPhotosMaxDistance
+    {
+        get => _similarPhotosMaxDistance;
+        set { if (_similarPhotosMaxDistance != value) { _similarPhotosMaxDistance = value; OnPropertyChanged(); } }
+    }
+
+    public string SimilarPhotosSummaryText
+    {
+        get => _similarPhotosSummaryText;
+        set { if (_similarPhotosSummaryText != value) { _similarPhotosSummaryText = value; OnPropertyChanged(); } }
+    }
+
+    public SimilarPhotoItem? SelectedSimilarPhoto
+    {
+        get => _selectedSimilarPhoto;
+        set { if (!ReferenceEquals(_selectedSimilarPhoto, value)) { _selectedSimilarPhoto = value; OnPropertyChanged(); } }
+    }
+
+    private void RefreshCleanupHistorySummary()
+    {
+        List<CleanupHistoryEntry> entries = CleanupHistoryService.LoadHistory();
+        long totalBytes = CleanupHistoryService.GetTotalLifetimeFreedBytes(entries);
+        LifetimeFreedFormatted = CleanerRule.FormatBytes(totalBytes);
+        LifetimeSessionsSummary = entries.Count > 0
+            ? $"{entries.Count:N0} oturum • {entries.Sum(e => e.ItemsProcessed):N0} öğe"
+            : "Henüz kayıtlı temizlik oturumu yok";
+
+        List<CleanupHistoryBarItem> bars = CleanupHistoryService.BuildRecentDailyBars(entries, days: 14, maxBarHeight: 54.0);
+        RecentCleanupBars.Clear();
+        foreach (CleanupHistoryBarItem bar in bars)
+            RecentCleanupBars.Add(bar);
+    }
+
+    private void RecordCleanupHistory(string moduleName, long freedBytes, int itemsProcessed)
+    {
+        if (freedBytes <= 0 && itemsProcessed <= 0)
+            return;
+
+        CleanupHistoryService.RecordSession(moduleName, freedBytes, itemsProcessed);
+        RefreshCleanupHistorySummary();
+    }
+
+    private async Task MoveTreemapNodeToRecycleBinAsync(TreemapNodeItem node)
+    {
+        if (IsBusy || !node.CanSafeDelete)
+            return;
+
+        if (ExclusionAndSettingsService.IsPathExcluded(node.FullPath, ExcludedPaths.ToList()))
+        {
+            MessageBox.Show(
+                $"'{node.FullPath}' Beyaz Liste (korunan klasörler) içinde yer aldığı için silinemez.",
+                "Beyaz Liste Koruması",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        if (SmartDiskAdvisorService.IsProtectedSystemPath(node.FullPath))
+        {
+            MessageBox.Show(
+                $"'{node.FullPath}' kritik bir Windows sistem yoludur ve doğrudan silmeye karşı korunmaktadır.",
+                "Sistem Koruması",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        var confirm = MessageBox.Show(
+            $"'{node.Name}' ({node.FormattedSize}) Geri Dönüşüm Kutusuna taşınacak.\n\n" +
+            $"Danışman Notu: {node.AdvisorSummary}\n" +
+            $"Yol: {node.FullPath}\n\nDevam edilsin mi?",
+            "Geri Dönüşüm Kutusuna Taşı",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        IsBusy = true;
+        StatusMessage = $"Geri Dönüşüm Kutusuna taşınıyor: {node.Name}...";
+        try
+        {
+            bool moved = await Task.Run(() => RecycleBinHelper.MovePathToRecycleBin(node.FullPath));
+            if (moved)
+            {
+                LastFreedBytes += node.SizeBytes;
+                LastDeletedFiles += 1;
+                RecordCleanupHistory("Treemap Güvenli Silme", node.SizeBytes, 1);
+                VisualDiskAndMediaService.ClearTreemapCache();
+                RefreshSystemMetrics();
+                AddLog($"[TREEMAP SİLME] '{node.FullPath}' ({node.FormattedSize}) Geri Dönüşüm Kutusuna taşındı.");
+                IsBusy = false;
+                await LoadTreemapAsync(forceRefresh: true);
+            }
+            else
+            {
+                string lockMsg = $"'{node.Name}' şu anda açık bir uygulama tarafından kullanılıyor olabilir (örneğin Chrome veya Claude açıkken kilitli olabilir).";
+                StatusMessage = lockMsg;
+                AddLog($"[TREEMAP UYARI] {lockMsg}");
+                MessageBox.Show(lockMsg, "Dosya Kullanımda / Taşınamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private async Task LoadDeepSpaceAsync()
+    {
+        if (IsBusy) return;
+
+        IsBusy = true;
+        DeepSpaceItems.Clear();
+        ProgressPercent = 20;
+        StatusMessage = "Dev Windows sistem alanı kaynakları (hiberfil.sys, WinSxS, CompactOS, GPU kurulumları) analiz ediliyor...";
+
+        try
+        {
+            List<DeepSpaceItem> items = await DeepSpaceRecoveryService.ScanDeepSpaceOpportunitiesAsync();
+            foreach (DeepSpaceItem item in items)
+                DeepSpaceItems.Add(item);
+
+            long knownBytes = items.Where(x => x.SizeBytes > 0 && x.ItemId != "HIBERFIL_REDUCED").Sum(x => x.SizeBytes);
+            DeepSpaceSummaryText = $"{items.Count} sistem modülü • Doğrudan {CleanerRule.FormatBytes(knownBytes)} tespit (+WinSxS/CompactOS)";
+            ProgressPercent = 100;
+            StatusMessage = $"Dev Sistem Alanı Analizi tamamlandı ({CleanerRule.FormatBytes(knownBytes)} doğrudan ölçülebilir alan).";
+            AddLog($"[DEV ALAN KURTARICI] Tarama tamamlandı: {items.Count} öğe.");
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private async Task ExecuteDeepSpaceItemAsync(DeepSpaceItem item)
+    {
+        if (IsBusy || !item.CanExecuteAction) return;
+
+        var confirm = MessageBox.Show(
+            $"'{item.Title}' çalıştırılacak.\n\nAçıklama: {item.Description}\n\nDevam edilsin mi?",
+            "Dev Sistem Alanı Kurtarıcısı",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        IsBusy = true;
+        ProgressPercent = 30;
+        StatusMessage = $"Uygulanıyor: {item.Title}...";
+
+        try
+        {
+            var (success, freed, message) = await DeepSpaceRecoveryService.ExecuteDeepSpaceActionAsync(item.ItemId);
+            if (success && freed > 0)
+            {
+                LastFreedBytes += freed;
+                RecordCleanupHistory("Dev Sistem Kurtarma", freed, 1);
+            }
+
+            RefreshSystemMetrics();
+            ProgressPercent = 100;
+            StatusMessage = message;
+            AddLog($"[DEV ALAN KURTARICI] {message}");
+
+            if (!success)
+            {
+                MessageBox.Show(message, "Sistem Alanı Kurtarma Uyarısı", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            else
+            {
+                IsBusy = false;
+                await LoadDeepSpaceAsync();
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private void BrowseSimilarPhotosFolder()
+    {
+        var dlg = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Benzer Fotoğraf Taraması İçin Klasör Seçin",
+            InitialDirectory = Directory.Exists(SimilarPhotosFolderPath)
+                ? SimilarPhotosFolderPath
+                : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+        };
+
+        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
+        {
+            SimilarPhotosFolderPath = dlg.FolderName;
+            _ = LoadSimilarPhotosAsync();
+        }
+    }
+
+    private async Task LoadSimilarPhotosAsync()
+    {
+        if (IsBusy) return;
+        if (string.IsNullOrWhiteSpace(SimilarPhotosFolderPath) || !Directory.Exists(SimilarPhotosFolderPath))
+        {
+            StatusMessage = "Geçerli bir fotoğraf klasörü seçin.";
+            return;
+        }
+
+        IsBusy = true;
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        SimilarPhotoItems.Clear();
+        ProgressPercent = 20;
+        StatusMessage = $"Perceptual dHash ile benzer fotoğraflar aranıyor: {SimilarPhotosFolderPath}";
+
+        try
+        {
+            List<SimilarPhotoItem> found = await SimilarPhotoFinderService.FindSimilarPhotosAsync(
+                SimilarPhotosFolderPath,
+                SimilarPhotosMaxDistance,
+                SimilarPhotosIncludeSubfolders,
+                _cts.Token);
+
+            foreach (SimilarPhotoItem item in found)
+                SimilarPhotoItems.Add(item);
+
+            int groups = found.Select(x => x.GroupId).Distinct().Count();
+            long reclaimable = found.Where(x => x.IsSelected).Sum(x => x.SizeBytes);
+            SimilarPhotosSummaryText = $"{groups} grup • {found.Count} fotoğraf • {CleanerRule.FormatBytes(reclaimable)} seçili kopya";
+            SelectedSimilarPhoto = SimilarPhotoItems.FirstOrDefault();
+            ProgressPercent = 100;
+            StatusMessage = $"Benzer fotoğraf taraması bitti: {groups} grup, {CleanerRule.FormatBytes(reclaimable)} kazanılabilir alan.";
+            AddLog($"[BENZER FOTOĞRAF] {groups} grupta {found.Count} fotoğraf bulundu ({CleanerRule.FormatBytes(reclaimable)} kopya).");
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Benzer fotoğraf taraması iptal edildi.";
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    private async Task CleanSelectedSimilarPhotosAsync()
+    {
+        var selected = SimilarPhotoItems.Where(x => x.IsSelected).ToList();
+        if (selected.Count == 0 || IsBusy)
+            return;
+
+        long totalBytes = selected.Sum(x => x.SizeBytes);
+        string modeText = UseRecycleBinSafety ? "Geri Dönüşüm Kutusuna taşınacak" : "KALICI OLARAK SİLİNECEK";
+        var confirm = MessageBox.Show(
+            $"Seçili {selected.Count} benzer kopya fotoğraf ({CleanerRule.FormatBytes(totalBytes)}) {modeText}.\n\nEn yüksek çözünürlüklü asıl kopyalar korunur. Devam edilsin mi?",
+            "Benzer Fotoğraf Temizliği",
+            MessageBoxButton.YesNo,
+            UseRecycleBinSafety ? MessageBoxImage.Question : MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        IsBusy = true;
+        try
+        {
+            var (deleted, freed) = await SimilarPhotoFinderService.CleanSelectedSimilarPhotosAsync(selected, UseRecycleBinSafety);
+            if (freed > 0 || deleted > 0)
+            {
+                LastFreedBytes += freed;
+                LastDeletedFiles += deleted;
+                RecordCleanupHistory("Benzer Fotoğraf Temizliği", freed, deleted);
+                RefreshSystemMetrics();
+            }
+
+            string summary = $"{deleted}/{selected.Count} benzer fotoğraf temizlendi ({CleanerRule.FormatBytes(freed)} yer açıldı).";
+            SimilarPhotosSummaryText = summary;
+            StatusMessage = summary;
+            AddLog($"[BENZER FOTOĞRAF] {summary}");
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    // ==================== 20. EXPLORER CONTEXT MENU, CLEANING PROFILES, JSON BACKUP, NTFS HARDLINK & TRAY TELEMETRY ====================
+
+    public string ExplorerContextMenuStatusText
+    {
+        get => _explorerContextMenuStatusText;
+        private set
+        {
+            if (_explorerContextMenuStatusText != value)
+            {
+                _explorerContextMenuStatusText = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    private void RefreshExplorerContextMenuStatus()
+    {
+        ExplorerContextMenuStatusText = ShellIntegrationAndProfilesService.IsExplorerContextMenuInstalled()
+            ? "✅ Durum: Windows Gezgini sağ tık menüsü AKTİF (HKCU)"
+            : "ℹ️ Durum: Windows Gezgini sağ tık menüsü henüz eklenmedi";
+    }
+
+    private CleanerConfigData BuildCurrentConfigSnapshot()
+    {
+        return new CleanerConfigData
+        {
+            ExcludedPaths = ExcludedPaths.ToList(),
+            AutoMonitorEnabled = AutoMonitorEnabled,
+            AutoMonitorThresholdMb = AutoMonitorThresholdMb,
+            MinimizeToTrayOnClose = MinimizeToTrayOnClose,
+            UseRecycleBinSafety = UseRecycleBinSafety,
+            RiskFilter = RiskFilter,
+            ScheduledMaintenanceEnabled = ScheduledMaintenanceEnabled,
+            ScheduledMaintenanceIntervalHours = ScheduledMaintenanceIntervalHours,
+            SelectedRuleIds = AllRules.Where(rule => rule.IsSelected).Select(rule => rule.Id).ToList(),
+            FavoriteSections = _favoriteSectionKeys.ToList(),
+            SelectedTheme = SelectedTheme,
+            SelectedLanguage = SelectedLanguage
+        };
+    }
+
+    private void ExecuteApplyCleaningProfile(CleaningProfileKind profile)
+    {
+        _suppressRuleWarningPrompt = true;
+        try
+        {
+            var (_, desc) = ShellIntegrationAndProfilesService.ApplyProfileToRules(AllRules, profile);
+            var selectedIds = AllRules
+                .Where(r => r.IsSelected)
+                .Select(r => r.Id)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var file in DiscoveredFiles)
+                file.IsSelected = selectedIds.Contains(file.RuleId);
+
+            RecalculateSelectedTotals();
+            SaveCurrentSettings();
+            StatusMessage = desc;
+            AddLog($"[PROFİL] {desc}");
+        }
+        finally
+        {
+            _suppressRuleWarningPrompt = false;
+        }
+    }
+
+    private void ExecuteInstallExplorerContextMenu()
+    {
+        var (success, message) = ShellIntegrationAndProfilesService.InstallExplorerContextMenu();
+        RefreshExplorerContextMenuStatus();
+        StatusMessage = message;
+        AddLog($"[SAĞ TIK MENÜSÜ] {message}");
+        if (!success)
+            MessageBox.Show(message, "Gezgin Sağ Tık Menüsü", MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private void ExecuteRemoveExplorerContextMenu()
+    {
+        var (_, message) = ShellIntegrationAndProfilesService.RemoveExplorerContextMenu();
+        RefreshExplorerContextMenuStatus();
+        StatusMessage = message;
+        AddLog($"[SAĞ TIK MENÜSÜ] {message}");
+    }
+
+    private void ExecuteExportSettingsConfig()
+    {
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "FreeCleaner Ayar Profilini Dışa Aktar",
+            Filter = "JSON Ayar Dosyası (*.json)|*.json",
+            FileName = $"FreeCleaner-Ayarlar-{DateTime.Now:yyyyMMdd}.json",
+            DefaultExt = ".json"
+        };
+
+        if (dlg.ShowDialog() != true)
+            return;
+
+        try
+        {
+            ShellIntegrationAndProfilesService.ExportSettingsToFile(BuildCurrentConfigSnapshot(), dlg.FileName);
+            StatusMessage = $"Ayar profili dışa aktarıldı: {dlg.FileName}";
+            AddLog($"[AYAR DIŞA AKTAR] Konfigürasyon kaydedildi -> {dlg.FileName}");
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ayar dışa aktarılamadı: {ex.Message}";
+            AddLog($"[HATA] Ayar dışa aktarma hatası: {ex.Message}");
+        }
+    }
+
+    private void ExecuteImportSettingsConfig()
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "FreeCleaner Ayar Profilini İçe Aktar",
+            Filter = "JSON Ayar Dosyası (*.json)|*.json|Tüm Dosyalar (*.*)|*.*"
+        };
+
+        if (dlg.ShowDialog() != true)
+            return;
+
+        try
+        {
+            CleanerConfigData imported = ShellIntegrationAndProfilesService.ImportSettingsFromFile(dlg.FileName);
+
+            ExcludedPaths.Clear();
+            foreach (string path in imported.ExcludedPaths)
+                ExcludedPaths.Add(path);
+
+            _favoriteSectionKeys.Clear();
+            foreach (string fav in imported.FavoriteSections)
+            {
+                if (!string.IsNullOrWhiteSpace(fav) && !_favoriteSectionKeys.Contains(fav, StringComparer.OrdinalIgnoreCase))
+                    _favoriteSectionKeys.Add(fav);
+            }
+            RebuildFavoriteNavItems();
+            OnPropertyChanged(nameof(IsCurrentSectionFavorite));
+            OnPropertyChanged(nameof(FavoriteButtonText));
+
+            AutoMonitorThresholdMb = imported.AutoMonitorThresholdMb;
+            AutoMonitorEnabled = imported.AutoMonitorEnabled;
+            MinimizeToTrayOnClose = imported.MinimizeToTrayOnClose;
+            UseRecycleBinSafety = imported.UseRecycleBinSafety;
+            RiskFilter = imported.RiskFilter;
+            ScheduledMaintenanceIntervalHours = imported.ScheduledMaintenanceIntervalHours;
+            ScheduledMaintenanceEnabled = imported.ScheduledMaintenanceEnabled;
+            SelectedLanguage = imported.SelectedLanguage;
+            SelectedTheme = imported.SelectedTheme;
+
+            if (imported.SelectedRuleIds.Count > 0)
+            {
+                var selectedSet = imported.SelectedRuleIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+                _suppressRuleWarningPrompt = true;
+                try
+                {
+                    foreach (var rule in AllRules)
+                        rule.IsSelected = selectedSet.Contains(rule.Id);
+
+                    foreach (var file in DiscoveredFiles)
+                        file.IsSelected = selectedSet.Contains(file.RuleId);
+
+                    RecalculateSelectedTotals();
+                }
+                finally
+                {
+                    _suppressRuleWarningPrompt = false;
+                }
+            }
+
+            SaveCurrentSettings();
+            StatusMessage = $"Ayar profili başarıyla yüklendi ({dlg.FileName}).";
+            AddLog($"[AYAR İÇE AKTAR] Profil geri yüklendi <- {dlg.FileName}");
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Ayar içe aktarılamadı: {ex.Message}";
+            MessageBox.Show($"Ayar dosyası okunamadı:\n{ex.Message}", "İçe Aktarma Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private async Task MergeDuplicatesWithHardlinksAsync()
+    {
+        var selectedDuplicates = DiskAnalyzerItems.Where(x => x.IsDuplicate && x.IsSelected).ToList();
+        if (selectedDuplicates.Count == 0)
+        {
+            StatusMessage = "Hardlink birleştirme için önce 'Çift (Kopya) Dosyaları Bul' taraması çalıştırın.";
+            return;
+        }
+
+        long potentialBytes = selectedDuplicates.Sum(x => x.SizeBytes);
+        var confirm = MessageBox.Show(
+            $"Seçili {selectedDuplicates.Count} kopya dosya ({CleanerRule.FormatBytes(potentialBytes)}) NTFS Hardlink ile orijinallerine bağlanacak.\n\n" +
+            "• İki dosya yolu da diskte yerinde kalır (0 veri kaybı).\n" +
+            "• Yalnızca aynı NTFS sürücüdeki SHA-256 birebir eşleşen dosyalar bağlanır.\n\nDevam edilsin mi?",
+            "NTFS Hardlink ile Birleştir",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        IsBusy = true;
+        StatusMessage = "SHA-256 doğrulanıyor ve NTFS hardlink bağlantıları oluşturuluyor...";
+        try
+        {
+            var result = await NtfsHardlinkService.DeduplicateWithHardlinksAsync(DiskAnalyzerItems);
+            if (result.BytesReclaimed > 0 || result.LinkedCount > 0)
+            {
+                LastFreedBytes += result.BytesReclaimed;
+                LastDeletedFiles += result.LinkedCount;
+                RecordCleanupHistory("NTFS Hardlink Birleştirme", result.BytesReclaimed, result.LinkedCount);
+                RefreshSystemMetrics();
+            }
+
+            foreach (string warning in result.Warnings.Take(8))
+                AddLog($"[HARDLINK UYARI] {warning}");
+
+            string summary = result.LinkedCount > 0
+                ? $"🔗 {result.LinkedCount} kopya NTFS hardlink ile birleştirildi — {CleanerRule.FormatBytes(result.BytesReclaimed)} gerçek disk alanı kurtarıldı (atlanan: {result.SkippedCount})."
+                : $"Yeni hardlink oluşturulamadı (atlanan: {result.SkippedCount}). Farklı sürücü, kilitli veya zaten bağlı olabilir.";
+
+            StatusMessage = summary;
+            AddLog($"[HARDLINK] {summary}");
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    public void TickTrayHealthWatcher()
+    {
+        var (cpu, ram, _, _) = _telemetrySampler.SampleNext();
+        var metrics = SystemInfoService.GetMetrics();
+        double freeGb = metrics.DriveFreeBytes / (1024.0 * 1024.0 * 1024.0);
+
+        TrayTooltipUpdateRequested?.Invoke(cpu, ram, freeGb, metrics.DriveUsedPercent);
+
+        var alert = FlagshipTelemetryAndThemeService.EvaluateCriticalAlerts(
+            ram,
+            metrics.DriveUsedPercent,
+            freeGb,
+            DateTime.UtcNow,
+            ref _lastDiskAlertUtc,
+            ref _lastRamAlertUtc);
+
+        if ((alert.TriggerDiskAlert || alert.TriggerRamAlert) &&
+            !string.IsNullOrEmpty(alert.Title) &&
+            !string.IsNullOrEmpty(alert.Message))
+        {
+            TrayNotificationRequested?.Invoke(alert.Title, alert.Message, true);
+            AddLog($"[CANLI TRAY UYARISI] {alert.Message}");
+        }
+    }
+
+    public async Task ApplyCliLaunchActionAsync(CliLaunchAction action)
+    {
+        switch (action.Kind)
+        {
+            case CliLaunchActionKind.ScheduledMaintenance:
+                await RunScheduledMaintenanceAsync(closeWhenFinished: true);
+                break;
+
+            case CliLaunchActionKind.OpenTreemap:
+                ActiveSection = "DiskTreemap";
+                if (!string.IsNullOrWhiteSpace(action.TargetPath) && Directory.Exists(action.TargetPath))
+                    TreemapCurrentPath = action.TargetPath;
+                await LoadTreemapAsync(forceRefresh: true);
+                break;
+
+            case CliLaunchActionKind.OpenExifScrubber:
+                ActiveSection = "ExifScrubber";
+                if (!string.IsNullOrWhiteSpace(action.TargetPath) && Directory.Exists(action.TargetPath))
+                    ExifScanFolderPath = action.TargetPath;
+                await LoadPhotoMetadataAsync();
+                break;
+
+            case CliLaunchActionKind.OpenSimilarPhotos:
+                ActiveSection = "SimilarPhotos";
+                if (!string.IsNullOrWhiteSpace(action.TargetPath) && Directory.Exists(action.TargetPath))
+                    SimilarPhotosFolderPath = action.TargetPath;
+                await LoadSimilarPhotosAsync();
+                break;
+
+            case CliLaunchActionKind.OpenDeepSpace:
+                ActiveSection = "DeepSpaceRecovery";
+                await LoadDeepSpaceAsync();
+                break;
+
+            case CliLaunchActionKind.QuickHealthCheck:
+                ActiveSection = "Dashboard";
+                await RunOneClickHealthCheckAsync();
+                break;
+        }
+    }
+
+}

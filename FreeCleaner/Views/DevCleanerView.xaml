@@ -1,0 +1,133 @@
+<UserControl x:Class="FreeCleaner.Views.DevCleanerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Visual Studio Debug & Retail Dedicated Auto-Clean Card -->
+            <Border Grid.Row="0"
+                    Background="{DynamicResource BgCardBrush}"
+                    BorderBrush="{DynamicResource AccentBlueBrush}"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Padding="14,12"
+                    Margin="0,0,0,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="&#xE943;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource AccentBlueBrush}" FontSize="15" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Visual Studio Projeleri: Debug &amp; Retail / Release Otomatik Temizleyici"
+                                       FontWeight="Bold"
+                                       FontSize="13.5"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </StackPanel>
+                        <TextBlock Text="Seçilen klasör altındaki tüm .sln, .slnx, .csproj ve .vcxproj projelerinin Debug, Retail, Release, x64 ve obj derleme çıktılarını otomatik bulur ve siler."
+                                   FontSize="11.5"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,0,8"/>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox IsChecked="{Binding VsIncludeDebug}"
+                                      Content="Debug Klasörleri (bin\Debug, obj\Debug, x64\Debug)"
+                                      Foreground="{DynamicResource TextPrimaryBrush}"
+                                      FontSize="12"
+                                      Margin="0,0,16,0"/>
+                            <CheckBox IsChecked="{Binding VsIncludeRetailAndRelease}"
+                                      Content="Retail &amp; Release Klasörleri (Retail, Release)"
+                                      Foreground="{DynamicResource TextPrimaryBrush}"
+                                      FontSize="12"
+                                      Margin="0,0,16,0"/>
+                            <CheckBox IsChecked="{Binding VsIncludeObjAndVs}"
+                                      Content=".vs, ipch &amp; Ara Derleme (obj) Klasörleri"
+                                      Foreground="{DynamicResource TextPrimaryBrush}"
+                                      FontSize="12"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                Content="VS Debug/Retail Tara"
+                                Command="{Binding ScanVsDebugRetailCommand}"
+                                Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource CleanButtonStyle}"
+                                Content="VS Debug &amp; Retail Otomatik Sil"
+                                Command="{Binding AutoCleanVsDebugRetailCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- General Dev Workspace & Gamer Toolbar -->
+            <Grid Grid.Row="1" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Projeler Kök Dizini:" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
+                    <TextBox Text="{Binding DevWorkspacePath, UpdateSourceTrigger=PropertyChanged}"
+                             Width="260"
+                             Background="{DynamicResource BgCardBrush}"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             BorderBrush="{DynamicResource BorderSubtleBrush}"
+                             Padding="8,6"
+                             VerticalContentAlignment="Center"
+                             Margin="0,0,6,0"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="Klasör Seç..."
+                            Command="{Binding BrowseDevWorkspaceCommand}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="Tüm Proje Çıktılarını Tara (node_modules, .venv)"
+                            Command="{Binding ScanDevProjectsCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="Oyun &amp; Paket Önbellekleri (Steam, Shader, NuGet)"
+                            Command="{Binding ScanGamerCachesCommand}"
+                            Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="Listeden Seçilileri Sil"
+                            Command="{Binding CleanDevArtifactsCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding DevArtifactItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="32">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
+                    <DataGridTextColumn Header="Proje / Hedef Adı" Binding="{Binding ProjectName}" IsReadOnly="True" Width="210"/>
+                    <DataGridTextColumn Header="Klasör Türü" Binding="{Binding ArtifactType}" IsReadOnly="True" Width="150"/>
+                    <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="105"/>
+                    <DataGridTextColumn Header="Son Değişiklik" Binding="{Binding FormattedDate}" IsReadOnly="True" Width="125"/>
+                    <DataGridTextColumn Header="Tam Klasör Yolu" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

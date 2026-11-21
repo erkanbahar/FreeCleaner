@@ -171,7 +171,21 @@ public static class LocalizationService
         ["Loc_ExifColCamera"] = "Kamera / Cihaz",
         ["Loc_ExifColDate"] = "Çekim Tarihi",
         ["Loc_ExifColMeta"] = "Tespit Edilen Meta Veriler",
-        ["Loc_ExifColStatus"] = "İşlem Durumu"
+        ["Loc_ExifColStatus"] = "İşlem Durumu",
+
+        ["Loc_SettingsShellTitle"] = "Windows Gezgini Sağ Tık Menüsü & CLI Entegrasyonu",
+        ["Loc_SettingsShellDesc"] = "Yönetici izni olmadan mevcut kullanıcı (HKCU) için klasör sağ tık menüsüne Treemap, EXIF Temizleyici ve Benzer Fotoğraf kısayolları ekler.",
+        ["Loc_SettingsShellInstallBtn"] = "🖱️ Sağ Tık Menüsünü Yükle",
+        ["Loc_SettingsShellRemoveBtn"] = "🗑️ Sağ Tık Menüsünü Kaldır",
+        ["Loc_SettingsBackupTitle"] = "Ayar Profili Yedekleme (JSON Dışa / İçe Aktar)",
+        ["Loc_SettingsBackupDesc"] = "Seçili kurallar, tema, dil, favori modüller ve dışlama listenizi taşınabilir bir JSON dosyasına kaydedin veya geri yükleyin.",
+        ["Loc_SettingsExportCfgBtn"] = "📤 Ayarları Dışa Aktar (.json)",
+        ["Loc_SettingsImportCfgBtn"] = "📥 Ayarları İçe Aktar (.json)",
+        ["Loc_ProfileSafeBtn"] = "🛡️ Güvenli Günlük",
+        ["Loc_ProfileDevBtn"] = "🛠️ Geliştirici",
+        ["Loc_ProfileGamerBtn"] = "🎮 Oyuncu",
+        ["Loc_ProfilePrivacyBtn"] = "🕵️ Gizlilik",
+        ["Loc_HardlinkMergeBtn"] = "🔗 Hardlink Birleştir (0 Veri Kaybı)"
     };
 
     private static readonly Dictionary<string, string> EnStrings = new(StringComparer.Ordinal)
@@ -328,7 +342,21 @@ public static class LocalizationService
         ["Loc_ExifColCamera"] = "Camera / Device",
         ["Loc_ExifColDate"] = "Date Taken",
         ["Loc_ExifColMeta"] = "Detected Metadata",
-        ["Loc_ExifColStatus"] = "Status"
+        ["Loc_ExifColStatus"] = "Status",
+
+        ["Loc_SettingsShellTitle"] = "Windows Explorer Context Menu & CLI Integration",
+        ["Loc_SettingsShellDesc"] = "Adds Treemap, EXIF Scrubber, and Similar Photo shortcuts to folder right-click menus under current user (HKCU) without admin rights.",
+        ["Loc_SettingsShellInstallBtn"] = "🖱️ Install Right-Click Menu",
+        ["Loc_SettingsShellRemoveBtn"] = "🗑️ Remove Right-Click Menu",
+        ["Loc_SettingsBackupTitle"] = "Settings Profile Backup (JSON Export / Import)",
+        ["Loc_SettingsBackupDesc"] = "Save or restore your selected rules, theme, language, pinned sidebar tools, and exclusion list as a portable JSON file.",
+        ["Loc_SettingsExportCfgBtn"] = "📤 Export Settings (.json)",
+        ["Loc_SettingsImportCfgBtn"] = "📥 Import Settings (.json)",
+        ["Loc_ProfileSafeBtn"] = "🛡️ Safe Daily",
+        ["Loc_ProfileDevBtn"] = "🛠️ Developer",
+        ["Loc_ProfileGamerBtn"] = "🎮 Gamer Boost",
+        ["Loc_ProfilePrivacyBtn"] = "🕵️ Max Privacy",
+        ["Loc_HardlinkMergeBtn"] = "🔗 Merge via Hardlink (Zero Data Loss)"
     };
 
     public static IReadOnlyCollection<string> GetAllKeys(string? langCode)

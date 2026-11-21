@@ -466,4 +466,178 @@ public class NextGenUpgradesTests
         BinaryPrimitives.WriteUInt32LittleEndian(dest[4..], count);
         BinaryPrimitives.WriteUInt32LittleEndian(dest[8..], valueOrOffset);
     }
+
+    [Fact]
+    public void ShellIntegrationAndProfilesService_ParsesCliArgsAndAppliesProfiles()
+    {
+        var treemap = ShellIntegrationAndProfilesService.ParseStartupArguments(["--treemap", "\"C:\\Work\""]);
+        Assert.Equal(CliLaunchActionKind.OpenTreemap, treemap.Kind);
+        Assert.Equal(@"C:\Work", treemap.TargetPath);
+
+        var rootDrive = ShellIntegrationAndProfilesService.ParseStartupArguments(["--treemap", "C:\""]);
+        Assert.Equal(CliLaunchActionKind.OpenTreemap, rootDrive.Kind);
+        Assert.Equal(@"C:\", rootDrive.TargetPath);
+
+        var exif = ShellIntegrationAndProfilesService.ParseStartupArguments(["--exif=D:\\Photos"]);
+        Assert.Equal(CliLaunchActionKind.OpenExifScrubber, exif.Kind);
+        Assert.Equal(@"D:\Photos", exif.TargetPath);
+
+        var similar = ShellIntegrationAndProfilesService.ParseStartupArguments(["--similar", @"E:\Shots"]);
+        Assert.Equal(CliLaunchActionKind.OpenSimilarPhotos, similar.Kind);
+        Assert.Equal(@"E:\Shots", similar.TargetPath);
+
+        Assert.Equal(CliLaunchActionKind.OpenDeepSpace,
+            ShellIntegrationAndProfilesService.ParseStartupArguments(["--deep-space"]).Kind);
+        Assert.Equal(CliLaunchActionKind.QuickHealthCheck,
+            ShellIntegrationAndProfilesService.ParseStartupArguments(["--health-check"]).Kind);
+        Assert.Equal(CliLaunchActionKind.ScheduledMaintenance,
+            ShellIntegrationAndProfilesService.ParseStartupArguments(["--scheduled-maintenance"]).Kind);
+
+        var rules = new List<FreeCleaner.Models.CleanerRule>
+        {
+            new() { Id = "win_temp", Name = "Windows Temp", Category = "Sistem", Description = "Geçici dosyalar", IconGlyph = "\uE7F8", Group = FreeCleaner.Models.RuleGroup.System, RiskLevel = FreeCleaner.Models.RiskLevel.Low },
+            new() { Id = "browser_cache", Name = "Chrome Cache", Category = "Tarayıcı", Description = "Önbellek", IconGlyph = "\uE774", Group = FreeCleaner.Models.RuleGroup.Browsers, RiskLevel = FreeCleaner.Models.RiskLevel.Low },
+            new() { Id = "browser_cookies", Name = "Chrome Cookies", Category = "Tarayıcı", Description = "Çerezler", IconGlyph = "\uE774", Group = FreeCleaner.Models.RuleGroup.Browsers, RiskLevel = FreeCleaner.Models.RiskLevel.High },
+            new() { Id = "nuget_cache", Name = "NuGet Cache", Category = "Geliştirici", Description = "Paket önbelleği", IconGlyph = "\uE943", Group = FreeCleaner.Models.RuleGroup.DeveloperAndApps, RiskLevel = FreeCleaner.Models.RiskLevel.Medium },
+            new() { Id = "gpu_shader", Name = "NVIDIA DX Shader Cache", Category = "Geliştirici", Description = "Shader", IconGlyph = "\uE7FC", Group = FreeCleaner.Models.RuleGroup.DeveloperAndApps, RiskLevel = FreeCleaner.Models.RiskLevel.Low }
+        };
+
+        ShellIntegrationAndProfilesService.ApplyProfileToRules(rules, CleaningProfileKind.SafeDaily);
+        Assert.True(rules[0].IsSelected);
+        Assert.True(rules[1].IsSelected);
+        Assert.False(rules[2].IsSelected);
+        Assert.False(rules[3].IsSelected);
+
+        ShellIntegrationAndProfilesService.ApplyProfileToRules(rules, CleaningProfileKind.DeveloperDeep);
+        Assert.True(rules[0].IsSelected);
+        Assert.True(rules[3].IsSelected);
+        Assert.False(rules[2].IsSelected);
+
+        ShellIntegrationAndProfilesService.ApplyProfileToRules(rules, CleaningProfileKind.GamerBoost);
+        Assert.True(rules[0].IsSelected);
+        Assert.True(rules[4].IsSelected);
+        Assert.False(rules[2].IsSelected);
+
+        ShellIntegrationAndProfilesService.ApplyProfileToRules(rules, CleaningProfileKind.MaxPrivacy);
+        Assert.True(rules[1].IsSelected);
+        Assert.True(rules[2].IsSelected);
+
+        string tempJson = Path.Combine(Path.GetTempPath(), $"fc_cfg_{Guid.NewGuid():N}.json");
+        try
+        {
+            var cfg = new CleanerConfigData
+            {
+                AutoMonitorEnabled = true,
+                AutoMonitorThresholdMb = 2048,
+                SelectedTheme = "CyberEmerald",
+                SelectedLanguage = "en-US",
+                SelectedRuleIds = ["win_temp", "nuget_cache"]
+            };
+
+            ShellIntegrationAndProfilesService.ExportSettingsToFile(cfg, tempJson);
+            CleanerConfigData restored = ShellIntegrationAndProfilesService.ImportSettingsFromFile(tempJson);
+
+            Assert.True(restored.AutoMonitorEnabled);
+            Assert.Equal(2048, restored.AutoMonitorThresholdMb);
+            Assert.Equal("CyberEmerald", restored.SelectedTheme);
+            Assert.Equal("en-US", restored.SelectedLanguage);
+            Assert.Equal(["win_temp", "nuget_cache"], restored.SelectedRuleIds);
+        }
+        finally
+        {
+            if (File.Exists(tempJson))
+                File.Delete(tempJson);
+        }
+    }
+
+    [Fact]
+    public async Task NtfsHardlinkService_DeduplicatesIdenticalFilesPreservingBothPaths()
+    {
+        string tempDir = Path.Combine(Path.GetTempPath(), $"FreeCleanerHardlinkTest_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            string fileA = Path.Combine(tempDir, "master.bin");
+            string fileB = Path.Combine(tempDir, "dup_identical.bin");
+            string fileC = Path.Combine(tempDir, "dup_mismatch.bin");
+
+            if (!NtfsHardlinkService.IsNtfsSameVolume(fileA, fileB))
+                return;
+
+            byte[] payload = new byte[128 * 1024];
+            new Random(42).NextBytes(payload);
+            await File.WriteAllBytesAsync(fileA, payload);
+            await File.WriteAllBytesAsync(fileB, payload);
+
+            byte[] altered = (byte[])payload.Clone();
+            altered[0] ^= 0xFF;
+            await File.WriteAllBytesAsync(fileC, altered);
+
+            var items = new List<FreeCleaner.Models.LargeOrDuplicateFileItem>
+            {
+                new() { FileName = "master.bin", Extension = ".bin", FullPath = fileA, SizeBytes = payload.Length, LastModified = DateTime.UtcNow, IsDuplicate = true, DuplicateGroupHash = "GRP1", IsSelected = false },
+                new() { FileName = "dup_identical.bin", Extension = ".bin", FullPath = fileB, SizeBytes = payload.Length, LastModified = DateTime.UtcNow, IsDuplicate = true, DuplicateGroupHash = "GRP1", IsSelected = true },
+                new() { FileName = "dup_mismatch.bin", Extension = ".bin", FullPath = fileC, SizeBytes = payload.Length, LastModified = DateTime.UtcNow, IsDuplicate = true, DuplicateGroupHash = "GRP1", IsSelected = true }
+            };
+
+            HardlinkDeduplicationResult result = await NtfsHardlinkService.DeduplicateWithHardlinksAsync(items);
+
+            Assert.Equal(1, result.LinkedCount);
+            Assert.Equal(1, result.SkippedCount);
+            Assert.Equal(payload.Length, result.BytesReclaimed);
+            Assert.True(File.Exists(fileA));
+            Assert.True(File.Exists(fileB));
+            Assert.True(File.Exists(fileC));
+            Assert.True(NtfsHardlinkService.AreSameNtfsFile(fileA, fileB));
+            Assert.False(NtfsHardlinkService.AreSameNtfsFile(fileA, fileC));
+            Assert.Equal(payload, await File.ReadAllBytesAsync(fileB));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+                Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SystemTrayService_FormatTrayTooltip_StaysWithin63CharLimit()
+    {
+        string normal = SystemTrayService.FormatTrayTooltip(24.4, 61.8, 142.3);
+        Assert.InRange(normal.Length, 10, 63);
+        Assert.Contains("CPU %24", normal);
+        Assert.Contains("RAM %62", normal);
+
+        string extreme = SystemTrayService.FormatTrayTooltip(999, 999, 999999999999999);
+        Assert.True(extreme.Length <= 63);
+        Assert.False(string.IsNullOrWhiteSpace(extreme));
+    }
+
+    [Fact]
+    public void FlagshipTelemetryAndThemeService_EvaluateCriticalAlerts_TriggersAndRespectsCooldown()
+    {
+        DateTime lastDisk = DateTime.MinValue;
+        DateTime lastRam = DateTime.MinValue;
+        DateTime t0 = new(2026, 11, 21, 12, 0, 0, DateTimeKind.Utc);
+
+        var ok = FlagshipTelemetryAndThemeService.EvaluateCriticalAlerts(70, 80, 120, t0, ref lastDisk, ref lastRam);
+        Assert.False(ok.TriggerDiskAlert);
+        Assert.False(ok.TriggerRamAlert);
+        Assert.Null(ok.Title);
+
+        var first = FlagshipTelemetryAndThemeService.EvaluateCriticalAlerts(95, 92, 12, t0, ref lastDisk, ref lastRam, cooldownMinutes: 30);
+        Assert.True(first.TriggerDiskAlert);
+        Assert.True(first.TriggerRamAlert);
+        Assert.False(string.IsNullOrWhiteSpace(first.Title));
+        Assert.Equal(t0, lastDisk);
+        Assert.Equal(t0, lastRam);
+
+        var cooled = FlagshipTelemetryAndThemeService.EvaluateCriticalAlerts(96, 94, 10, t0.AddMinutes(5), ref lastDisk, ref lastRam, cooldownMinutes: 30);
+        Assert.False(cooled.TriggerDiskAlert);
+        Assert.False(cooled.TriggerRamAlert);
+
+        var reFired = FlagshipTelemetryAndThemeService.EvaluateCriticalAlerts(96, 94, 10, t0.AddMinutes(31), ref lastDisk, ref lastRam, cooldownMinutes: 30);
+        Assert.True(reFired.TriggerDiskAlert);
+        Assert.True(reFired.TriggerRamAlert);
+    }
 }

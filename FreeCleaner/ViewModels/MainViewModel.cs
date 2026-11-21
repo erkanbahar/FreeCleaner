@@ -26,11 +26,12 @@ public class RelayCommand(Action<object?> execute, Predicate<object?>? canExecut
 
 public sealed record SimilarSensitivityOption(string Label, int MaxDistance);
 
-public class MainViewModel : INotifyPropertyChanged
+public partial class MainViewModel : INotifyPropertyChanged
 {
     private readonly CleanerEngine _engine = new();
     private readonly DispatcherTimer _autoMonitorTimer;
     private readonly DispatcherTimer _liveTelemetryTimer;
+    private readonly DispatcherTimer _trayWatcherTimer;
     private readonly LiveSystemTelemetrySampler _telemetrySampler = new();
     private readonly List<double> _cpuHistory = [];
     private readonly List<double> _ramHistory = [];
@@ -42,6 +43,10 @@ public class MainViewModel : INotifyPropertyChanged
         "FreeCleaner",
         "activity.log");
     private CancellationTokenSource? _cts;
+    private DateTime _lastDiskAlertUtc = DateTime.MinValue;
+    private DateTime _lastRamAlertUtc = DateTime.MinValue;
+    private string _explorerContextMenuStatusText = string.Empty;
+    private bool _suppressRuleWarningPrompt;
 
     private string _activeSection = "Dashboard";
     private string _selectedTheme = "ObsidianNeon";
@@ -232,6 +237,7 @@ public class MainViewModel : INotifyPropertyChanged
     public string AppVersionDisplay => $"v{AppUpdateService.CurrentVersion} • .NET 10";
 
     public event Action<string, string, bool>? TrayNotificationRequested;
+    public event Action<double, double, double, double>? TrayTooltipUpdateRequested;
 
     // Cleaner Commands
     public ICommand AnalyzeCommand { get; }
@@ -472,6 +478,14 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand ScanSimilarPhotosCommand { get; }
     public ICommand CleanSelectedSimilarPhotosCommand { get; }
     public ICommand OpenSimilarPhotoLocationCommand { get; }
+
+    // 13th Gen Explorer Context Menu, Cleaning Profiles, Settings JSON Backup & NTFS Hardlink Commands
+    public ICommand ApplyCleaningProfileCommand { get; }
+    public ICommand InstallExplorerContextMenuCommand { get; }
+    public ICommand RemoveExplorerContextMenuCommand { get; }
+    public ICommand ExportSettingsConfigCommand { get; }
+    public ICommand ImportSettingsConfigCommand { get; }
+    public ICommand MergeDuplicatesWithHardlinksCommand { get; }
 
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
@@ -951,11 +965,34 @@ public class MainViewModel : INotifyPropertyChanged
                 OpenExplorerPath(photo.FullPath);
         });
 
+        // 13th Gen Commands
+        ApplyCleaningProfileCommand = new RelayCommand(param =>
+        {
+            if (param is string profileKey && Enum.TryParse<CleaningProfileKind>(profileKey, ignoreCase: true, out var profile))
+                ExecuteApplyCleaningProfile(profile);
+            else if (param is CleaningProfileKind directProfile)
+                ExecuteApplyCleaningProfile(directProfile);
+        }, _ => !IsBusy);
+        InstallExplorerContextMenuCommand = new RelayCommand(_ => ExecuteInstallExplorerContextMenu());
+        RemoveExplorerContextMenuCommand = new RelayCommand(_ => ExecuteRemoveExplorerContextMenu());
+        ExportSettingsConfigCommand = new RelayCommand(_ => ExecuteExportSettingsConfig());
+        ImportSettingsConfigCommand = new RelayCommand(_ => ExecuteImportSettingsConfig());
+        MergeDuplicatesWithHardlinksCommand = new RelayCommand(
+            async _ => await MergeDuplicatesWithHardlinksAsync(),
+            _ => !IsBusy && DiskAnalyzerItems.Any(x => x.IsDuplicate && x.IsSelected));
+
         _liveTelemetryTimer = new DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(1)
         };
         _liveTelemetryTimer.Tick += (_, _) => TickLiveTelemetry();
+
+        _trayWatcherTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(30)
+        };
+        _trayWatcherTimer.Tick += (_, _) => TickTrayHealthWatcher();
+        _trayWatcherTimer.Start();
 
         // Background Auto-Monitor Timer (checks every 5 minutes if enabled)
         _autoMonitorTimer = new DispatcherTimer
@@ -973,6 +1010,7 @@ public class MainViewModel : INotifyPropertyChanged
         LocalizationService.ApplyLanguage(_selectedLanguage);
         ThemeManagerService.ApplyTheme(_selectedTheme);
         RefreshCleanupHistorySummary();
+        RefreshExplorerContextMenuStatus();
         UpdateHealthScoreSummary(0, StartupItems.Count);
         AddLog("FreeCleaner Pro (.NET 10) başlatıldı: Dashboard Geçmişi, Akıllı Treemap Danışmanı, Dev Alan Kurtarıcı, dHash & 57 Modül hazır.");
     }
@@ -1545,7 +1583,8 @@ public class MainViewModel : INotifyPropertyChanged
     {
         if (e.PropertyName == nameof(CleanerRule.IsSelected) && sender is CleanerRule changedRule)
         {
-            if (changedRule.IsSelected &&
+            if (!_suppressRuleWarningPrompt &&
+                changedRule.IsSelected &&
                 (changedRule.RequiresWarning || changedRule.RiskLevel == RiskLevel.High) &&
                 !string.IsNullOrEmpty(changedRule.WarningMessage))
             {
@@ -2377,21 +2416,7 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void SaveCurrentSettings()
     {
-        ExclusionAndSettingsService.Save(new CleanerConfigData
-        {
-            ExcludedPaths = ExcludedPaths.ToList(),
-            AutoMonitorEnabled = AutoMonitorEnabled,
-            AutoMonitorThresholdMb = AutoMonitorThresholdMb,
-            MinimizeToTrayOnClose = MinimizeToTrayOnClose,
-            UseRecycleBinSafety = UseRecycleBinSafety,
-            RiskFilter = RiskFilter,
-            ScheduledMaintenanceEnabled = ScheduledMaintenanceEnabled,
-            ScheduledMaintenanceIntervalHours = ScheduledMaintenanceIntervalHours,
-            SelectedRuleIds = AllRules.Where(rule => rule.IsSelected).Select(rule => rule.Id).ToList(),
-            FavoriteSections = _favoriteSectionKeys.ToList(),
-            SelectedTheme = SelectedTheme,
-            SelectedLanguage = SelectedLanguage
-        });
+        ExclusionAndSettingsService.Save(BuildCurrentConfigSnapshot());
     }
 
     private async Task CheckAutoMonitorThresholdAsync()
@@ -5533,6 +5558,25 @@ public class MainViewModel : INotifyPropertyChanged
                 if (CheckForUpdatesCommand.CanExecute(null))
                     CheckForUpdatesCommand.Execute(null);
                 break;
+            case "CMD:ProfileSafe":
+                ActiveSection = "All";
+                ExecuteApplyCleaningProfile(CleaningProfileKind.SafeDaily);
+                break;
+            case "CMD:ProfileDev":
+                ActiveSection = "All";
+                ExecuteApplyCleaningProfile(CleaningProfileKind.DeveloperDeep);
+                break;
+            case "CMD:ProfileGamer":
+                ActiveSection = "All";
+                ExecuteApplyCleaningProfile(CleaningProfileKind.GamerBoost);
+                break;
+            case "CMD:ProfilePrivacy":
+                ActiveSection = "All";
+                ExecuteApplyCleaningProfile(CleaningProfileKind.MaxPrivacy);
+                break;
+            case "CMD:ExportSettings":
+                ExecuteExportSettingsConfig();
+                break;
             default:
                 ActiveSection = item.SectionKey;
                 break;
@@ -5724,6 +5768,11 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("CMD:OptimizeRam", "🧠 Hızlı Eylem: RAM Belleğini Şimdi Boşalt", "\uE945", "Hızlı Komut", "ram bellek bosalt memory boost");
         AddEntry("CMD:FlushDns", "🌐 Hızlı Eylem: DNS Önbelleğini Temizle (flushdns)", "\uE701", "Hızlı Komut", "dns flush ip yenile");
         AddEntry("CMD:CheckUpdate", "🔄 Hızlı Eylem: Yeni Sürüm Kontrol Et (GitHub Releases)", "\uE895", "Hızlı Komut", "guncelleme update version release github");
+        AddEntry("CMD:ProfileSafe", "🛡️ Profil Uygula: Güvenli Günlük Temizlik Kural Seti", "\uEA18", "Hızlı Komut", "profil safe gunluk temizlik kural");
+        AddEntry("CMD:ProfileDev", "🛠️ Profil Uygula: Geliştirici Derin (SDK / Cache) Kural Seti", "\uE943", "Hızlı Komut", "profil developer gelistirici sdk cache nuget npm");
+        AddEntry("CMD:ProfileGamer", "🎮 Profil Uygula: Oyuncu Boost (GPU / Shader / Temp)", "\uE7FC", "Hızlı Komut", "profil gamer oyuncu shader directx steam temp");
+        AddEntry("CMD:ProfilePrivacy", "🕵️ Profil Uygula: Maksimum Gizlilik (Tarayıcı / Telemetri)", "\uE72E", "Hızlı Komut", "profil gizlilik privacy cookie gecmis history");
+        AddEntry("CMD:ExportSettings", "📤 Hızlı Eylem: Ayar Profilini JSON Olarak Dışa Aktar", "\uE74E", "Hızlı Komut", "ayar yedek export import json profil");
 
         // All 57 Modules
         AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "\uE80F", "Temizlik & Bakış", "dashboard ana sayfa saglik skoru gecmis lifetime");
@@ -5786,792 +5835,6 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("BrowserExtensions", "Tarayıcı Eklentileri Denetçisi", "\uEA86", "Geliştirici & AI", "extension eklenti chrome edge");
         AddEntry("DriversUpdates", "KB Güncellemeler & Sürücü Deposu", "\uE777", "Geliştirici & AI", "hotfix kb driverstore pnputil");
         AddEntry("Settings", "Tema, Dil, Güncelleme, Beyaz Liste & Raporlar", "\uE713", "Ayarlar & Tema", "tema theme dil language tr en guncelle update tray sistem tepsisi whitelist ayarlar rapor");
-    }
-
-    // ==================== 18. DISK TREEMAP, EXIF SCRUBBER, LANGUAGE SWITCHER & APP UPDATE CHECKER ====================
-
-    public string SelectedLanguage
-    {
-        get => _selectedLanguage;
-        set
-        {
-            string normalized = LocalizationService.NormalizeLanguageCode(value);
-            if (_selectedLanguage != normalized)
-            {
-                _selectedLanguage = normalized;
-                LocalizationService.ApplyLanguage(_selectedLanguage);
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(SectionTitle));
-                OnPropertyChanged(nameof(AdminStatusBadge));
-                OnPropertyChanged(nameof(FavoriteButtonText));
-                SaveCurrentSettings();
-                StatusMessage = _selectedLanguage == "en-US"
-                    ? "Language switched to English (en-US)."
-                    : "Uygulama dili Türkçe (tr-TR) olarak güncellendi.";
-                AddLog($"[DİL / LANGUAGE] Arayüz dili '{_selectedLanguage}' olarak değiştirildi.");
-            }
-        }
-    }
-
-    public string UpdateStatusText
-    {
-        get => _updateStatusText;
-        set { if (_updateStatusText != value) { _updateStatusText = value; OnPropertyChanged(); } }
-    }
-
-    public string TreemapCurrentPath
-    {
-        get => _treemapCurrentPath;
-        set { if (_treemapCurrentPath != value) { _treemapCurrentPath = value; OnPropertyChanged(); } }
-    }
-
-    public string TreemapSummaryText
-    {
-        get => _treemapSummaryText;
-        set { if (_treemapSummaryText != value) { _treemapSummaryText = value; OnPropertyChanged(); } }
-    }
-
-    public string ExifScanFolderPath
-    {
-        get => _exifScanFolderPath;
-        set { if (_exifScanFolderPath != value) { _exifScanFolderPath = value; OnPropertyChanged(); } }
-    }
-
-    public bool ExifIncludeSubfolders
-    {
-        get => _exifIncludeSubfolders;
-        set { if (_exifIncludeSubfolders != value) { _exifIncludeSubfolders = value; OnPropertyChanged(); } }
-    }
-
-    public bool ExifCreateBackup
-    {
-        get => _exifCreateBackup;
-        set { if (_exifCreateBackup != value) { _exifCreateBackup = value; OnPropertyChanged(); } }
-    }
-
-    public bool ExifOptimizeJpeg
-    {
-        get => _exifOptimizeJpeg;
-        set { if (_exifOptimizeJpeg != value) { _exifOptimizeJpeg = value; OnPropertyChanged(); } }
-    }
-
-    public string ExifSummaryText
-    {
-        get => _exifSummaryText;
-        set { if (_exifSummaryText != value) { _exifSummaryText = value; OnPropertyChanged(); } }
-    }
-
-    public bool IsTreemapScanning
-    {
-        get => _isTreemapScanning;
-        set { if (_isTreemapScanning != value) { _isTreemapScanning = value; OnPropertyChanged(); } }
-    }
-
-    public int TreemapScanPercent
-    {
-        get => _treemapScanPercent;
-        set { if (_treemapScanPercent != value) { _treemapScanPercent = value; OnPropertyChanged(); } }
-    }
-
-    public bool IsTreemapIndeterminate
-    {
-        get => _isTreemapIndeterminate;
-        set { if (_isTreemapIndeterminate != value) { _isTreemapIndeterminate = value; OnPropertyChanged(); } }
-    }
-
-    public string TreemapScanStatusDetail
-    {
-        get => _treemapScanStatusDetail;
-        set { if (_treemapScanStatusDetail != value) { _treemapScanStatusDetail = value; OnPropertyChanged(); } }
-    }
-
-    public string TreemapActiveScanPath
-    {
-        get => _treemapActiveScanPath;
-        set { if (_treemapActiveScanPath != value) { _treemapActiveScanPath = value; OnPropertyChanged(); } }
-    }
-
-    public void UpdateTreemapViewport(double width, double height)
-    {
-        if (width <= 32 || height <= 32)
-            return;
-
-        if (Math.Abs(_treemapCanvasWidth - width) < 2.0 && Math.Abs(_treemapCanvasHeight - height) < 2.0)
-            return;
-
-        _treemapCanvasWidth = width;
-        _treemapCanvasHeight = height;
-
-        if (_lastTreemapRawEntries.Count == 0)
-            return;
-
-        var recomputed = VisualDiskAndMediaService.ComputeTreemapLayout(_lastTreemapRawEntries, width, height);
-        TreemapNodes.Clear();
-        foreach (TreemapNodeItem node in recomputed)
-            TreemapNodes.Add(node);
-    }
-
-    private async Task SelectTreemapPresetAsync(string preset)
-    {
-        string target = preset switch
-        {
-            "C" => @"C:\",
-            "User" => Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            "Downloads" => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
-            "Desktop" => Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-            "AppData" => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            _ => TreemapCurrentPath
-        };
-
-        if (string.IsNullOrWhiteSpace(target) || !Directory.Exists(target))
-        {
-            StatusMessage = $"Klasör bulunamadı: {target}";
-            return;
-        }
-
-        TreemapCurrentPath = target;
-        await LoadTreemapAsync(forceRefresh: false);
-    }
-
-    private void BrowseTreemapFolder()
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "Görsel Disk Haritası (Treemap) İçin Klasör Seçin",
-            InitialDirectory = Directory.Exists(TreemapCurrentPath)
-                ? TreemapCurrentPath
-                : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
-        };
-
-        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
-        {
-            TreemapCurrentPath = dlg.FolderName;
-            _ = LoadTreemapAsync(forceRefresh: false);
-        }
-    }
-
-    private async Task NavigateTreemapParentAsync()
-    {
-        if (string.IsNullOrWhiteSpace(TreemapCurrentPath))
-            return;
-
-        DirectoryInfo? parent = Directory.GetParent(TreemapCurrentPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        if (parent is null || !parent.Exists)
-        {
-            StatusMessage = "Zaten sürücü kök dizinindesiniz.";
-            return;
-        }
-
-        TreemapCurrentPath = parent.FullName;
-        await LoadTreemapAsync(forceRefresh: false);
-    }
-
-    private async Task LoadTreemapAsync(bool forceRefresh = false)
-    {
-        if (IsBusy) return;
-        if (string.IsNullOrWhiteSpace(TreemapCurrentPath) || !Directory.Exists(TreemapCurrentPath))
-        {
-            StatusMessage = "Geçerli bir klasör yolu seçin.";
-            return;
-        }
-
-        IsBusy = true;
-        IsTreemapScanning = true;
-        IsTreemapIndeterminate = true;
-        TreemapScanPercent = 0;
-        ProgressPercent = 5;
-        TreemapActiveScanPath = TreemapCurrentPath;
-        TreemapScanStatusDetail = "⏳ Klasör yapısı hızlı Win32 tarayıcı ile okunuyor...";
-        TreemapSummaryText = "⏳ Taranıyor...";
-        StatusMessage = $"Disk Treemap taranıyor: {TreemapCurrentPath}";
-
-        _cts?.Dispose();
-        _cts = new CancellationTokenSource();
-        CancellationToken token = _cts.Token;
-
-        _lastTreemapRawEntries = [];
-        TreemapNodes.Clear();
-
-        var progressReporter = new Progress<TreemapScanProgress>(p =>
-        {
-            if (token.IsCancellationRequested)
-                return;
-
-            if (p.TotalUnits > 0)
-            {
-                IsTreemapIndeterminate = false;
-                int pct = Math.Clamp((int)Math.Round(p.CompletedUnits * 100.0 / p.TotalUnits), 2, 99);
-                TreemapScanPercent = pct;
-                ProgressPercent = pct;
-            }
-            else
-            {
-                IsTreemapIndeterminate = true;
-            }
-
-            string elapsedStr = $"{p.Elapsed.TotalSeconds:F1}s";
-            string bytesStr = CleanerRule.FormatBytes(p.ScannedBytes);
-            TreemapScanStatusDetail = p.TotalUnits > 0
-                ? $"🔍 Taranıyor: %{TreemapScanPercent} ({p.CompletedUnits}/{p.TotalUnits} alt dal) • {p.ScannedFiles:N0} dosya • {bytesStr} • {elapsedStr}"
-                : $"🔍 Taranıyor: {p.ScannedFiles:N0} dosya • {bytesStr} • {elapsedStr}";
-            TreemapSummaryText = $"⏳ {bytesStr} ({p.ScannedFiles:N0} dosya)";
-            TreemapActiveScanPath = p.CurrentPath;
-
-            if (p.PartialEntries is { Count: > 0 })
-            {
-                _lastTreemapRawEntries = [.. p.PartialEntries];
-                var liveNodes = VisualDiskAndMediaService.ComputeTreemapLayout(p.PartialEntries, _treemapCanvasWidth, _treemapCanvasHeight);
-                TreemapNodes.Clear();
-                foreach (TreemapNodeItem n in liveNodes)
-                    TreemapNodes.Add(n);
-            }
-        });
-
-        try
-        {
-            TreemapAnalysisResult result = await VisualDiskAndMediaService.AnalyzeTreemapFolderAsync(
-                TreemapCurrentPath,
-                _treemapCanvasWidth,
-                _treemapCanvasHeight,
-                progressReporter,
-                forceRefresh,
-                token);
-
-            _lastTreemapRawEntries = result.RawEntries;
-            TreemapNodes.Clear();
-            foreach (TreemapNodeItem n in result.Nodes)
-                TreemapNodes.Add(n);
-
-            IsTreemapIndeterminate = false;
-            TreemapScanPercent = 100;
-            ProgressPercent = 100;
-
-            string timeBadge = result.UsedCache
-                ? "⚡ Önbellek (<0.1s)"
-                : $"⏱️ {result.Elapsed.TotalSeconds:F1}s";
-            TreemapSummaryText = $"{TreemapNodes.Count} blok • {CleanerRule.FormatBytes(result.TotalBytes)} • {result.ScannedFileCount:N0} dosya • {timeBadge}";
-            StatusMessage = $"Treemap hazır: {TreemapCurrentPath} ({CleanerRule.FormatBytes(result.TotalBytes)}, {timeBadge})";
-            AddLog($"[TREEMAP] '{TreemapCurrentPath}' haritalandı ({CleanerRule.FormatBytes(result.TotalBytes)}, {result.ScannedFileCount:N0} dosya, {timeBadge}).");
-        }
-        catch (OperationCanceledException)
-        {
-            IsTreemapIndeterminate = false;
-            TreemapSummaryText = TreemapNodes.Count > 0
-                ? $"⏹ Kısmi Sonuç ({TreemapNodes.Count} blok)"
-                : "⏹ İptal edildi";
-            StatusMessage = "Treemap analizi durduruldu — şimdiye kadar bulunan bloklar ekranda tutuldu.";
-            AddLog("[TREEMAP] Tarama kullanıcı tarafından durduruldu.");
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Treemap hatası: {ex.Message}";
-            AddLog($"[HATA] Disk Treemap analizi başarısız: {ex.Message}");
-        }
-        finally
-        {
-            IsTreemapScanning = false;
-            IsBusy = false;
-            CommandManager.InvalidateRequerySuggested();
-        }
-    }
-
-    private void BrowseExifFolder()
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "EXIF / GPS Gizlilik Taraması Yapılacak Fotoğraf Klasörünü Seçin",
-            InitialDirectory = Directory.Exists(ExifScanFolderPath)
-                ? ExifScanFolderPath
-                : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
-        };
-
-        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
-        {
-            ExifScanFolderPath = dlg.FolderName;
-            _ = LoadPhotoMetadataAsync();
-        }
-    }
-
-    private async Task LoadPhotoMetadataAsync()
-    {
-        if (IsBusy) return;
-        if (string.IsNullOrWhiteSpace(ExifScanFolderPath) || !Directory.Exists(ExifScanFolderPath))
-        {
-            StatusMessage = "Geçerli bir fotoğraf klasörü seçin.";
-            return;
-        }
-
-        IsBusy = true;
-        _cts?.Dispose();
-        _cts = new CancellationTokenSource();
-        ProgressPercent = 15;
-        StatusMessage = $"Fotoğraf EXIF/GPS verileri taranıyor: {ExifScanFolderPath}";
-
-        try
-        {
-            var photos = await VisualDiskAndMediaService.ScanPhotoMetadataAsync(
-                ExifScanFolderPath,
-                ExifIncludeSubfolders,
-                _cts.Token);
-
-            PhotoMetadataItems.Clear();
-            foreach (PhotoMetadataItem item in photos)
-                PhotoMetadataItems.Add(item);
-
-            int gpsCount = photos.Count(p => p.HasGpsData);
-            int metaCount = photos.Count(p => p.TagCount > 0);
-            ExifSummaryText = $"{photos.Count:N0} fotoğraf • {gpsCount} GPS riski • {metaCount} EXIF etiketli";
-            ProgressPercent = 100;
-            StatusMessage = $"Fotoğraf taraması tamamlandı: {photos.Count:N0} dosya ({gpsCount} GPS verili).";
-            AddLog($"[EXIF TARAMA] '{ExifScanFolderPath}' içinde {photos.Count} fotoğraf incelendi ({gpsCount} GPS koordinatlı).");
-        }
-        catch (OperationCanceledException)
-        {
-            StatusMessage = "EXIF taraması iptal edildi.";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"EXIF tarama hatası: {ex.Message}";
-            AddLog($"[HATA] Fotoğraf EXIF taraması başarısız: {ex.Message}");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task ScrubSelectedPhotosAsync()
-    {
-        if (IsBusy) return;
-
-        var targets = PhotoMetadataItems.Where(p => p.IsSelected).ToList();
-        if (targets.Count == 0)
-        {
-            StatusMessage = "Temizlenecek fotoğraf seçilmedi.";
-            return;
-        }
-
-        IsBusy = true;
-        _cts?.Dispose();
-        _cts = new CancellationTokenSource();
-        long totalSaved = 0;
-        int cleanedCount = 0;
-        int totalTagsRemoved = 0;
-
-        try
-        {
-            for (int i = 0; i < targets.Count; i++)
-            {
-                _cts.Token.ThrowIfCancellationRequested();
-                PhotoMetadataItem item = targets[i];
-                ProgressPercent = (int)Math.Round((i + 1) * 100.0 / targets.Count);
-                StatusMessage = $"Temizleniyor ({i + 1}/{targets.Count}): {item.FileName}";
-
-                var (ok, saved, removedTags, _) = await VisualDiskAndMediaService.ScrubPhotoMetadataAsync(
-                    item,
-                    ExifCreateBackup,
-                    ExifOptimizeJpeg,
-                    jpegQuality: 88,
-                    _cts.Token);
-
-                if (ok)
-                {
-                    cleanedCount++;
-                    totalSaved += saved;
-                    totalTagsRemoved += removedTags;
-                }
-            }
-
-            if (totalSaved > 0)
-                LastFreedBytes += totalSaved;
-
-            LastDeletedFiles += cleanedCount;
-            RecordCleanupHistory("EXIF / GPS Temizliği", totalSaved, cleanedCount);
-
-            string summary = $"{cleanedCount}/{targets.Count} fotoğraf EXIF/GPS verilerinden temizlendi ({totalTagsRemoved} etiket silindi, {CleanerRule.FormatBytes(totalSaved)} tasarruf).";
-            ExifSummaryText = summary;
-            StatusMessage = summary;
-            AddLog($"[EXIF SCRUBBER] {summary}");
-            TrayNotificationRequested?.Invoke("FreeCleaner Pro — EXIF/GPS Temizliği", summary, false);
-        }
-        catch (OperationCanceledException)
-        {
-            StatusMessage = "EXIF temizleme işlemi iptal edildi.";
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task CheckForUpdatesAsync()
-    {
-        if (IsBusy) return;
-
-        IsBusy = true;
-        UpdateStatusText = "GitHub Releases kontrol ediliyor...";
-        StatusMessage = "GitHub üzerinden yeni sürüm kontrol ediliyor...";
-
-        try
-        {
-            UpdateCheckResult result = await AppUpdateService.CheckForUpdatesAsync();
-            _latestReleaseUrl = result.ReleaseUrl;
-            UpdateStatusText = result.StatusMessage;
-            StatusMessage = result.StatusMessage;
-            AddLog($"[GÜNCELLEME] {result.StatusMessage}");
-
-            if (result.IsUpdateAvailable)
-            {
-                TrayNotificationRequested?.Invoke("FreeCleaner Pro — Güncelleme Mevcut", result.StatusMessage, false);
-                var ask = MessageBox.Show(
-                    $"{result.StatusMessage}\n\nGitHub Releases indirme sayfasını tarayıcıda açmak ister misiniz?",
-                    "Yeni Sürüm Mevcut",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Information);
-                if (ask == MessageBoxResult.Yes)
-                    OpenUrlSafe(result.ReleaseUrl);
-            }
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private void OpenUrlSafe(string url)
-    {
-        try
-        {
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = url,
-                UseShellExecute = true
-            });
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Bağlantı açılamadı: {ex.Message}";
-        }
-    }
-
-    // ==================== 19. SMART TREEMAP DELETE, LIFETIME HISTORY, DEEP SPACE RECOVERY & DHASH PHOTO FINDER ====================
-
-    public string LifetimeFreedFormatted
-    {
-        get => _lifetimeFreedFormatted;
-        set { if (_lifetimeFreedFormatted != value) { _lifetimeFreedFormatted = value; OnPropertyChanged(); } }
-    }
-
-    public string LifetimeSessionsSummary
-    {
-        get => _lifetimeSessionsSummary;
-        set { if (_lifetimeSessionsSummary != value) { _lifetimeSessionsSummary = value; OnPropertyChanged(); } }
-    }
-
-    public string DeepSpaceSummaryText
-    {
-        get => _deepSpaceSummaryText;
-        set { if (_deepSpaceSummaryText != value) { _deepSpaceSummaryText = value; OnPropertyChanged(); } }
-    }
-
-    public string SimilarPhotosFolderPath
-    {
-        get => _similarPhotosFolderPath;
-        set { if (_similarPhotosFolderPath != value) { _similarPhotosFolderPath = value; OnPropertyChanged(); } }
-    }
-
-    public bool SimilarPhotosIncludeSubfolders
-    {
-        get => _similarPhotosIncludeSubfolders;
-        set { if (_similarPhotosIncludeSubfolders != value) { _similarPhotosIncludeSubfolders = value; OnPropertyChanged(); } }
-    }
-
-    public int SimilarPhotosMaxDistance
-    {
-        get => _similarPhotosMaxDistance;
-        set { if (_similarPhotosMaxDistance != value) { _similarPhotosMaxDistance = value; OnPropertyChanged(); } }
-    }
-
-    public string SimilarPhotosSummaryText
-    {
-        get => _similarPhotosSummaryText;
-        set { if (_similarPhotosSummaryText != value) { _similarPhotosSummaryText = value; OnPropertyChanged(); } }
-    }
-
-    public SimilarPhotoItem? SelectedSimilarPhoto
-    {
-        get => _selectedSimilarPhoto;
-        set { if (!ReferenceEquals(_selectedSimilarPhoto, value)) { _selectedSimilarPhoto = value; OnPropertyChanged(); } }
-    }
-
-    private void RefreshCleanupHistorySummary()
-    {
-        List<CleanupHistoryEntry> entries = CleanupHistoryService.LoadHistory();
-        long totalBytes = CleanupHistoryService.GetTotalLifetimeFreedBytes(entries);
-        LifetimeFreedFormatted = CleanerRule.FormatBytes(totalBytes);
-        LifetimeSessionsSummary = entries.Count > 0
-            ? $"{entries.Count:N0} oturum • {entries.Sum(e => e.ItemsProcessed):N0} öğe"
-            : "Henüz kayıtlı temizlik oturumu yok";
-
-        List<CleanupHistoryBarItem> bars = CleanupHistoryService.BuildRecentDailyBars(entries, days: 14, maxBarHeight: 54.0);
-        RecentCleanupBars.Clear();
-        foreach (CleanupHistoryBarItem bar in bars)
-            RecentCleanupBars.Add(bar);
-    }
-
-    private void RecordCleanupHistory(string moduleName, long freedBytes, int itemsProcessed)
-    {
-        if (freedBytes <= 0 && itemsProcessed <= 0)
-            return;
-
-        CleanupHistoryService.RecordSession(moduleName, freedBytes, itemsProcessed);
-        RefreshCleanupHistorySummary();
-    }
-
-    private async Task MoveTreemapNodeToRecycleBinAsync(TreemapNodeItem node)
-    {
-        if (IsBusy || !node.CanSafeDelete)
-            return;
-
-        if (ExclusionAndSettingsService.IsPathExcluded(node.FullPath, ExcludedPaths.ToList()))
-        {
-            MessageBox.Show(
-                $"'{node.FullPath}' Beyaz Liste (korunan klasörler) içinde yer aldığı için silinemez.",
-                "Beyaz Liste Koruması",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
-
-        if (SmartDiskAdvisorService.IsProtectedSystemPath(node.FullPath))
-        {
-            MessageBox.Show(
-                $"'{node.FullPath}' kritik bir Windows sistem yoludur ve doğrudan silmeye karşı korunmaktadır.",
-                "Sistem Koruması",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-            return;
-        }
-
-        var confirm = MessageBox.Show(
-            $"'{node.Name}' ({node.FormattedSize}) Geri Dönüşüm Kutusuna taşınacak.\n\n" +
-            $"Danışman Notu: {node.AdvisorSummary}\n" +
-            $"Yol: {node.FullPath}\n\nDevam edilsin mi?",
-            "Geri Dönüşüm Kutusuna Taşı",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-
-        if (confirm != MessageBoxResult.Yes)
-            return;
-
-        IsBusy = true;
-        StatusMessage = $"Geri Dönüşüm Kutusuna taşınıyor: {node.Name}...";
-        try
-        {
-            bool moved = await Task.Run(() => RecycleBinHelper.MovePathToRecycleBin(node.FullPath));
-            if (moved)
-            {
-                LastFreedBytes += node.SizeBytes;
-                LastDeletedFiles += 1;
-                RecordCleanupHistory("Treemap Güvenli Silme", node.SizeBytes, 1);
-                VisualDiskAndMediaService.ClearTreemapCache();
-                RefreshSystemMetrics();
-                AddLog($"[TREEMAP SİLME] '{node.FullPath}' ({node.FormattedSize}) Geri Dönüşüm Kutusuna taşındı.");
-                IsBusy = false;
-                await LoadTreemapAsync(forceRefresh: true);
-            }
-            else
-            {
-                string lockMsg = $"'{node.Name}' şu anda açık bir uygulama tarafından kullanılıyor olabilir (örneğin Chrome veya Claude açıkken kilitli olabilir).";
-                StatusMessage = lockMsg;
-                AddLog($"[TREEMAP UYARI] {lockMsg}");
-                MessageBox.Show(lockMsg, "Dosya Kullanımda / Taşınamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-        finally
-        {
-            IsBusy = false;
-            CommandManager.InvalidateRequerySuggested();
-        }
-    }
-
-    private async Task LoadDeepSpaceAsync()
-    {
-        if (IsBusy) return;
-
-        IsBusy = true;
-        DeepSpaceItems.Clear();
-        ProgressPercent = 20;
-        StatusMessage = "Dev Windows sistem alanı kaynakları (hiberfil.sys, WinSxS, CompactOS, GPU kurulumları) analiz ediliyor...";
-
-        try
-        {
-            List<DeepSpaceItem> items = await DeepSpaceRecoveryService.ScanDeepSpaceOpportunitiesAsync();
-            foreach (DeepSpaceItem item in items)
-                DeepSpaceItems.Add(item);
-
-            long knownBytes = items.Where(x => x.SizeBytes > 0 && x.ItemId != "HIBERFIL_REDUCED").Sum(x => x.SizeBytes);
-            DeepSpaceSummaryText = $"{items.Count} sistem modülü • Doğrudan {CleanerRule.FormatBytes(knownBytes)} tespit (+WinSxS/CompactOS)";
-            ProgressPercent = 100;
-            StatusMessage = $"Dev Sistem Alanı Analizi tamamlandı ({CleanerRule.FormatBytes(knownBytes)} doğrudan ölçülebilir alan).";
-            AddLog($"[DEV ALAN KURTARICI] Tarama tamamlandı: {items.Count} öğe.");
-        }
-        finally
-        {
-            IsBusy = false;
-            CommandManager.InvalidateRequerySuggested();
-        }
-    }
-
-    private async Task ExecuteDeepSpaceItemAsync(DeepSpaceItem item)
-    {
-        if (IsBusy || !item.CanExecuteAction) return;
-
-        var confirm = MessageBox.Show(
-            $"'{item.Title}' çalıştırılacak.\n\nAçıklama: {item.Description}\n\nDevam edilsin mi?",
-            "Dev Sistem Alanı Kurtarıcısı",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-
-        if (confirm != MessageBoxResult.Yes) return;
-
-        IsBusy = true;
-        ProgressPercent = 30;
-        StatusMessage = $"Uygulanıyor: {item.Title}...";
-
-        try
-        {
-            var (success, freed, message) = await DeepSpaceRecoveryService.ExecuteDeepSpaceActionAsync(item.ItemId);
-            if (success && freed > 0)
-            {
-                LastFreedBytes += freed;
-                RecordCleanupHistory("Dev Sistem Kurtarma", freed, 1);
-            }
-
-            RefreshSystemMetrics();
-            ProgressPercent = 100;
-            StatusMessage = message;
-            AddLog($"[DEV ALAN KURTARICI] {message}");
-
-            if (!success)
-            {
-                MessageBox.Show(message, "Sistem Alanı Kurtarma Uyarısı", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-            else
-            {
-                IsBusy = false;
-                await LoadDeepSpaceAsync();
-            }
-        }
-        finally
-        {
-            IsBusy = false;
-            CommandManager.InvalidateRequerySuggested();
-        }
-    }
-
-    private void BrowseSimilarPhotosFolder()
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "Benzer Fotoğraf Taraması İçin Klasör Seçin",
-            InitialDirectory = Directory.Exists(SimilarPhotosFolderPath)
-                ? SimilarPhotosFolderPath
-                : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
-        };
-
-        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
-        {
-            SimilarPhotosFolderPath = dlg.FolderName;
-            _ = LoadSimilarPhotosAsync();
-        }
-    }
-
-    private async Task LoadSimilarPhotosAsync()
-    {
-        if (IsBusy) return;
-        if (string.IsNullOrWhiteSpace(SimilarPhotosFolderPath) || !Directory.Exists(SimilarPhotosFolderPath))
-        {
-            StatusMessage = "Geçerli bir fotoğraf klasörü seçin.";
-            return;
-        }
-
-        IsBusy = true;
-        _cts?.Dispose();
-        _cts = new CancellationTokenSource();
-        SimilarPhotoItems.Clear();
-        ProgressPercent = 20;
-        StatusMessage = $"Perceptual dHash ile benzer fotoğraflar aranıyor: {SimilarPhotosFolderPath}";
-
-        try
-        {
-            List<SimilarPhotoItem> found = await SimilarPhotoFinderService.FindSimilarPhotosAsync(
-                SimilarPhotosFolderPath,
-                SimilarPhotosMaxDistance,
-                SimilarPhotosIncludeSubfolders,
-                _cts.Token);
-
-            foreach (SimilarPhotoItem item in found)
-                SimilarPhotoItems.Add(item);
-
-            int groups = found.Select(x => x.GroupId).Distinct().Count();
-            long reclaimable = found.Where(x => x.IsSelected).Sum(x => x.SizeBytes);
-            SimilarPhotosSummaryText = $"{groups} grup • {found.Count} fotoğraf • {CleanerRule.FormatBytes(reclaimable)} seçili kopya";
-            SelectedSimilarPhoto = SimilarPhotoItems.FirstOrDefault();
-            ProgressPercent = 100;
-            StatusMessage = $"Benzer fotoğraf taraması bitti: {groups} grup, {CleanerRule.FormatBytes(reclaimable)} kazanılabilir alan.";
-            AddLog($"[BENZER FOTOĞRAF] {groups} grupta {found.Count} fotoğraf bulundu ({CleanerRule.FormatBytes(reclaimable)} kopya).");
-        }
-        catch (OperationCanceledException)
-        {
-            StatusMessage = "Benzer fotoğraf taraması iptal edildi.";
-        }
-        finally
-        {
-            IsBusy = false;
-            CommandManager.InvalidateRequerySuggested();
-        }
-    }
-
-    private async Task CleanSelectedSimilarPhotosAsync()
-    {
-        var selected = SimilarPhotoItems.Where(x => x.IsSelected).ToList();
-        if (selected.Count == 0 || IsBusy)
-            return;
-
-        long totalBytes = selected.Sum(x => x.SizeBytes);
-        string modeText = UseRecycleBinSafety ? "Geri Dönüşüm Kutusuna taşınacak" : "KALICI OLARAK SİLİNECEK";
-        var confirm = MessageBox.Show(
-            $"Seçili {selected.Count} benzer kopya fotoğraf ({CleanerRule.FormatBytes(totalBytes)}) {modeText}.\n\nEn yüksek çözünürlüklü asıl kopyalar korunur. Devam edilsin mi?",
-            "Benzer Fotoğraf Temizliği",
-            MessageBoxButton.YesNo,
-            UseRecycleBinSafety ? MessageBoxImage.Question : MessageBoxImage.Warning);
-
-        if (confirm != MessageBoxResult.Yes)
-            return;
-
-        IsBusy = true;
-        try
-        {
-            var (deleted, freed) = await SimilarPhotoFinderService.CleanSelectedSimilarPhotosAsync(selected, UseRecycleBinSafety);
-            if (freed > 0 || deleted > 0)
-            {
-                LastFreedBytes += freed;
-                LastDeletedFiles += deleted;
-                RecordCleanupHistory("Benzer Fotoğraf Temizliği", freed, deleted);
-                RefreshSystemMetrics();
-            }
-
-            string summary = $"{deleted}/{selected.Count} benzer fotoğraf temizlendi ({CleanerRule.FormatBytes(freed)} yer açıldı).";
-            SimilarPhotosSummaryText = summary;
-            StatusMessage = summary;
-            AddLog($"[BENZER FOTOĞRAF] {summary}");
-        }
-        finally
-        {
-            IsBusy = false;
-            CommandManager.InvalidateRequerySuggested();
-        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

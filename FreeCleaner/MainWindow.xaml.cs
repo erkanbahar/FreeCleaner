@@ -32,6 +32,9 @@ public partial class MainWindow : Window
     {
         _lazyViews.Register("Dashboard", () => new DashboardView { DataContext = DataContext });
         _lazyViews.Register("LiveMonitor", () => new LiveMonitorView { DataContext = DataContext });
+        _lazyViews.Register("DiskAnalyzer", () => new DiskAnalyzerView { DataContext = DataContext });
+        _lazyViews.Register("DevCleaner", () => new DevCleanerView { DataContext = DataContext });
+        _lazyViews.Register("PackageCaches", () => new PackageCachesView { DataContext = DataContext });
         _lazyViews.Register("DiskTreemap", () => new DiskTreemapView { DataContext = DataContext });
         _lazyViews.Register("ExifScrubber", () => new ExifScrubberView { DataContext = DataContext });
         _lazyViews.Register("DeepSpaceRecovery", () => new DeepSpaceRecoveryView { DataContext = DataContext });
@@ -98,6 +101,11 @@ public partial class MainWindow : Window
 
             viewModel.TrayNotificationRequested += (title, message, isWarning) =>
                 _trayService?.ShowNotification(title, message, isWarning);
+
+            viewModel.TrayTooltipUpdateRequested += (cpu, ram, freeGb, _) =>
+                _trayService?.UpdateStatusTooltip(cpu, ram, freeGb);
+
+            viewModel.TickTrayHealthWatcher();
         }
     }
 
@@ -405,16 +413,6 @@ public partial class MainWindow : Window
             DataContext is MainViewModel vm)
         {
             vm.OpenFileLocationCommand.Execute(item);
-        }
-    }
-
-    private void DiskDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is DataGrid grid &&
-            grid.SelectedItem is LargeOrDuplicateFileItem item &&
-            DataContext is MainViewModel vm)
-        {
-            vm.OpenDiskFileLocationCommand.Execute(item);
         }
     }
 }

@@ -21,12 +21,13 @@ public partial class App : Application
         MainWindow = window;
         window.Show();
 
-        if (e.Args.Any(arg => arg.Equals("--scheduled-maintenance", StringComparison.OrdinalIgnoreCase)))
+        var cliAction = Services.ShellIntegrationAndProfilesService.ParseStartupArguments(e.Args);
+        if (cliAction.Kind != Services.CliLaunchActionKind.None)
         {
             window.Loaded += async (_, _) =>
             {
                 if (window.DataContext is ViewModels.MainViewModel viewModel)
-                    await viewModel.RunScheduledMaintenanceAsync(closeWhenFinished: true);
+                    await viewModel.ApplyCliLaunchActionAsync(cliAction);
             };
         }
     }
