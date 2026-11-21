@@ -46,6 +46,7 @@ public class CleanerEngine
                 Description = "Silinmiş ancak diskte hâlâ yer kaplayan Geri Dönüşüm Kutusu öğeleri",
                 IconGlyph = "\uE74D",
                 Group = RuleGroup.System,
+                RiskLevel = RiskLevel.High,
                 IsRecycleBin = true,
                 IsSelected = true,
                 Risk = RiskLevel.High
@@ -106,7 +107,10 @@ public class CleanerEngine
                 Description = "Hızlı erişim ve son açılan dosya kısayol geçmişi (*.lnk)",
                 IconGlyph = "\uE81C",
                 Group = RuleGroup.System,
+                RiskLevel = RiskLevel.High,
                 IsSelected = false,
+                RequiresWarning = true,
+                WarningMessage = "Son kullanılan belge kısayolları silinecek; bu işlem Windows geçmiş görünümünü etkiler.",
                 Targets =
                 [
                     new ScanTarget(
@@ -147,6 +151,7 @@ public class CleanerEngine
                 Description = "Sitelerdeki oturumlarınızı kapatabilir (İsteğe bağlı)",
                 IconGlyph = "\uE8D7",
                 Group = RuleGroup.Browsers,
+                RiskLevel = RiskLevel.High,
                 IsSelected = false,
                 RequiresWarning = true,
                 Risk = RiskLevel.High,
@@ -172,6 +177,7 @@ public class CleanerEngine
                 Description = "Edge web oturumu çerez veritabanları (İsteğe bağlı)",
                 IconGlyph = "\uE8D7",
                 Group = RuleGroup.Browsers,
+                RiskLevel = RiskLevel.High,
                 IsSelected = false,
                 RequiresWarning = true,
                 Risk = RiskLevel.High,
@@ -271,6 +277,7 @@ public class CleanerEngine
                 Description = "C:\\CURSOR ve Repos içindeki Visual Studio projelerinin Debug, Retail, Release, bin ve obj klasörleri",
                 IconGlyph = "\uE943",
                 Group = RuleGroup.DeveloperAndApps,
+                RiskLevel = RiskLevel.High,
                 IsSelected = false,
                 RequiresWarning = true,
                 Risk = RiskLevel.High,
@@ -475,6 +482,7 @@ public class CleanerEngine
                             FileName = $"Geri Dönüşüm Kutusu ({rbCount:N0} öğe)",
                             SizeBytes = rbSize,
                             LastModified = DateTime.Now,
+                            RiskLevel = rule.RiskLevel,
                             IsRecycleBinItem = true,
                             Risk = rule.Risk,
                             Status = "Analiz Edildi"

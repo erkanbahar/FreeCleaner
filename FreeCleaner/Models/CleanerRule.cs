@@ -30,6 +30,7 @@ public class CleanerRule : INotifyPropertyChanged
     public required string Description { get; init; }
     public required string IconGlyph { get; init; }
     public required RuleGroup Group { get; init; }
+    public RiskLevel RiskLevel { get; init; } = RiskLevel.Medium;
     public bool IsRecycleBin { get; init; }
     public bool RequiresWarning { get; init; }
     public string? WarningMessage { get; init; }
@@ -100,6 +101,12 @@ public class CleanerRule : INotifyPropertyChanged
     }
 
     public string FormattedSize => FormatBytes(DetectedSizeBytes);
+    public string RiskLabel => RiskLevel switch
+    {
+        RiskLevel.Low => "Düşük risk",
+        RiskLevel.High => "Yüksek risk",
+        _ => "Orta risk"
+    };
 
     public static string FormatBytes(long bytes)
     {
