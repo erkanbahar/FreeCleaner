@@ -662,7 +662,12 @@ public class GlobalPackageCacheItem : INotifyPropertyChanged
     }
 
     public string FormattedSize => CleanerRule.FormatBytes(SizeBytes);
-    public string SafetyLabel => CanSafeDelete ? "Güvenle Temizlenebilir Önbellek" : "Sanal Disk (Salt Okunur Bilgi)";
+    public bool IsVhdxVirtualDisk => FolderPath.EndsWith(".vhdx", StringComparison.OrdinalIgnoreCase);
+    public string SafetyLabel => CanSafeDelete
+        ? "Güvenle Temizlenebilir Önbellek"
+        : IsVhdxVirtualDisk
+            ? "Sanal Disk (Sıkıştırılabilir .vhdx)"
+            : "Sanal Disk (Salt Okunur Bilgi)";
 
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

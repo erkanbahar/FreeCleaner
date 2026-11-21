@@ -80,6 +80,40 @@ public static class EighthGenAiAndSecuritySuiteService
                 catch { }
             }
 
+            // Detect Claude Desktop Local VM Bundles (Claude-Data\...\vm_bundles\claudevm.bundle\rootfs.vhdx)
+            foreach (string claudeRoot in new[]
+            {
+                Path.Combine(localAppData, "Claude-Data"),
+                Path.Combine(localAppData, "AnthropicClaude")
+            })
+            {
+                try
+                {
+                    if (!Directory.Exists(claudeRoot)) continue;
+                    foreach (string vmDir in Directory.EnumerateDirectories(claudeRoot, "vm_bundles", new EnumerationOptions
+                    {
+                        RecurseSubdirectories = true,
+                        IgnoreInaccessible = true,
+                        MaxRecursionDepth = 2
+                    }))
+                    {
+                        long bytes = CalculateDirectorySizeSafe(vmDir);
+                        if (bytes <= 0) continue;
+
+                        results.Add(new AiModelCacheItem
+                        {
+                            AiFramework = "Claude Desktop VM",
+                            ModelOrCacheName = "Claude Yerel VM Paketi (rootfs.vhdx — Claude kapalıyken silin)",
+                            FullPath = vmDir,
+                            SizeBytes = bytes,
+                            IsDirectory = true,
+                            IsSelected = false
+                        });
+                    }
+                }
+                catch { }
+            }
+
             // Scan custom folder or Downloads/UserProfile for standalone .gguf / .safetensors / .onnx / weights.bin model files
             var fileSearchRoots = new List<string>();
             if (!string.IsNullOrWhiteSpace(customSearchDir) && Directory.Exists(customSearchDir))

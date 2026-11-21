@@ -355,14 +355,18 @@ public static class NextGenForensicsAndRescueService
                 catch { }
             }
 
-            // Scan WSL2 & Docker .vhdx virtual disks (informational audit so user can see VHDX disk footprint)
-            var vhdxSearchRoots = new[]
+            // Scan WSL2, Docker & Claude Desktop VM .vhdx virtual disks
+            string roamingAppData2 = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var vhdxSearchRoots = new (string RootPath, string EcosystemLabel)[]
             {
-                Path.Combine(localAppData, "Docker", "wsl"),
-                Path.Combine(localAppData, "Packages")
+                (Path.Combine(localAppData, "Docker", "wsl"), "Docker Desktop VHDX"),
+                (Path.Combine(localAppData, "Packages"), "WSL2 / UWP VHDX"),
+                (Path.Combine(localAppData, "Claude-Data"), "Claude Desktop VM (VHDX)"),
+                (Path.Combine(localAppData, "AnthropicClaude"), "Claude Desktop VM (VHDX)"),
+                (Path.Combine(roamingAppData2, "Claude"), "Claude Desktop VM (VHDX)")
             };
 
-            foreach (var root in vhdxSearchRoots)
+            foreach (var (root, ecoLabel) in vhdxSearchRoots)
             {
                 try
                 {
@@ -371,13 +375,13 @@ public static class NextGenForensicsAndRescueService
                     {
                         RecurseSubdirectories = true,
                         IgnoreInaccessible = true,
-                        MaxRecursionDepth = 4
+                        MaxRecursionDepth = 5
                     }))
                     {
                         var fi = new FileInfo(vhdx);
                         results.Add(new GlobalPackageCacheItem
                         {
-                            Ecosystem = "WSL2 / Docker VHDX",
+                            Ecosystem = ecoLabel,
                             CacheName = $"Sanal Disk: {fi.Name}",
                             FolderPath = fi.FullName,
                             SizeBytes = fi.Length,
@@ -391,6 +395,102 @@ public static class NextGenForensicsAndRescueService
 
             return results.OrderByDescending(x => x.SizeBytes).ToList();
         });
+    }
+
+    public static string BuildDiskpartCompactScript(string vhdxPath)
+    {
+        return string.Join(Environment.NewLine,
+        [
+            $"select vdisk file=\"{vhdxPath}\"",
+            "attach vdisk readonly",
+            "compact vdisk",
+            "detach vdisk",
+            "exit"
+        ]);
+    }
+
+    public static async Task<(bool Success, long FreedBytes, string Message)> CompactVhdxVirtualDiskAsync(string vhdxPath)
+    {
+        if (string.IsNullOrWhiteSpace(vhdxPath) ||
+            !vhdxPath.EndsWith(".vhdx", StringComparison.OrdinalIgnoreCase) ||
+            !File.Exists(vhdxPath))
+        {
+            return (false, 0, "Geçerli bir .vhdx sanal disk dosyası bulunamadı.");
+        }
+
+        if (!UltimateSystemSuiteService.IsRunningAsAdministrator())
+            return (false, 0, "VHDX sıkıştırma (diskpart compact vdisk) için sağ üstteki '🛡️ Yönetici' butonu ile yönetici yetkisi gerekir.");
+
+        try
+        {
+            using (File.Open(vhdxPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            {
+                // Verify file is not currently mounted or locked by Claude Desktop / WSL2 / Docker.
+            }
+        }
+        catch (IOException)
+        {
+            return (false, 0, "Dosya şu anda kullanımda (kilitli). Lütfen önce Claude Desktop, Docker Desktop veya WSL2'yi (wsl --shutdown) tamamen kapatın.");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return (false, 0, $"Dosya erişimi reddedildi: {ex.Message}");
+        }
+
+        long beforeBytes = new FileInfo(vhdxPath).Length;
+        string scriptPath = Path.Combine(Path.GetTempPath(), $"freecleaner_compact_{Guid.NewGuid():N}.txt");
+
+        try
+        {
+            await File.WriteAllTextAsync(scriptPath, BuildDiskpartCompactScript(vhdxPath), Encoding.ASCII);
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                Arguments = $"/c \"chcp 65001 >nul && diskpart /s \"\"{scriptPath}\"\"\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var proc = Process.Start(psi);
+            if (proc is null)
+                return (false, 0, "DiskPart işlemi başlatılamadı.");
+
+            string stdout = await proc.StandardOutput.ReadToEndAsync();
+            string stderr = await proc.StandardError.ReadToEndAsync();
+            await proc.WaitForExitAsync();
+
+            long afterBytes = File.Exists(vhdxPath) ? new FileInfo(vhdxPath).Length : beforeBytes;
+            long freed = Math.Max(0, beforeBytes - afterBytes);
+
+            if (proc.ExitCode == 0)
+            {
+                string msg = freed > 0
+                    ? $"VHDX sıkıştırıldı! {CleanerRule.FormatBytes(beforeBytes)} → {CleanerRule.FormatBytes(afterBytes)} ({CleanerRule.FormatBytes(freed)} yer açıldı)."
+                    : $"DiskPart işlemi tamamlandı ({CleanerRule.FormatBytes(afterBytes)} — boş sıfır blok bulunamadı veya tam sıkışmış).";
+                return (true, freed, msg);
+            }
+
+            string errDetail = string.IsNullOrWhiteSpace(stderr) ? stdout : stderr;
+            return (false, 0, $"DiskPart hatası (Kod {proc.ExitCode}): {errDetail.Trim()}");
+        }
+        catch (Exception ex)
+        {
+            return (false, 0, $"VHDX sıkıştırma hatası: {ex.Message}");
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(scriptPath))
+                    File.Delete(scriptPath);
+            }
+            catch { }
+        }
     }
 
     public static async Task<(int CleanedCount, long FreedBytes)> CleanSelectedPackageCachesAsync(IEnumerable<GlobalPackageCacheItem> items)

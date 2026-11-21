@@ -240,6 +240,42 @@ public class NextGenUpgradesTests
         Assert.Contains(tweaks, t => t.TweakId == "DISABLE_BROWSER_ONDEVICE_AI");
     }
 
+    [Fact]
+    public async Task VhdxCompactAndClaudeVm_ScriptAndModelProperties_WorkAccurately()
+    {
+        var vhdxItem = new FreeCleaner.Models.GlobalPackageCacheItem
+        {
+            Ecosystem = "Claude Desktop VM (VHDX)",
+            CacheName = "Sanal Disk: rootfs.vhdx",
+            FolderPath = @"C:\Users\Test\AppData\Local\Claude-Data\abc\vm_bundles\claudevm.bundle\rootfs.vhdx",
+            SizeBytes = 7_500_000_000,
+            CanSafeDelete = false
+        };
+
+        var folderItem = new FreeCleaner.Models.GlobalPackageCacheItem
+        {
+            Ecosystem = "NuGet (.NET)",
+            CacheName = "NuGet Cache",
+            FolderPath = @"C:\Users\Test\.nuget\packages",
+            SizeBytes = 1024,
+            CanSafeDelete = true
+        };
+
+        Assert.True(vhdxItem.IsVhdxVirtualDisk);
+        Assert.Contains(".vhdx", vhdxItem.SafetyLabel, StringComparison.OrdinalIgnoreCase);
+        Assert.False(folderItem.IsVhdxVirtualDisk);
+
+        string script = NextGenForensicsAndRescueService.BuildDiskpartCompactScript(vhdxItem.FolderPath);
+        Assert.Contains("select vdisk file=", script);
+        Assert.Contains("attach vdisk readonly", script);
+        Assert.Contains("compact vdisk", script);
+        Assert.Contains("detach vdisk", script);
+
+        var (success, freed, _) = await NextGenForensicsAndRescueService.CompactVhdxVirtualDiskAsync(@"C:\NonExistent\missing_rootfs.vhdx");
+        Assert.False(success);
+        Assert.Equal(0, freed);
+    }
+
     private static void CreateSyntheticJpegWithExifAndGps(string path, int width, int height)
     {
         byte[] cleanJpegBytes;

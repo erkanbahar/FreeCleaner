@@ -338,6 +338,7 @@ public class MainViewModel : INotifyPropertyChanged
     public ICommand ScanWifiAndDnsCommand { get; }
     public ICommand ScanPackageCachesCommand { get; }
     public ICommand CleanPackageCachesCommand { get; }
+    public ICommand CompactVhdxCommand { get; }
     public ICommand OpenPackageCacheFolderCommand { get; }
     public ICommand RefreshRestorePointsCommand { get; }
     public ICommand CreateRestorePointCommand { get; }
@@ -691,6 +692,11 @@ public class MainViewModel : INotifyPropertyChanged
         ScanWifiAndDnsCommand = new RelayCommand(async _ => await LoadWifiAndDnsAsync(), _ => !IsBusy);
         ScanPackageCachesCommand = new RelayCommand(async _ => await LoadGlobalPackageCachesAsync(), _ => !IsBusy);
         CleanPackageCachesCommand = new RelayCommand(async _ => await RunCleanPackageCachesAsync(), _ => !IsBusy && GlobalPackageCaches.Any(x => x.IsSelected && x.CanSafeDelete));
+        CompactVhdxCommand = new RelayCommand(async param =>
+        {
+            if (param is GlobalPackageCacheItem item)
+                await RunCompactVhdxAsync(item);
+        }, param => !IsBusy && param is GlobalPackageCacheItem { IsVhdxVirtualDisk: true });
         OpenPackageCacheFolderCommand = new RelayCommand(param =>
         {
             if (param is GlobalPackageCacheItem item)
@@ -3760,6 +3766,49 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    private async Task RunCompactVhdxAsync(GlobalPackageCacheItem item)
+    {
+        if (IsBusy || !item.IsVhdxVirtualDisk) return;
+
+        var confirm = MessageBox.Show(
+            $"'{item.CacheName}' ({item.FormattedSize}) sanal diski DiskPart (compact vdisk) ile boş bloklardan arındırılacak.\n\n" +
+            $"Yol: {item.FolderPath}\n\n" +
+            "Not: Yönetici yetkisi gerekir ve ilgili uygulama (Claude Desktop / Docker Desktop / WSL2) tamamen kapalı olmalıdır. Devam edilsin mi?",
+            "VHDX Sanal Disk Sıkıştırma",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        IsBusy = true;
+        ProgressPercent = 25;
+        StatusMessage = $"VHDX sıkıştırılıyor (diskpart compact vdisk): {item.FolderPath}";
+
+        try
+        {
+            var (success, freed, message) = await NextGenForensicsAndRescueService.CompactVhdxVirtualDiskAsync(item.FolderPath);
+            if (success && freed > 0)
+            {
+                LastFreedBytes += freed;
+                RefreshSystemMetrics();
+            }
+
+            if (success)
+                await LoadGlobalPackageCachesAsync();
+
+            ProgressPercent = 100;
+            StatusMessage = message;
+            AddLog($"[VHDX SIKISTIRMA] {message}");
+            if (!success)
+                MessageBox.Show(message, "VHDX Sıkıştırma Uyarısı", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
     private async Task LoadRestorePointsAsync()
     {
         IsBusy = true;
@@ -5660,11 +5709,11 @@ public class MainViewModel : INotifyPropertyChanged
         AddEntry("CredentialSsh", "Kimlik Kasası (cmdkey) & SSH", "\uE8D7", "Güvenlik & Gizlilik", "ssh credential cmdkey git key");
         AddEntry("UsbForensics", "USB Depolama Geçmişi (USBSTOR)", "\uE88E", "Güvenlik & Gizlilik", "usb usbstor adli analiz");
         AddEntry("CrashLogs", "Mavi Ekran (BSOD) & Olay Günlüğü", "\uE7BA", "Güvenlik & Gizlilik", "bsod dmp eventlog cokme");
-        AddEntry("AiModelCleaner", "Yapay Zeka (AI / LLM) Model Avcısı", "\uE99A", "Geliştirici & AI", "ollama huggingface lmstudio gguf safetensors ai llm chrome gemini nano optguideondevicemodel weights.bin");
+        AddEntry("AiModelCleaner", "Yapay Zeka (AI / LLM) Model Avcısı", "\uE99A", "Geliştirici & AI", "ollama huggingface lmstudio gguf safetensors ai llm chrome gemini nano optguideondevicemodel weights.bin claude rootfs vhdx vm_bundles");
         AddEntry("DockerWsl", "WSL2 & Docker Yöneticisi", "\uE756", "Geliştirici & AI", "wsl wsl2 docker container prune");
         AddEntry("GitRepoCompressor", "Git Depo (.git) Sıkıştırıcı (git gc)", "\uE8B7", "Geliştirici & AI", "git gc branch repo");
         AddEntry("DevCleaner", "VS Debug/Retail & DevCleaner", "\uE943", "Geliştirici & AI", "visual studio debug release obj node_modules");
-        AddEntry("PackageCaches", "NuGet / NPM & WSL2 VHDX Önbelleği", "\uE7B8", "Geliştirici & AI", "nuget npm pip cargo gradle maven vhdx");
+        AddEntry("PackageCaches", "NuGet / NPM & WSL2 / Claude VHDX Yöneticisi", "\uE7B8", "Geliştirici & AI", "nuget npm pip cargo gradle maven vhdx claude rootfs compact sikistir");
         AddEntry("SqliteOptimizer", "Tarayıcı & IDE SQLite Sıkıştırıcı", "\uEE94", "Geliştirici & AI", "sqlite veritabani wal chrome vscode cursor");
         AddEntry("BatchRenamer", "Toplu Dosya Adlandırıcı (PowerRename)", "\uE8AC", "Geliştirici & AI", "rename toplu adlandirma prefix suffix");
         AddEntry("Unlocker", "Kilitli Dosya Çözücü (File Unlocker)", "\uE785", "Geliştirici & AI", "kilitli dosya unlocker restart manager");
