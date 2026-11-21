@@ -1,0 +1,64 @@
+<UserControl x:Class="FreeCleaner.Views.UsbForensicsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="USB DEPOLAMA GEÇMİŞİ (USBSTOR ADLİ ANALİZ) &amp; İZ TEMİZLEYİCİ"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Bilgisayara bugüne kadar takılmış tüm USB bellek ve harici disklerin marka, model ve seri numaralarını (HKLM\...\USBSTOR) listeler."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="USB Geçmişini Tara"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanUsbHistoryCommand}"/>
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Content="Seçili USB İzlerini Sil (Admin)"
+                            Padding="12,7"
+                            Command="{Binding CleanUsbHistoryCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding UsbHistoryItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="34">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="Cihaz Adı (FriendlyName)" Binding="{Binding FriendlyName}" IsReadOnly="True" Width="240"/>
+                    <DataGridTextColumn Header="Üretici &amp; Ürün Kimliği" Binding="{Binding VendorAndProduct}" IsReadOnly="True" Width="250"/>
+                    <DataGridTextColumn Header="Donanım Seri Numarası" Binding="{Binding SerialNumber}" IsReadOnly="True" Width="220"/>
+                    <DataGridTextColumn Header="Kayıt Defteri Anahtarı" Binding="{Binding RegistrySubKeyPath}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

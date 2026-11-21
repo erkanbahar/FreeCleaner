@@ -16,7 +16,7 @@
                 CornerRadius="12"
                 Padding="16">
             <StackPanel>
-                <TextBlock Text="HIZLANDIRICI &amp; SİSTEM ARAÇLARI"
+                <TextBlock Text="{DynamicResource Loc_BoostSectionTitle}"
                            FontSize="12"
                            FontWeight="Bold"
                            Foreground="{DynamicResource TextSecondaryBrush}"
@@ -24,22 +24,22 @@
 
                 <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="RAM Bellek Boşaltıcı (Working Set Trim)" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <TextBlock Text="Arka planda çalışan uygulamaların kullanmadığı ayrılmış bellek sayfalarını işletim sistemine geri kazandırır."
+                        <TextBlock Text="{DynamicResource Loc_BoostRamTitle}" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{DynamicResource Loc_BoostRamDesc}"
                                    FontSize="11.5"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,4,0,10"/>
                         <Button Style="{StaticResource CleanButtonStyle}"
-                                Content="RAM Belleği Şimdi Optimize Et"
+                                Content="{DynamicResource Loc_BoostRamBtn}"
                                 Command="{Binding OptimizeRamCommand}"/>
                     </StackPanel>
                 </Border>
 
                 <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,10">
                     <StackPanel>
-                        <TextBlock Text="DNS &amp; Ağ Önbelleği Temizleyici" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <TextBlock Text="Bozuk DNS çözümleme önbelleğini (ipconfig /flushdns) ve hedef önbelleğini sıfırlayarak bağlantı sorunlarını giderir."
+                        <TextBlock Text="{DynamicResource Loc_BoostDnsTitle}" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{DynamicResource Loc_BoostDnsDesc}"
                                    FontSize="11.5"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
@@ -52,11 +52,11 @@
                             </Grid.ColumnDefinitions>
                             <Button Grid.Column="0"
                                     Style="{StaticResource PrimaryButtonStyle}"
-                                    Content="DNS Önbelleğini Sil"
+                                    Content="{DynamicResource Loc_BoostFlushDnsBtn}"
                                     Command="{Binding FlushDnsCommand}"/>
                             <Button Grid.Column="2"
                                     Style="{StaticResource SubtleButtonStyle}"
-                                    Content="Ağ Önbelleğini Sıfırla"
+                                    Content="{DynamicResource Loc_BoostResetNetBtn}"
                                     Command="{Binding ResetNetCacheCommand}"/>
                         </Grid>
                     </StackPanel>
@@ -64,13 +64,13 @@
 
                 <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14">
                     <StackPanel>
-                        <TextBlock Text="Windows Derin Bakım Kısayolları" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                        <TextBlock Text="{DynamicResource Loc_BoostShortcutsTitle}" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                Content="Windows Disk Temizleme (cleanmgr / WinSxS)"
+                                Content="{DynamicResource Loc_BoostCleanMgrBtn}"
                                 Command="{Binding LaunchCleanMgrCommand}"
                                 Margin="0,0,0,8"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                Content="Sistem Geri Yükleme Noktası Yöneticisi"
+                                Content="{DynamicResource Loc_BoostSysRestoreBtn}"
                                 Command="{Binding LaunchSystemRestoreCommand}"/>
                     </StackPanel>
                 </Border>
@@ -90,13 +90,13 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="0" Margin="0,0,0,10">
-                    <TextBlock Text="EN ÇOK BELLEK (RAM) TÜKETEN İŞLEMLER"
+                    <TextBlock Text="{DynamicResource Loc_BoostTopMemTitle}"
                                FontSize="12"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Listeyi Yenile"
+                            Content="{DynamicResource Loc_StartupRefreshBtn}"
                             HorizontalAlignment="Right"
                             Command="{Binding RefreshTopProcessesCommand}"/>
                 </Grid>
@@ -115,9 +115,21 @@
                           BorderThickness="1"
                           RowHeight="32">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="90"/>
-                        <DataGridTextColumn Header="İşlem Adı (Process)" Binding="{Binding ProcessName}" Width="*"/>
-                        <DataGridTextColumn Header="Bellek Kullanımı (Working Set)" Binding="{Binding FormattedMemory}" SortMemberPath="WorkingSetBytes" Width="210"/>
+                        <DataGridTextColumn Binding="{Binding ProcessId}" Width="90">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_LiveColPid}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding ProcessName}" Width="*">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_BoostColProcess}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding FormattedMemory}" SortMemberPath="WorkingSetBytes" Width="210">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_BoostColMem}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

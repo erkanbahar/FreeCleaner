@@ -18,11 +18,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="WINGET TOPLU PROGRAM GÜNCELLEYİCİ (ONE-CLICK SOFTWARE UPDATER)"
+                    <TextBlock Text="{DynamicResource Loc_WingetTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Windows Paket Yöneticisi (winget upgrade) ile eski sürümde kalmış tüm programları listeler ve tek tıkla sessizce (--silent) günceller."
+                    <TextBlock Text="{DynamicResource Loc_WingetSubtitle}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -30,22 +30,22 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="🔍 Güncellemeleri Tara"
+                            Content="{DynamicResource Loc_WingetScanBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanWingetUpgradesCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="🚀 Seçili Programları Güncelle"
+                            Content="{DynamicResource Loc_WingetUpgradeSelBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding UpgradeSelectedWingetCommand}"/>
                     <Button Style="{StaticResource SecondaryButtonStyle}"
-                            Content="⚡ Tümünü Güncelle (--all)"
+                            Content="{DynamicResource Loc_WingetUpgradeAllBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding UpgradeAllWingetCommand}"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="⛔ İptal"
+                            Content="{DynamicResource Loc_WingetCancelBtn}"
                             Padding="12,7"
                             Command="{Binding CancelCommand}"/>
                 </StackPanel>
@@ -96,13 +96,41 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Güncelleme Durumu" Binding="{Binding UpgradeStatus}" IsReadOnly="True" Width="170"/>
-                    <DataGridTextColumn Header="Program Adı" Binding="{Binding PackageName}" IsReadOnly="True" Width="250"/>
-                    <DataGridTextColumn Header="Winget Paket Kimliği (ID)" Binding="{Binding PackageId}" IsReadOnly="True" Width="230"/>
-                    <DataGridTextColumn Header="Yüklü Sürüm" Binding="{Binding InstalledVersion}" IsReadOnly="True" Width="130"/>
-                    <DataGridTextColumn Header="Yeni Sürüm" Binding="{Binding AvailableVersion}" IsReadOnly="True" Width="130"/>
-                    <DataGridTextColumn Header="Kaynak" Binding="{Binding SourceName}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding UpgradeStatus}" IsReadOnly="True" Width="170">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_WingetColStatus}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PackageName}" IsReadOnly="True" Width="250">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_StartupColAppName}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PackageId}" IsReadOnly="True" Width="230">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_WingetColId}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding InstalledVersion}" IsReadOnly="True" Width="130">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_WingetColInstalled}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding AvailableVersion}" IsReadOnly="True" Width="130">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_WingetColAvailable}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SourceName}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_WingetColSource}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

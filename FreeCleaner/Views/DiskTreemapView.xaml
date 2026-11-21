@@ -291,8 +291,8 @@
                                         MouseLeftButtonUp="TreemapTile_MouseLeftButtonUp">
                                     <Border.ContextMenu>
                                         <ContextMenu>
-                                            <MenuItem Header="📂 Klasöre Gir (Drill Down)" Click="DrillDownMenuItem_Click"/>
-                                            <MenuItem Header="🔍 Dosya Gezgininde Göster" Click="OpenExplorerMenuItem_Click"/>
+                                            <MenuItem Header="{DynamicResource Loc_TreemapMenuDrill}" Click="DrillDownMenuItem_Click"/>
+                                            <MenuItem Header="{DynamicResource Loc_TreemapMenuExplorer}" Click="OpenExplorerMenuItem_Click"/>
                                             <Separator/>
                                             <MenuItem Header="{DynamicResource Loc_TreemapDeleteBtn}" Click="RecycleTreemapMenuItem_Click"/>
                                         </ContextMenu>
@@ -384,13 +384,40 @@
                               BorderThickness="1"
                               RowHeight="28">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Durum" Binding="{Binding StatusBadge}" Width="95"/>
-                            <DataGridTextColumn Header="Klasör / Dosya" Binding="{Binding Name}" Width="210"/>
-                            <DataGridTextColumn Header="Önceki" Binding="{Binding FormattedPrevious}" Width="105"/>
-                            <DataGridTextColumn Header="Şimdiki" Binding="{Binding FormattedCurrent}" Width="105"/>
-                            <DataGridTextColumn Header="Değişim" Binding="{Binding FormattedDelta}" Width="115"/>
-                            <DataGridTextColumn Header="Tam Yol" Binding="{Binding FullPath}" Width="*"/>
-                            <DataGridTemplateColumn Header="Aç" Width="56">
+                            <DataGridTextColumn Binding="{Binding StatusBadge}" Width="95">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding Name}" Width="210">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_TreemapDiffColName}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding FormattedPrevious}" Width="105">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_TreemapDiffColPrev}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding FormattedCurrent}" Width="105">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_TreemapDiffColCurr}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding FormattedDelta}" Width="115">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_TreemapDiffColDelta}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding FullPath}" Width="*">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_ColFullPath}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Width="56">
+                                <DataGridTemplateColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_TreemapDiffColOpen}"/>
+                                </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Style="{StaticResource SubtleButtonStyle}"
@@ -462,7 +489,7 @@
                                             Padding="7,2"
                                             FontSize="11"
                                             Margin="0,0,4,0"
-                                            ToolTip="İçine Gir (Klasör)"
+                                            ToolTip="{DynamicResource Loc_TreemapTipDrill}"
                                             Command="{Binding DataContext.DrillDownTreemapNodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource SubtleButtonStyle}"
@@ -470,7 +497,7 @@
                                             Padding="7,2"
                                             FontSize="11"
                                             Margin="0,0,4,0"
-                                            ToolTip="Dosya Gezgininde Aç"
+                                            ToolTip="{DynamicResource Loc_TreemapTipExplorer}"
                                             Command="{Binding DataContext.OpenTreemapNodeInExplorerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource DangerButtonStyle}"

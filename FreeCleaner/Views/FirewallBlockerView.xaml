@@ -1,0 +1,70 @@
+<UserControl x:Class="FreeCleaner.Views.FirewallBlockerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="WINDOWS GÜVENLİK DUVARI (FIREWALL) DENETÇİSİ &amp; UYGULAMA İNTERNET KESİCİ"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Seçtiğiniz herhangi bir .exe programının gelen/giden internet bağlantısını tek tıkla Güvenlik Duvarı üzerinden engeller veya engeli kaldırır."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Content="⛔ .EXE Seç ve İnternetini Kes (Block)"
+                            Padding="13,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding BrowseAndBlockExeFirewallCommand}"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="🔓 Seçili Engelleri Kaldır (İnterneti Aç)"
+                            Padding="13,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding RemoveSelectedFirewallRulesCommand}"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="Kuralları Yenile"
+                            Padding="12,7"
+                            Command="{Binding RefreshFirewallRulesCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding FirewallBlockRules}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="Kural Adı" Binding="{Binding RuleName}" IsReadOnly="True" Width="250"/>
+                    <DataGridTextColumn Header="Yön" Binding="{Binding Direction}" IsReadOnly="True" Width="175"/>
+                    <DataGridTextColumn Header="Durum" Binding="{Binding ActionBadge}" IsReadOnly="True" Width="195"/>
+                    <DataGridTextColumn Header="Profil" Binding="{Binding ProfileText}" IsReadOnly="True" Width="125"/>
+                    <DataGridTextColumn Header="Hedef Program (.exe) Yolu" Binding="{Binding ProgramPath}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

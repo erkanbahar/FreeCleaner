@@ -1,0 +1,71 @@
+<UserControl x:Class="FreeCleaner.Views.MonitorGpuView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="MONİTÖR EDID, YENİLEME HIZI (HZ) &amp; EKRAN KARTI (GPU) SIFIRLAMA DOKTORU"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Bağlı ekranların EDID model/seri numarasını ve aktif Hz değerini denetler; tek tıkla GPU görüntü sürücüsünü yeniden başlatır."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="🖥️ Ekran &amp; Hz Bilgilerini Yenile"
+                            Padding="13,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanMonitorsAndGpuCommand}"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="🎨 ClearType Metin Ayarı"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding LaunchSystemToolCommand}"
+                            CommandParameter="cttune.exe"/>
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Content="⚡ GPU Sürücüsünü Yeniden Başlat (Admin)"
+                            Padding="13,7"
+                            Command="{Binding RestartGpuDriverCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding MonitorAndDisplayItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Ekran / GPU Adı" Binding="{Binding DisplayName}" Width="245"/>
+                    <DataGridTextColumn Header="Çözünürlük &amp; Bit" Binding="{Binding ResolutionAndDepth}" Width="180"/>
+                    <DataGridTextColumn Header="Yenileme Hızı (Hz) / Üretim" Binding="{Binding RefreshRateInfo}" Width="210"/>
+                    <DataGridTextColumn Header="EDID Seri No / Sürücü" Binding="{Binding EdidAndDriverInfo}" Width="245"/>
+                    <DataGridTextColumn Header="Durum &amp; Optimizasyon" Binding="{Binding OptimizationBadge}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

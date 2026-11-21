@@ -1,0 +1,91 @@
+<UserControl x:Class="FreeCleaner.Views.NetworkAdapterDoctorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="AĞ ADAPTÖRÜ, IP/MAC ENVANTERİ &amp; TCP/IP WINSOCK ONARIM DOKTORU"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Tüm fiziksel/sanal ağ kartlarını, MAC adreslerini, Ağ Geçidi (Gateway) ve DNS sunucularını listeler; tek tıkla TCP/IP ve Winsock onarımı yapar."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <Button Style="{StaticResource PrimaryButtonStyle}"
+                        Content="Ağ Adaptörlerini Yenile"
+                        Padding="14,7"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Command="{Binding RefreshNetworkAdaptersCommand}"/>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Background="{DynamicResource BgPrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,10"
+                    Margin="0,0,0,10">
+                <WrapPanel VerticalAlignment="Center">
+                    <TextBlock Text="Hızlı Ağ Onarım Araçları:" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="🧹 DNS &amp; ARP Önbelleğini Sıfırla (arp -d *)"
+                            Padding="12,6"
+                            Margin="0,0,10,0"
+                            Command="{Binding RunNetworkRepairActionCommand}"
+                            CommandParameter="ARP_FLUSH"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="🔄 DHCP IP Yenile (Release &amp; Renew)"
+                            Padding="12,6"
+                            Margin="0,0,10,0"
+                            Command="{Binding RunNetworkRepairActionCommand}"
+                            CommandParameter="DHCP_RENEW"/>
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Content="🛠️ Winsock &amp; TCP/IP Yığınını Sıfırla (Admin)"
+                            Padding="12,6"
+                            Command="{Binding RunNetworkRepairActionCommand}"
+                            CommandParameter="TCP_WINSOCK_RESET"/>
+                </WrapPanel>
+            </Border>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding NetworkAdapters}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Bağlantı Durumu" Binding="{Binding StatusBadge}" Width="135"/>
+                    <DataGridTextColumn Header="Arayüz Adı" Binding="{Binding AdapterName}" Width="165"/>
+                    <DataGridTextColumn Header="Donanım / Sanal Adaptör" Binding="{Binding Description}" Width="245"/>
+                    <DataGridTextColumn Header="Fiziksel Adres (MAC)" Binding="{Binding MacAddress}" Width="150"/>
+                    <DataGridTextColumn Header="IPv4 &amp; Ağ Geçidi (Gateway)" Binding="{Binding IpAndGateway}" Width="240"/>
+                    <DataGridTextColumn Header="Hız &amp; DNS Sunucuları" Binding="{Binding DnsAndSpeed}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

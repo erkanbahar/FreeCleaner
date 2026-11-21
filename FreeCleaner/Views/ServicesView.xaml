@@ -1,0 +1,75 @@
+<UserControl x:Class="FreeCleaner.Views.ServicesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Windows Arka Plan Servisleri &amp; Telemetri Optimizasyon Yöneticisi"
+                               FontSize="14"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="Telemetri (DiagTrack), SysMain (Superfetch), Windows Search, Yazdırma Biriktiricisi ve Xbox servislerini yönetin."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                </StackPanel>
+
+                <Button Style="{StaticResource PrimaryButtonStyle}"
+                        Content="Servis Durumlarını Yenile"
+                        HorizontalAlignment="Right"
+                        Command="{Binding RefreshServicesCommand}"/>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding OptimizableServices}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Servis Kodu" Binding="{Binding ServiceName}" Width="130"/>
+                    <DataGridTextColumn Header="Servis Adı" Binding="{Binding DisplayName}" Width="230"/>
+                    <DataGridTextColumn Header="Durum" Binding="{Binding Status}" Width="140"/>
+                    <DataGridTextColumn Header="Başlangıç" Binding="{Binding StartType}" Width="95"/>
+                    <DataGridTextColumn Header="Açıklama" Binding="{Binding Description}" Width="*"/>
+                    <DataGridTemplateColumn Header="Kontrol" Width="165">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource SubtleButtonStyle}"
+                                            Content="Durdur"
+                                            Padding="8,3"
+                                            Margin="0,0,6,0"
+                                            Command="{Binding DataContext.StopServiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                    <Button Style="{StaticResource SubtleButtonStyle}"
+                                            Content="Başlat"
+                                            Padding="8,3"
+                                            Command="{Binding DataContext.StartServiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

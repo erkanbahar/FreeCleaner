@@ -12,6 +12,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        Services.CrashGuardService.InstallGlobalHandlers(this);
 
         _singleInstance = new Services.SingleInstanceBridgeService();
         if (!_singleInstance.TryAcquirePrimaryInstance())

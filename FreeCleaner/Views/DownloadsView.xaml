@@ -28,18 +28,18 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Kurulum Yaşı (Gün):" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
+                        <TextBlock Text="{DynamicResource Loc_DlInstallerAgeLabel}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
                         <ComboBox ItemsSource="{Binding AvailableInstallerAgeDays}"
                                   SelectedItem="{Binding InstallerMinAgeDays}"
                                   Width="65"
                                   VerticalContentAlignment="Center"
                                   Margin="0,0,12,0"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="İndirilenler (.exe, .msi, .iso, .zip) Tara"
+                                Content="{DynamicResource Loc_DlScanInstallersBtn}"
                                 Command="{Binding ScanOldInstallersCommand}"
                                 Margin="0,0,14,0"/>
 
-                        <TextBlock Text="Boş Klasör Hedefi:" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
+                        <TextBlock Text="{DynamicResource Loc_DlEmptyTargetLabel}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
                         <TextBox Text="{Binding EmptyFolderScanTarget, UpdateSourceTrigger=PropertyChanged}"
                                  Width="185"
                                  Background="{DynamicResource BgCardBrush}"
@@ -49,17 +49,17 @@
                                  Padding="6,5"
                                  Margin="0,0,6,0"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                Content="Seç..."
+                                Content="{DynamicResource Loc_BtnSelectDots}"
                                 Command="{Binding BrowseEmptyFolderTargetCommand}"
                                 Margin="0,0,6,0"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="Boş Klasörleri Bul"
+                                Content="{DynamicResource Loc_DlScanEmptyBtn}"
                                 Command="{Binding ScanEmptyFoldersCommand}"/>
                     </StackPanel>
 
                     <Button Grid.Column="1"
                             Style="{StaticResource CleanButtonStyle}"
-                            Content="Seçilileri Temizle"
+                            Content="{DynamicResource Loc_DlCleanSelectedBtn}"
                             Command="{Binding CleanDownloadsAndEmptyCommand}"/>
                 </Grid>
 
@@ -77,12 +77,36 @@
                           BorderThickness="1"
                           RowHeight="32">
                     <DataGrid.Columns>
-                        <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                        <DataGridTextColumn Header="Tür" Binding="{Binding ItemType}" IsReadOnly="True" Width="175"/>
-                        <DataGridTextColumn Header="Adı" Binding="{Binding Name}" IsReadOnly="True" Width="220"/>
-                        <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="105"/>
-                        <DataGridTextColumn Header="Tarih / Yaş" Binding="{Binding FormattedAge}" IsReadOnly="True" Width="155"/>
-                        <DataGridTextColumn Header="Tam Yol" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
+                        <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45">
+                            <DataGridCheckBoxColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                            </DataGridCheckBoxColumn.Header>
+                        </DataGridCheckBoxColumn>
+                        <DataGridTextColumn Binding="{Binding ItemType}" IsReadOnly="True" Width="175">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_DlColType}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding Name}" IsReadOnly="True" Width="220">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_DlColName}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="105">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding FormattedAge}" IsReadOnly="True" Width="155">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_DlColAge}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding FullPath}" IsReadOnly="True" Width="*">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColFullPath}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
@@ -135,16 +159,16 @@
                                  Padding="7,5"
                                  Margin="0,0,6,0"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                Content="Gözat..."
+                                Content="{DynamicResource Loc_BtnBrowse}"
                                 Command="{Binding BrowseOrganizerFolderCommand}"
                                 Margin="0,0,6,0"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                Content="📥 İndirilenler"
+                                Content="{DynamicResource Loc_TreemapQuickDownloads}"
                                 Command="{Binding SelectOrganizerPresetCommand}"
                                 CommandParameter="Downloads"
                                 Margin="0,0,4,0"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                Content="🖥️ Masaüstü"
+                                Content="{DynamicResource Loc_TreemapQuickDesktop}"
                                 Command="{Binding SelectOrganizerPresetCommand}"
                                 CommandParameter="Desktop"/>
                     </StackPanel>
@@ -178,10 +202,26 @@
                           BorderThickness="1"
                           RowHeight="27">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Kategori" Binding="{Binding TargetCategory}" Width="115"/>
-                        <DataGridTextColumn Header="Dosya Adı" Binding="{Binding FileName}" Width="240"/>
-                        <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" Width="90"/>
-                        <DataGridTextColumn Header="Hedef Yol" Binding="{Binding DestinationPath}" Width="*"/>
+                        <DataGridTextColumn Binding="{Binding TargetCategory}" Width="115">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColCategory}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding FileName}" Width="240">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_DiskColFileName}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" Width="90">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding DestinationPath}" Width="*">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_OrgColDestPath}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

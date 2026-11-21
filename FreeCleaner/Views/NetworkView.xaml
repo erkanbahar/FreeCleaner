@@ -21,13 +21,13 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="0" Margin="0,0,0,10">
-                    <TextBlock Text="CANLI TCP / UDP AĞ BAĞLANTILARI &amp; PORT DENETÇİSİ"
+                    <TextBlock Text="{DynamicResource Loc_NetConnTitle}"
                                FontSize="12"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Bağlantıları Yenile"
+                            Content="{DynamicResource Loc_NetConnRefreshBtn}"
                             Padding="12,6"
                             HorizontalAlignment="Right"
                             Command="{Binding RefreshConnectionsCommand}"/>
@@ -47,12 +47,36 @@
                           BorderThickness="1"
                           RowHeight="30">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Protokol" Binding="{Binding Protocol}" Width="65"/>
-                        <DataGridTextColumn Header="İşlem (Process)" Binding="{Binding ProcessName}" Width="140"/>
-                        <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="60"/>
-                        <DataGridTextColumn Header="Yerel Adres" Binding="{Binding LocalAddress}" Width="145"/>
-                        <DataGridTextColumn Header="Uzak Adres" Binding="{Binding RemoteAddress}" Width="145"/>
-                        <DataGridTextColumn Header="Durum" Binding="{Binding State}" Width="*"/>
+                        <DataGridTextColumn Binding="{Binding Protocol}" Width="65">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_NetColProto}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding ProcessName}" Width="140">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_NetColProcess}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding ProcessId}" Width="60">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_LiveColPid}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding LocalAddress}" Width="145">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_NetColLocal}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding RemoteAddress}" Width="145">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_NetColRemote}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding State}" Width="*">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
@@ -73,18 +97,18 @@
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0" Margin="0,0,0,10">
-                    <TextBlock Text="WINDOWS HOSTS DOSYASI YÖNETİCİSİ"
+                    <TextBlock Text="{DynamicResource Loc_NetHostsTitle}"
                                FontSize="12"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Yenile"
+                            Content="{DynamicResource Loc_BtnRefresh}"
                             HorizontalAlignment="Right"
                             Command="{Binding RefreshHostsCommand}"
                             Margin="0,0,84,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Yedeği Geri Yükle"
+                            Content="{DynamicResource Loc_NetHostsRestoreBtn}"
                             HorizontalAlignment="Right"
                             Command="{Binding RestoreHostsBackupCommand}"/>
                 </Grid>
@@ -103,7 +127,7 @@
                              BorderBrush="{DynamicResource BorderSubtleBrush}"
                              Padding="6,5"
                              Margin="0,0,6,0"
-                             ToolTip="Hedef IP (Engellemek için 0.0.0.0)"/>
+                             ToolTip="{DynamicResource Loc_NetHostIpTip}"/>
                     <TextBox Grid.Column="1"
                              Text="{Binding NewHostDomain, UpdateSourceTrigger=PropertyChanged}"
                              Background="{DynamicResource BgCardBrush}"
@@ -112,10 +136,10 @@
                              BorderBrush="{DynamicResource BorderSubtleBrush}"
                              Padding="6,5"
                              Margin="0,0,6,0"
-                             ToolTip="Alan adı (örn: telemetry.example.com)"/>
+                             ToolTip="{DynamicResource Loc_NetHostDomainTip}"/>
                     <Button Grid.Column="2"
                             Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Kural Ekle"
+                            Content="{DynamicResource Loc_NetHostAddBtn}"
                             Padding="12,5"
                             Command="{Binding AddHostEntryCommand}"/>
                 </Grid>
@@ -135,22 +159,41 @@
                           BorderThickness="1"
                           RowHeight="30">
                     <DataGrid.Columns>
-                        <DataGridCheckBoxColumn Header="Etkin" Binding="{Binding IsEnabled, UpdateSourceTrigger=PropertyChanged}" Width="48"/>
-                        <DataGridTextColumn Header="IP Adresi" Binding="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}" Width="105"/>
-                        <DataGridTextColumn Header="Alan Adı (Host)" Binding="{Binding Hostname, UpdateSourceTrigger=PropertyChanged}" Width="165"/>
-                        <DataGridTextColumn Header="Açıklama" Binding="{Binding Comment, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                        <DataGridTemplateColumn Header="İşlemler" Width="140">
+                        <DataGridCheckBoxColumn Binding="{Binding IsEnabled, UpdateSourceTrigger=PropertyChanged}" Width="48">
+                            <DataGridCheckBoxColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_NetHostsColEnabled}"/>
+                            </DataGridCheckBoxColumn.Header>
+                        </DataGridCheckBoxColumn>
+                        <DataGridTextColumn Binding="{Binding IpAddress, UpdateSourceTrigger=PropertyChanged}" Width="105">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_NetHostsColIp}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding Hostname, UpdateSourceTrigger=PropertyChanged}" Width="165">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_NetHostsColHost}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding Comment, UpdateSourceTrigger=PropertyChanged}" Width="*">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColDescription}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTemplateColumn Width="140">
+                            <DataGridTemplateColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColActions}"/>
+                            </DataGridTemplateColumn.Header>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
                                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                                Content="Kaydet"
+                                                Content="{DynamicResource Loc_NetHostSaveBtn}"
                                                 Padding="6,3"
                                                 Margin="0,0,5,0"
                                                 Command="{Binding DataContext.SaveHostEntryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"/>
                                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                                Content="Sil"
+                                                Content="{DynamicResource Loc_StartupDeleteBtn}"
                                                 Padding="6,3"
                                                 Command="{Binding DataContext.DeleteHostEntryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"/>

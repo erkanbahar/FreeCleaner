@@ -1,0 +1,70 @@
+<UserControl x:Class="FreeCleaner.Views.DockerWslView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="WSL2 LINUX DAĞITIM YÖNETİCİSİ &amp; DOCKER KONTEYNER / İMAJ TEMİZLEYİCİ"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Yüklü WSL2 dağıtımlarını ve Docker konteynerlerini listeler; tek tıkla VmmemWSL RAM'ini kurtarır (wsl --shutdown) veya Docker prune yapar."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="🔄 Listeyi Yenile"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanDockerAndWslCommand}"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="🛑 WSL2 Motorunu Kapat &amp; RAM Kurtar"
+                            Padding="13,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ShutdownWslCommand}"/>
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Content="🐳 Docker System Prune (-f)"
+                            Padding="13,7"
+                            Command="{Binding PruneDockerSystemCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding DockerAndWslItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Platform" Binding="{Binding PlatformType}" Width="195"/>
+                    <DataGridTextColumn Header="Dağıtım / Konteyner Adı" Binding="{Binding NameOrTag}" Width="240"/>
+                    <DataGridTextColumn Header="Durum" Binding="{Binding StateOrStatus}" Width="190"/>
+                    <DataGridTextColumn Header="Sürüm / Boyut" Binding="{Binding VersionOrSize}" Width="160"/>
+                    <DataGridTextColumn Header="Ayrıntılar" Binding="{Binding Details}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

@@ -880,18 +880,18 @@ public class NextGenUpgradesTests
 
         Assert.Contains("<svg", html);
         Assert.Contains("94", html);
-        Assert.Contains("FreeCleaner Pro v4.1.0", html);
+        Assert.Contains($"FreeCleaner Pro v{AppUpdateService.CurrentVersion}", html);
         Assert.DoesNotContain("<script>alert('xss')</script>", html);
         Assert.Contains("&lt;script&gt;", html);
     }
 
     [Fact]
-    public void AppUpdateService_CurrentVersionIs410AndComparesCorrectly()
+    public void AppUpdateService_CurrentVersionMatches430AndComparesCorrectly()
     {
-        Assert.Equal("4.1.0", AppUpdateService.CurrentVersion);
-        Assert.True(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.2.0"));
-        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.1.0"));
-        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.0.0"));
+        Assert.Equal("4.3.0", AppUpdateService.CurrentVersion);
+        Assert.True(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.4.0"));
+        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.3.0"));
+        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.2.0"));
     }
 
     [Fact]

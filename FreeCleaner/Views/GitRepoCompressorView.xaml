@@ -1,0 +1,101 @@
+<UserControl x:Class="FreeCleaner.Views.GitRepoCompressorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="GİT DEPOLARI (.GIT) SIKIŞTIRICI (GIT GC --PRUNE) &amp; PROJE DURUM RADARI"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Çalışma alanındaki tüm Git projelerinin aktif branch ve değişiklik durumunu listeler; 'git gc --prune=now' ile hiçbir kod silmeden .git boyutunu küçültür."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="🌿 Git Projelerini Tara"
+                            Padding="13,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanGitReposCommand}"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="🗜️ Seçili Git Depolarını Sıkıştır (git gc)"
+                            Padding="14,7"
+                            Command="{Binding CompressSelectedGitReposCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Background="{DynamicResource BgPrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,9"
+                    Margin="0,0,0,10">
+                <WrapPanel VerticalAlignment="Center">
+                    <TextBlock Text="Git Çalışma Alanı (Workspace) Klasörü:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBox Text="{Binding GitWorkspacePath, UpdateSourceTrigger=PropertyChanged}"
+                             Width="390"
+                             Padding="8,5"
+                             Background="#0D1422"
+                             Foreground="{DynamicResource TextPrimaryBrush}"
+                             BorderBrush="{DynamicResource BorderSubtleBrush}"
+                             Margin="0,0,8,0"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="Klasör Seç &amp; Tara..."
+                            Padding="12,5"
+                            Command="{Binding BrowseGitWorkspaceCommand}"/>
+                </WrapPanel>
+            </Border>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding GitRepoItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="Proje / Depo Adı" Binding="{Binding RepoName}" IsReadOnly="True" Width="210"/>
+                    <DataGridTextColumn Header="Aktif Branch" Binding="{Binding ActiveBranch}" IsReadOnly="True" Width="165"/>
+                    <DataGridTextColumn Header="Çalışma Ağacı (git status)" Binding="{Binding WorkingTreeStatus}" IsReadOnly="True" Width="220"/>
+                    <DataGridTextColumn Header=".git Boyutu" Binding="{Binding FormattedGitSize}" IsReadOnly="True" Width="120"/>
+                    <DataGridTextColumn Header="Tam Klasör Yolu" Binding="{Binding RepoRootPath}" IsReadOnly="True" Width="*"/>
+                    <DataGridTemplateColumn Header="Klasör" Width="95">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Aç"
+                                        Padding="10,3"
+                                        FontSize="11"
+                                        Command="{Binding DataContext.OpenGitRepoFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

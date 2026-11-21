@@ -18,7 +18,8 @@ public sealed class SystemTrayService : IDisposable
         Action optimizeRamAction,
         Action runHealthCheckAction,
         Action analyzeJunkAction,
-        Action exitAppAction)
+        Action exitAppAction,
+        Action? balloonClickedAction = null)
     {
         _menu = new Forms.ContextMenuStrip();
         _menu.Items.Add("🖥️ FreeCleaner Pro'yu Göster", null, (_, _) => InvokeOnUi(showWindowAction));
@@ -38,6 +39,8 @@ public sealed class SystemTrayService : IDisposable
         };
 
         _notifyIcon.DoubleClick += (_, _) => InvokeOnUi(showWindowAction);
+        if (balloonClickedAction is not null)
+            _notifyIcon.BalloonTipClicked += (_, _) => InvokeOnUi(balloonClickedAction);
     }
 
     public void ShowNotification(string title, string message, bool isWarning = false)

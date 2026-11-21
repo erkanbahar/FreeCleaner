@@ -1,0 +1,64 @@
+<UserControl x:Class="FreeCleaner.Views.FileAssocView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="DOSYA UZANTISI &amp; VARSAYILAN PROGRAM (USERCHOICE) DOKTORU"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Popüler dosya uzantılarının (.pdf, .zip, .mp4, .jpg, .json, .cs vb.) bağlı olduğu ProgId kayıtlarını denetler ve bozuk uzantı ilişkilerini sıfırlar."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="Uzantıları Yeniden Tara"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanFileAssocCommand}"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="Seçili Uzantı İlişkilerini Sıfırla"
+                            Padding="12,7"
+                            Command="{Binding ResetFileAssocCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding FileAssociations}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="34">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="Uzantı" Binding="{Binding Extension}" IsReadOnly="True" Width="95"/>
+                    <DataGridTextColumn Header="Atanmış ProgId" Binding="{Binding CurrentProgId}" IsReadOnly="True" Width="230"/>
+                    <DataGridTextColumn Header="Durum" Binding="{Binding StatusText}" IsReadOnly="True" Width="210"/>
+                    <DataGridTextColumn Header="Uygulama / İşleyici Açıklaması" Binding="{Binding HandlerDescription}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,121 @@
+<UserControl x:Class="FreeCleaner.Views.BatchRenamerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="TOPLU DOSYA YENİDEN ADLANDIRICI (POWERRENAME &amp; GERİ ALMA MERKEZİ)"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Klasördeki dosyalar için Ön Ek, Son Ek, Bul/Değiştir, Numaralandırma (001, 002...) ve Harf Biçimi kurallarını canlı önizlemeyle uygulayın."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="↩ Son Adlandırmayı Geri Al"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding UndoBatchRenameCommand}"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="✨ Seçili Dosyaları Yeniden Adlandır"
+                            Padding="14,7"
+                            Command="{Binding ApplyBatchRenameCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Background="{DynamicResource BgPrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,10"
+                    Margin="0,0,0,10">
+                <StackPanel>
+                    <WrapPanel VerticalAlignment="Center" Margin="0,0,0,8">
+                        <TextBlock Text="Hedef Klasör:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Text="{Binding BatchRenameFolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="360"
+                                 Padding="8,5"
+                                 Background="#0D1422"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                 Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource SecondaryButtonStyle}"
+                                Content="Klasör Seç..."
+                                Padding="10,5"
+                                Margin="0,0,12,0"
+                                Command="{Binding BrowseRenameFolderCommand}"/>
+                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                Content="Önizlemeyi Yenile"
+                                Padding="12,5"
+                                Command="{Binding PreviewBatchRenameCommand}"/>
+                    </WrapPanel>
+
+                    <WrapPanel VerticalAlignment="Center">
+                        <TextBlock Text="Bul:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBox Text="{Binding BatchRenameFindText, UpdateSourceTrigger=PropertyChanged}" Width="110" Padding="6,4" Background="#0D1422" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+
+                        <TextBlock Text="Değiştir:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBox Text="{Binding BatchRenameReplaceText, UpdateSourceTrigger=PropertyChanged}" Width="110" Padding="6,4" Background="#0D1422" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+
+                        <TextBlock Text="Ön Ek (Prefix):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBox Text="{Binding BatchRenamePrefixText, UpdateSourceTrigger=PropertyChanged}" Width="95" Padding="6,4" Background="#0D1422" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+
+                        <TextBlock Text="Son Ek (Suffix):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBox Text="{Binding BatchRenameSuffixText, UpdateSourceTrigger=PropertyChanged}" Width="95" Padding="6,4" Background="#0D1422" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+
+                        <ComboBox ItemsSource="{Binding AvailableRenameCaseModes}"
+                                  SelectedItem="{Binding BatchRenameCaseMode}"
+                                  Width="185"
+                                  Padding="6,4"
+                                  Margin="0,0,12,0"/>
+
+                        <CheckBox Content="Sıra No (_001)"
+                                  IsChecked="{Binding BatchRenameAddNumbers}"
+                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  VerticalAlignment="Center"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding BatchRenameItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="34">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="Mevcut Dosya Adı" Binding="{Binding OriginalName}" IsReadOnly="True" Width="260"/>
+                    <DataGridTextColumn Header="Yeni Dosya Adı (Önizleme)" Binding="{Binding NewName}" IsReadOnly="True" Width="280"/>
+                    <DataGridTextColumn Header="Uzantı" Binding="{Binding Extension}" IsReadOnly="True" Width="80"/>
+                    <DataGridTextColumn Header="Durum" Binding="{Binding ChangeStatus}" IsReadOnly="True" Width="175"/>
+                    <DataGridTextColumn Header="Tam Dosya Yolu" Binding="{Binding OriginalFullPath}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

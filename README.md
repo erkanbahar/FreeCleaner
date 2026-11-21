@@ -1,10 +1,10 @@
-# FreeCleaner Pro v4.1 (.NET 10 WPF)
+# FreeCleaner Pro v4.3 (.NET 10 WPF)
 
 [![FreeCleaner .NET 10 CI](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--windows-512BD4?logo=dotnet)
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011%20(x64)-0078D6?logo=windows)
 ![Modules](https://img.shields.io/badge/Modules-57%20Tools-10B981)
-![Tests](https://img.shields.io/badge/Tests-44%20Passing-22C55E)
+![Tests](https://img.shields.io/badge/Tests-52%20Passing-22C55E)
 ![Language](https://img.shields.io/badge/Language-English%20%7C%20T%C3%BCrk%C3%A7e-38BDF8)
 
 > 🌐 **Language / Dil:** [English](#english) • [Türkçe](#türkçe) • 📋 [Changelog](CHANGELOG.md)
@@ -24,7 +24,8 @@
 - **📈 Disk Snapshot Diff ("Where Did My Disk Space Go?"):** Saves lightweight Treemap snapshots (`%LocalAppData%\FreeCleaner\snapshots`) and computes per-folder `+GB` growth deltas (`ComputeGrowthDiff`) between scans.
 - **🔒 Smart Browser / VM Process Lock Guard:** Detects active browsers (`Chrome`, `Edge`, `Brave`, `Firefox`, `Discord`, `Steam`, `VS Code`) before cleanup and `Claude Desktop` / `Docker` / `WSL2` before `.vhdx` compaction, offering a safe **Close & Continue / Skip / Cancel** prompt.
 - **⬇️ In-App GitHub Releases Updater with SHA-256 Verification:** Downloads portable `.exe`/`.zip` releases with live progress tracking, validates cryptographic `SHA-256` digests (`SHA256SUMS.txt` / GitHub asset digest), and runs an atomic backup/swap/relaunch script.
-- **🔔 Live System Tray Telemetry & Cooldown Alerts:** Displays real-time `CPU %`, `RAM %`, and `C:` free GB in the tray tooltip (63-char safe), supports minimize-to-tray, and sends cooldown-protected alerts when Disk (`>= 90%`) or RAM (`>= 92%`) reaches critical thresholds.
+- **🔔 Live System Tray Telemetry, Cooldown & Proactive Storage Forecast Alerts:** Displays real-time `CPU %`, `RAM %`, and `C:` free GB in the tray tooltip (63-char safe), supports minimize-to-tray, sends cooldown-protected critical alerts (`>= 90%` Disk / `>= 92%` RAM), and notifies proactively when predicted days to 90% disk usage fall below your configurable threshold (`7 / 15 / 30` days — click balloon to open Smart Cleaner).
+- **🛡️ Global Crash Guard (`CrashGuardService`):** Captures unhandled UI/AppDomain/Task exceptions cleanly, writes redacted `crashes/crash-*.log` reports (`%USERPROFILE%` + secret sanitization), and offers one-click redacted Desktop Support Bundle `.zip` export (`latest_crash_sanitized.log` included).
 - **📊 SVG Diagnostic HTML Report & Filterable Activity Console:** Exports rich HTML/JSON reports featuring an inline SVG health-score gauge and 14-day cleanup history bars, paired with live log search, clipboard copy, `.log` export, and clear buttons in the Activity Console.
 - **🪟 Native Windows 11 DWM & Manifest Polish:** Includes `app.manifest` (`PerMonitorV2` DPI awareness and `longPathAware` for deep `node_modules`/cache paths) plus DWM rounded corners and theme-adaptive frame attributes.
 - **🎒 True Portable Mode (`portable.flag`) & Diagnostic Support Bundle (`.zip`):** Stores settings, cleanup history, snapshots, telemetry, and logs inside a local `data\` folder when enabled, and exports a redacted support `.zip` (`diagnostic_report.html`, `system_summary.json`, sanitized logs).
@@ -33,8 +34,8 @@
 - **💾 Deep Windows Space Recovery & VHDX Compactor:** Manages `hiberfil.sys` (`powercfg`), `WinSxS` (`DISM`), lossless `CompactOS`, `NVIDIA/AMD` installer caches, and one-click DiskPart `compact vdisk` for WSL2 / Docker / Claude VM `.vhdx` virtual disks.
 - **🖼️ Perceptual Similar Photo Finder (`dHash`), 📸 EXIF Scrubber & 🗂️ Smart Folder Organizer:** Clusters burst photos with 64-bit `dHash`, strips GPS/EXIF metadata pixel-safely, and organizes Downloads / Desktop folders with one-click Undo.
 - **📈 Live CPU / RAM & Network Sparkline Monitor:** 1-second Win32 `GetSystemTimes` + `NetworkInterface` telemetry with sparkline charts and top-10 memory consumers.
-- **⌨️ Bilingual `Ctrl+K` Command Palette, 4 Live Themes & Complete EN/TR UI:** Live switching across `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix`, and `FluentLight` themes and full `en-US` / `tr-TR` translation across all 57 sidebar modules and palette actions.
-- **🚀 Modular Partial ViewModel & 22 Lazy Views (`LazyViewRegistry`):** 22 core & heavy views instantiate on first demand, backed by clean partial splits (`MainViewModel.cs`, `MainViewModel.CoreTools.cs`, `MainViewModel.SystemTools.cs`, `MainViewModel.NextGen.cs`, `MainViewModel.PowerSuite.cs`) and `-p:TreatWarningsAsErrors=true` CI enforcement.
+- **⌨️ Bilingual `Ctrl+K` Command Palette, 4 Live Themes & Complete EN/TR Core UI:** Live switching across `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix`, and `FluentLight` themes and full `en-US` / `tr-TR` translation across all sidebar modules, palette actions, and all 22 core modular Views.
+- **🚀 100% Modular Architecture (`57 Lazy Views` / `60 Section Keys`) & Cohesive `partial MainViewModel` Split:** Every module view instantiates on demand via `LazyViewRegistry` (zero inline view blocks in `MainWindow.xaml`), backed by modular ViewModel files (`CoreTools`, `SystemTools`, `WindowsTools`, `HardwareAndForensics`, `SecurityAndTweaks`, `DevOpsAndNetwork`, `Dashboard`, `NextGen`, `PowerSuite`), `.gitattributes`/`.editorconfig` hygiene, and CI `XPlat Code Coverage` + `-p:TreatWarningsAsErrors=true`.
 
 ### All Modules (6 Categories • 57 Tools)
 
@@ -117,6 +118,10 @@
 | `--deep-space` | Opens Deep Windows Space Recovery and starts analysis |
 | `--health-check` | Runs the 100-Point Health Check on Dashboard |
 | `--scheduled-maintenance` | Executes headless/auto scheduled cleanup and closes on completion |
+| `--dry-run` | Analyzes cleanup rules safely without deleting any files |
+| `--profile <SafeDaily\|DeveloperDeep\|GamerBoost\|MaxPrivacy>` | Applies a preset cleaning profile on launch |
+| `--report-json "<path>"` | Exports the structured JSON scan breakdown (`CliAutomationReport`) |
+| `--exit` / `--headless` | Exits cleanly right after CLI automation finishes |
 | `--minimized` / `--tray` | Starts silently minimized directly to System Tray |
 
 | Shortcut | Action |
@@ -131,19 +136,21 @@
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### CLI Build & Unit Tests (44 Tests)
+#### CLI Build & Unit Tests (52 Tests + Coverage)
 ```powershell
 dotnet restore FreeCleaner.slnx
-dotnet build FreeCleaner.slnx --configuration Release --no-restore
-dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release --no-build --verbosity normal
+dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
+dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage"
 dotnet run --project FreeCleaner/FreeCleaner.csproj
 ```
 
 #### Single-File Portable `.exe`
 ```powershell
 .\scripts\Publish-Portable.ps1
+# Optional pre-flagged USB portable output:
+.\scripts\Publish-Portable.ps1 -IncludePortableFlag
 ```
-Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag v4.0.0 && git push origin v4.0.0`) triggers `.github/workflows/release.yml` to run tests and publish the portable `.exe` and `.zip` on GitHub Releases.
+Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag v4.3.0 && git push origin v4.3.0`) triggers `.github/workflows/release.yml` to verify tests, build with warnings-as-errors, and publish both Standard and USB (`portable.flag`) archives + `SHA256SUMS.txt` on GitHub Releases.
 
 ---
 
@@ -162,7 +169,8 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **📈 Klasör Boyutu Anlık Görüntü Karşılaştırması (Disk Snapshot Diff):** Treemap taramalarını hafif anlık görüntüler (`%LocalAppData%\FreeCleaner\snapshots`) olarak kaydeder; önceki taramaya göre en çok büyüyen klasörleri (`+GB` artış) listeler.
 - **🔒 Akıllı Süreç Kilit Koruması (Process Lock Guard):** Temizlik öncesinde açık tarayıcı/uygulamaları (`Chrome`, `Edge`, `Brave`, `Firefox`, `Discord`, `Steam`, `VS Code`), `.vhdx` sıkıştırma öncesinde ise `Claude Desktop` / `Docker` / `WSL2` süreçlerini algılayıp güvenli kapatma seçeneği sunar.
 - **⬇️ Uygulama İçi SHA-256 Doğrulamalı Güncelleyici:** GitHub Releases üzerinden `.exe`/`.zip` paketlerini ilerleme çubuğuyla indirir, kriptografik `SHA-256` bütünlüğünü (`SHA256SUMS.txt` / asset digest) doğrular ve atomik yedekleme/yeniden başlatma uygular.
-- **🔔 Canlı Sistem Tepsisi Telemetrisi & Bekleme Süreli Kritik Uyarılar:** Tepsi ikonu üzerine gelince anlık `CPU %`, `RAM %` ve `C:` boş alanı (63 karakter sınırına uygun) gösterir; Disk (`>= %90`) veya RAM (`>= %92`) kritik eşiğe ulaştığında 30 dakikalık bekleme süresiyle (cooldown) akıllı uyarı gönderir.
+- **🔔 Canlı Sistem Tepsisi Telemetrisi, Bekleme Süreli & Proaktif Depolama Tahmin Uyarıları:** Tepsi ikonu üzerine gelince anlık `CPU %`, `RAM %` ve `C:` boş alanı (63 karakter sınırına uygun) gösterir; Disk (`>= %90`) veya RAM (`>= %92`) kritik eşiğe ulaştığında 30 dakikalık cooldown ile uyarır; disk doluluk tahmini belirlenen kalan gün eşiğinin (`7 / 15 / 30` gün) altına düştüğünde proaktif bildirim üretir (bildirime tıklayınca Akıllı Temizlik açılır).
+- **🛡️ Global Çökme Koruması (`CrashGuardService`):** Beklenmedik UI, `AppDomain` ve arka plan `Task` hatalarını yakalar; `%USERPROFILE%` ve gizli anahtarlardan arındırılmış dökümleri `crashes/crash-*.log` altına yazar (en fazla 20 log saklar) ve Masaüstüne `latest_crash_sanitized.log` içeren Teşhis Destek Paketi `.zip` oluşturulmasını önerir.
 - **📊 SVG Sağlık Göstergeli HTML Rapor & Filtrelenebilir Konsol:** Inline SVG sağlık puanı kadranı ve 14 günlük geçmiş çubukları içeren HTML/JSON rapor üretir; işlem konsolunda canlı arama, panoya kopyalama, `.log` dışa aktarma ve temizleme araçları sunar.
 - **🪟 Windows 11 Yerel Pencere Cilası & `app.manifest`:** `PerMonitorV2` DPI, `longPathAware` uzun yol desteği ve DWM yuvarlatılmış pencere/uyumlu çerçeve özellikleri içerir.
 - **🎒 Gerçek Taşınabilir Mod (`portable.flag`) & Teşhis Destek Paketi (`.zip`):** Etkinleştirildiğinde tüm ayar, geçmiş, snapshot, telemetri ve logları uygulama yanındaki `data\` klasöründe tutar; hassas verilerden arındırılmış tek dosyalık destek `.zip` arşivi dışa aktarır.
@@ -171,8 +179,8 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **💾 Dev Windows Sistem Alanı Kurtarıcısı & VHDX Sıkıştırıcı:** Hazırda bekletmeyi kapatma/yarıya indirme (`powercfg`), bileşen deposu temizliği (`DISM`), kayıpsız `CompactOS` sıkıştırma, `NVIDIA/AMD` sürücü artıkları ve WSL2/Docker/Claude VM `.vhdx` sanal diskleri için tek tıkla DiskPart `compact vdisk` desteği sunar.
 - **🖼️ Benzer Fotoğraf Bulucu (`dHash`), 📸 EXIF Temizleyici & 🗂️ Akıllı Klasör Düzenleyici:** 64-bit `dHash` ile seri fotoğrafları kümeleyip en kalitelisini korur, EXIF/GPS metaverilerini siler ve İndirilenler / Masaüstü klasörlerini önizleme + tek tıkla Geri Al (Undo) ile düzenler.
 - **📈 Canlı CPU / RAM & Ağ Hızı Sparkline Monitörü:** Win32 `GetSystemTimes` + `NetworkInterface` üzerinden saniyede bir güncellenen gerçek zamanlı sparkline grafikler ve en çok bellek kullanan ilk 10 işlem tablosu.
-- **⌨️ Çift Dilli `Ctrl+K` Komut Paleti, 4 Canlı Tema & Tam TR/EN Arayüz:** Dil değiştirildiğinde tüm 57 modül, sol menü, sabitlenen favoriler ve Komut Paleti eylemleri `tr-TR` / `en-US` arasında anında çevrilir; `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix` ve `FluentLight` temaları canlı geçiş destekler.
-- **🚀 Modüler `partial class MainViewModel`, 22 Lazy View & CI Uyarı Kapısı:** 22 modüler görünüm ilk açıldığında yüklenir; ViewModel `MainViewModel.cs`, `MainViewModel.CoreTools.cs`, `MainViewModel.SystemTools.cs`, `MainViewModel.NextGen.cs` ve `MainViewModel.PowerSuite.cs` olarak ayrılmıştır ve CI `-p:TreatWarningsAsErrors=true` ile doğrulanır.
+- **⌨️ Çift Dilli `Ctrl+K` Komut Paleti, 4 Canlı Tema & Tam TR/EN Çekirdek Arayüz:** Dil değiştirildiğinde tüm sol menü, sabitlenen favoriler, Komut Paleti ve tüm 22 çekirdek modüler ekran `tr-TR` / `en-US` arasında anında çevrilir; `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix` ve `FluentLight` temaları canlı geçiş destekler.
+- **🚀 %100 Modüler `57 Lazy View` / `60 Ekran Anahtarı` & `partial MainViewModel` Yapısı:** Tüm ekranlar `LazyViewRegistry` ile talep üzerine yüklenir (`MainWindow.xaml` içinde satır içi görünüm kalmamıştır); ViewModel konu bazlı parçalara (`CoreTools`, `SystemTools`, `WindowsTools`, `HardwareAndForensics`, `SecurityAndTweaks`, `DevOpsAndNetwork`, `Dashboard`, `NextGen`, `PowerSuite`) ayrılmıştır; `.gitattributes`/`.editorconfig` ile CI `XPlat Code Coverage` + `-p:TreatWarningsAsErrors=true` uygulanır.
 
 ### Tüm Modüller (6 Kategori • 57 Araç)
 
@@ -255,6 +263,10 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 | `--deep-space` | Dev Windows Sistem Alanı Kurtarıcısı'nı açıp analizi başlatır |
 | `--health-check` | Dashboard üzerinde 100 puanlık Sistem Sağlık Kontrolü başlatır |
 | `--scheduled-maintenance` | Zamanlanmış otomatik bakımı çalıştırıp tamamlanınca kapatır |
+| `--dry-run` | Hiçbir dosya silmeden kuralları güvenli şekilde analiz eder |
+| `--profile <SafeDaily\|DeveloperDeep\|GamerBoost\|MaxPrivacy>` | Açılışta belirtilen temizlik profilini uygular |
+| `--report-json "<yol>"` | Tarama özetini yapılandırılmış JSON (`CliAutomationReport`) olarak yazar |
+| `--exit` / `--headless` | CLI otomasyonu bitince uygulamayı otomatik kapatır |
 | `--minimized` / `--tray` | Pencere göstermeden doğrudan Sistem Tepsisinde sessiz başlatır |
 
 | Kısayol | İşlev |
@@ -269,16 +281,18 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### Komut Satırı ile Derleme & Test (44 Test)
+#### Komut Satırı ile Derleme & Test (52 Test + Kapsam)
 ```powershell
 dotnet restore FreeCleaner.slnx
-dotnet build FreeCleaner.slnx --configuration Release --no-restore
-dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release --no-build --verbosity normal
+dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
+dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release --no-build --collect:"XPlat Code Coverage"
 dotnet run --project FreeCleaner/FreeCleaner.csproj
 ```
 
 #### Tek Dosya Taşınabilir `.exe` Yayınlama
 ```powershell
 .\scripts\Publish-Portable.ps1
+# İsteğe bağlı hazır USB taşınabilir mod (portable.flag) üretimi:
+.\scripts\Publish-Portable.ps1 -IncludePortableFlag
 ```
-Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.1.0 && git push origin v4.1.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp tek dosya `.exe`, `.zip` ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar.
+Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.3.0 && git push origin v4.3.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp hem Standart hem USB (`portable.flag`) `.zip` arşivlerini ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar.

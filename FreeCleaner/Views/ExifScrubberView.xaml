@@ -171,7 +171,7 @@
                                         Padding="8,2"
                                         FontSize="11"
                                         HorizontalAlignment="Center"
-                                        ToolTip="Dosya Konumunu Aç"
+                                        ToolTip="{DynamicResource Loc_OpenFileLocationTip}"
                                         Command="{Binding DataContext.OpenPhotoLocationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                         CommandParameter="{Binding}"/>
                             </DataTemplate>

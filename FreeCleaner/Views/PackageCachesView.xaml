@@ -51,13 +51,40 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Ekosistem" Binding="{Binding Ecosystem}" IsReadOnly="True" Width="170"/>
-                    <DataGridTextColumn Header="Önbellek / Sanal Disk Adı" Binding="{Binding CacheName}" IsReadOnly="True" Width="225"/>
-                    <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="100"/>
-                    <DataGridTextColumn Header="Güvenlik Türü" Binding="{Binding SafetyLabel}" IsReadOnly="True" Width="210"/>
-                    <DataGridTextColumn Header="Tam Klasör / Dosya Yolu" Binding="{Binding FolderPath}" IsReadOnly="True" Width="*"/>
-                    <DataGridTemplateColumn Header="İşlem" Width="195">
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding Ecosystem}" IsReadOnly="True" Width="170">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_PkgColEcosystem}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding CacheName}" IsReadOnly="True" Width="225">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_PkgColName}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedSize}" IsReadOnly="True" Width="100">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding SafetyLabel}" IsReadOnly="True" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_PkgColSafety}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FolderPath}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_PkgColFolder}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="195">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColActions}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -67,7 +94,7 @@
                                             FontSize="11"
                                             Margin="0,0,5,0"
                                             Visibility="{Binding IsVhdxVirtualDisk, Converter={StaticResource BoolToVis}}"
-                                            ToolTip="DiskPart compact vdisk ile .vhdx boş bloklarını sıkıştırır (Yönetici + kapalı uygulama gerekir)"
+                                            ToolTip="{DynamicResource Loc_PkgCompactTip}"
                                             Command="{Binding DataContext.CompactVhdxCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource SecondaryButtonStyle}"

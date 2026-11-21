@@ -202,7 +202,21 @@
                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                       FontWeight="SemiBold"
                                       FontSize="12.5"
-                                      Content="{DynamicResource Loc_SettingsAutoStartTrayCheck}"/>
+                                      Content="{DynamicResource Loc_SettingsAutoStartTrayCheck}"
+                                      Margin="0,0,0,8"/>
+                            <CheckBox IsChecked="{Binding ProactiveStorageAlertsEnabled}"
+                                      Foreground="{DynamicResource TextPrimaryBrush}"
+                                      FontWeight="SemiBold"
+                                      FontSize="12.5"
+                                      Content="{DynamicResource Loc_SettingsProactiveStorageCheck}"
+                                      Margin="0,0,0,8"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{DynamicResource Loc_SettingsProactiveDaysLabel}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <ComboBox ItemsSource="{Binding AvailableStorageAlertDays}"
+                                          SelectedItem="{Binding StorageAlertThresholdDays}"
+                                          Width="72"/>
+                                <TextBlock Text="{DynamicResource Loc_SettingsDaysSuffix}" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                     <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">

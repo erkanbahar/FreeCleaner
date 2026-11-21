@@ -13,10 +13,31 @@ public enum CliLaunchActionKind
     OpenExifScrubber,
     OpenSimilarPhotos,
     OpenDeepSpace,
-    QuickHealthCheck
+    QuickHealthCheck,
+    DryRunReport
 }
 
-public sealed record CliLaunchAction(CliLaunchActionKind Kind, string? TargetPath = null, bool StartMinimized = false);
+public sealed record CliLaunchAction(
+    CliLaunchActionKind Kind,
+    string? TargetPath = null,
+    bool StartMinimized = false,
+    bool DryRun = false,
+    string? ReportJsonPath = null,
+    CleaningProfileKind? Profile = null,
+    bool ExitWhenFinished = false);
+
+public sealed record CliCategoryBreakdownItem(string Category, int FileCount, long Bytes);
+
+public sealed record CliAutomationReport(
+    DateTime GeneratedUtc,
+    string AppVersion,
+    string Profile,
+    bool DryRun,
+    int TotalFiles,
+    long TotalBytes,
+    string TotalSizeFormatted,
+    long ElapsedMilliseconds,
+    List<CliCategoryBreakdownItem> Categories);
 
 public enum CleaningProfileKind
 {
@@ -46,6 +67,10 @@ public static class ShellIntegrationAndProfilesService
         CliLaunchActionKind kind = CliLaunchActionKind.None;
         string? targetPath = null;
         bool startMinimized = false;
+        bool dryRun = false;
+        string? reportJsonPath = null;
+        CleaningProfileKind? profile = null;
+        bool exitWhenFinished = false;
 
         for (int i = 0; i < args.Count; i++)
         {
@@ -66,6 +91,49 @@ public static class ShellIntegrationAndProfilesService
                 flag.Equals("--tray", StringComparison.OrdinalIgnoreCase))
             {
                 startMinimized = true;
+                continue;
+            }
+
+            if (flag.Equals("--dry-run", StringComparison.OrdinalIgnoreCase))
+            {
+                dryRun = true;
+                continue;
+            }
+
+            if (flag.Equals("--exit", StringComparison.OrdinalIgnoreCase) ||
+                flag.Equals("--headless", StringComparison.OrdinalIgnoreCase))
+            {
+                exitWhenFinished = true;
+                continue;
+            }
+
+            if (flag.Equals("--profile", StringComparison.OrdinalIgnoreCase))
+            {
+                string? rawProfile = inlineValue;
+                if (string.IsNullOrWhiteSpace(rawProfile))
+                {
+                    rawProfile = ReadNextPathArg(args, i);
+                    if (rawProfile is not null)
+                        i++;
+                }
+
+                if (Enum.TryParse<CleaningProfileKind>(rawProfile, ignoreCase: true, out CleaningProfileKind parsedProfile))
+                    profile = parsedProfile;
+                continue;
+            }
+
+            if (flag.Equals("--report-json", StringComparison.OrdinalIgnoreCase))
+            {
+                string? rawReport = inlineValue;
+                if (string.IsNullOrWhiteSpace(rawReport))
+                {
+                    rawReport = ReadNextPathArg(args, i);
+                    if (rawReport is not null)
+                        i++;
+                }
+
+                if (!string.IsNullOrWhiteSpace(rawReport))
+                    reportJsonPath = rawReport;
                 continue;
             }
 
@@ -95,7 +163,36 @@ public static class ShellIntegrationAndProfilesService
             }
         }
 
-        return new CliLaunchAction(kind, targetPath, startMinimized);
+        if (kind == CliLaunchActionKind.None && (dryRun || !string.IsNullOrWhiteSpace(reportJsonPath)))
+        {
+            kind = CliLaunchActionKind.DryRunReport;
+            dryRun = true;
+        }
+
+        return new CliLaunchAction(
+            kind,
+            targetPath,
+            startMinimized,
+            dryRun,
+            reportJsonPath,
+            profile,
+            exitWhenFinished);
+    }
+
+    public static string WriteCliAutomationReportJson(string outputPath, CliAutomationReport report)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
+        ArgumentNullException.ThrowIfNull(report);
+
+        string fullPath = Path.GetFullPath(outputPath);
+        string? dir = Path.GetDirectoryName(fullPath);
+        if (!string.IsNullOrEmpty(dir))
+            Directory.CreateDirectory(dir);
+
+        string tempPath = $"{fullPath}.{Guid.NewGuid():N}.tmp";
+        File.WriteAllText(tempPath, JsonSerializer.Serialize(report, JsonOptions));
+        File.Move(tempPath, fullPath, overwrite: true);
+        return fullPath;
     }
 
     public static bool IsAutoStartWithWindowsEnabled()

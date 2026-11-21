@@ -1,0 +1,103 @@
+<UserControl x:Class="FreeCleaner.Views.RestoreGodModeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="SİSTEM GERİ YÜKLEME NOKTASI (RESTORE POINT) &amp; WINDOWS GOD MODE MERKEZİ"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Kritik temizlik/optimizasyon işlemlerinden önce tek tıkla Geri Yükleme Noktası oluşturun ve Windows Tanrı Modu (200+ gizli ayar) araçlarına erişin."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="⚡ Masaüstünde Windows God Mode Aç"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding OpenGodModeCommand}"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="Kaynak İzleyicisi (resmon)"
+                            Padding="10,7"
+                            Margin="0,0,6,0"
+                            Command="{Binding LaunchSystemToolCommand}"
+                            CommandParameter="resmon.exe"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="Olay Görüntüleyicisi"
+                            Padding="10,7"
+                            Command="{Binding LaunchSystemToolCommand}"
+                            CommandParameter="eventvwr.msc"/>
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Row="1" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox Grid.Column="0"
+                         Text="{Binding RestorePointDescription, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource BgCardBrush}"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
+                         BorderBrush="{DynamicResource BorderSubtleBrush}"
+                         BorderThickness="1"
+                         Padding="10,7"
+                         VerticalContentAlignment="Center"
+                         Margin="0,0,8,0"/>
+
+                <Button Grid.Column="1"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Content="+ Yeni Geri Yükleme Noktası Oluştur"
+                        Padding="14,7"
+                        Margin="0,0,8,0"
+                        Command="{Binding CreateRestorePointCommand}"/>
+
+                <Button Grid.Column="2"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Content="Listeyi Yenile"
+                        Padding="12,7"
+                        Command="{Binding RefreshRestorePointsCommand}"/>
+            </Grid>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding RestorePoints}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="35">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Sıra No" Binding="{Binding SequenceNumber}" Width="95"/>
+                    <DataGridTextColumn Header="Oluşturulma Tarihi" Binding="{Binding CreationTime}" Width="180"/>
+                    <DataGridTextColumn Header="Tür" Binding="{Binding RestorePointType}" Width="165"/>
+                    <DataGridTextColumn Header="Geri Yükleme Noktası Açıklaması" Binding="{Binding Description}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

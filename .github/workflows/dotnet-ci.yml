@@ -25,5 +25,13 @@ jobs:
       - name: Build solution
         run: dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
 
-      - name: Run unit tests
-        run: dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release --no-build --verbosity normal
+      - name: Run unit tests with code coverage
+        run: dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory TestResults --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test & coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-and-coverage
+          path: TestResults/
+          retention-days: 14

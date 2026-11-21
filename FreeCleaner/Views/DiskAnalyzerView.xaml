@@ -51,7 +51,7 @@
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_HardlinkMergeBtn}"
-                            ToolTip="Aynı NTFS birimindeki birebir aynı dosyaları veri kaybetmeden tek fiziksel bloğa bağlar"
+                            ToolTip="{DynamicResource Loc_DiskHardlinkTip}"
                             Command="{Binding MergeDuplicatesWithHardlinksCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
@@ -75,12 +75,36 @@
                       RowHeight="31"
                       MouseDoubleClick="DiskDataGrid_MouseDoubleClick">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                    <DataGridTextColumn Header="Tür / Kopya Grubu" Binding="{Binding TypeBadge}" IsReadOnly="True" Width="135"/>
-                    <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="105"/>
-                    <DataGridTextColumn Header="Dosya Adı" Binding="{Binding FileName}" IsReadOnly="True" Width="210"/>
-                    <DataGridTextColumn Header="Değiştirilme" Binding="{Binding FormattedDate}" IsReadOnly="True" Width="125"/>
-                    <DataGridTextColumn Header="Tam Yol (Çift tıklayarak Gezgin'de açın)" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding TypeBadge}" IsReadOnly="True" Width="135">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DiskColTypeDup}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="105">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FileName}" IsReadOnly="True" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DiskColFileName}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedDate}" IsReadOnly="True" Width="125">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DiskColModified}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FullPath}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DiskColFullPathHint}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

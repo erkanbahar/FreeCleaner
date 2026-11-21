@@ -14,11 +14,11 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel>
-                    <TextBlock Text="WINDOWS 10 / 11 ÖNYÜKLÜ BLOATWARE (UWP / APPX) KALDIRICI"
+                    <TextBlock Text="{DynamicResource Loc_BloatTitle}"
                                FontSize="13"
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Standart Program Ekle/Kaldır'da görünmeyen Windows mağaza uygulamalarını (Clipchamp, BingNews, Xbox, Solitaire vb.) listeler ve kaldırır."
+                    <TextBlock Text="{DynamicResource Loc_BloatSubtitle}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextMutedBrush}"
                                Margin="0,3,0,0"/>
@@ -26,12 +26,12 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Mağaza Paketlerini Yeniden Tara"
+                            Content="{DynamicResource Loc_BloatScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanAppxBloatwareCommand}"/>
                     <Button Style="{StaticResource DangerButtonStyle}"
-                            Content="Seçili Bloatware Paketlerini Kaldır"
+                            Content="{DynamicResource Loc_BloatRemoveBtn}"
                             Padding="12,7"
                             Command="{Binding RemoveSelectedAppxCommand}"/>
                 </StackPanel>
@@ -51,11 +51,31 @@
                       BorderThickness="1"
                       RowHeight="35">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
-                    <DataGridTextColumn Header="Öneri / Kategori" Binding="{Binding CategoryBadge}" IsReadOnly="True" Width="195"/>
-                    <DataGridTextColumn Header="Uygulama Adı" Binding="{Binding Name}" IsReadOnly="True" Width="260"/>
-                    <DataGridTextColumn Header="Sürüm" Binding="{Binding Version}" IsReadOnly="True" Width="115"/>
-                    <DataGridTextColumn Header="Tam Paket Kimliği (PackageFullName)" Binding="{Binding PackageFullName}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding CategoryBadge}" IsReadOnly="True" Width="195">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_BloatColCat}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Name}" IsReadOnly="True" Width="260">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_StartupColAppName}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Version}" IsReadOnly="True" Width="115">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_BloatColVer}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding PackageFullName}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_BloatColFull}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

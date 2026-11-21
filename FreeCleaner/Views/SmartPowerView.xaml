@@ -1,0 +1,131 @@
+<UserControl x:Class="FreeCleaner.Views.SmartPowerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.2*"/>
+            <ColumnDefinition Width="14"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Physical Disks S.M.A.R.T. -->
+        <Border Grid.Column="0"
+                Background="{DynamicResource BgSecondaryBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <TextBlock Text="FİZİKSEL DİSK SAĞLIĞI (S.M.A.R.T. &amp; NVMe/SSD DURUMU)"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource SubtleButtonStyle}"
+                            Content="Yenile"
+                            HorizontalAlignment="Right"
+                            Command="{Binding RefreshDiskAndPowerCommand}"/>
+                </Grid>
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding PhysicalDisks}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="None"
+                          Background="{DynamicResource BgPrimaryBrush}"
+                          RowBackground="{DynamicResource BgSecondaryBrush}"
+                          AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          BorderBrush="{DynamicResource BorderSubtleBrush}"
+                          BorderThickness="1"
+                          RowHeight="34">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Disk Modeli" Binding="{Binding FriendlyName}" Width="*"/>
+                        <DataGridTextColumn Header="Tür" Binding="{Binding MediaType}" Width="75"/>
+                        <DataGridTextColumn Header="Veri Yolu" Binding="{Binding BusType}" Width="80"/>
+                        <DataGridTextColumn Header="Kapasite" Binding="{Binding SizeFormatted}" Width="95"/>
+                        <DataGridTextColumn Header="S.M.A.R.T. Sağlığı" Binding="{Binding HealthStatus}" Width="135"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+
+        <!-- Power Plan Switcher & Game Booster -->
+        <Border Grid.Column="2"
+                Background="{DynamicResource BgSecondaryBrush}"
+                BorderBrush="{DynamicResource BorderSubtleBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <TextBlock Text="WINDOWS GÜÇ PLANI &amp; OYUN HIZLANDIRICI"
+                               FontSize="12"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               VerticalAlignment="Center"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="+ Nihai Performans Planını Aç"
+                            Padding="10,5"
+                            HorizontalAlignment="Right"
+                            Command="{Binding UnlockUltimatePowerCommand}"/>
+                </Grid>
+
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="⚡ Tek Tıkla Oyun &amp; Performans Modu"
+                            Padding="12,6"
+                            Margin="0,0,8,0"
+                            Command="{Binding ActivateGameBoosterCommand}"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="🔋 Pil Sağlık Raporu (HTML)"
+                            Padding="12,6"
+                            Command="{Binding GenerateBatteryReportCommand}"/>
+                </StackPanel>
+
+                <DataGrid Grid.Row="2"
+                          ItemsSource="{Binding PowerPlans}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="None"
+                          Background="{DynamicResource BgPrimaryBrush}"
+                          RowBackground="{DynamicResource BgSecondaryBrush}"
+                          AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                          Foreground="{DynamicResource TextPrimaryBrush}"
+                          BorderBrush="{DynamicResource BorderSubtleBrush}"
+                          BorderThickness="1"
+                          RowHeight="36">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Durum" Binding="{Binding StatusBadge}" Width="105"/>
+                        <DataGridTextColumn Header="Güç Planı Adı" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTemplateColumn Header="Seç" Width="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource CleanButtonStyle}"
+                                            Content="Etkinleştir"
+                                            Padding="8,4"
+                                            Command="{Binding DataContext.ActivatePowerPlanCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

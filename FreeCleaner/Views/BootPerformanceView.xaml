@@ -1,0 +1,59 @@
+<UserControl x:Class="FreeCleaner.Views.BootPerformanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="WINDOWS AÇILIŞ SÜRESİ (BOOT TIME) &amp; ÖNYÜKLEME DARBOĞAZ ANALİZCİSİ"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Windows Diagnostics-Performance (Event ID 100/101) verilerinden son açılış süresini, çekirdek süresini ve açılışı yavaşlatan servisleri listeler."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <Button Style="{StaticResource PrimaryButtonStyle}"
+                        Content="⏱️ Açılış Performansını Yeniden Analiz Et"
+                        Padding="14,7"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Command="{Binding ScanBootPerformanceCommand}"/>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding BootPerformanceItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Metrik Kategorisi" Binding="{Binding MetricCategory}" Width="245"/>
+                    <DataGridTextColumn Header="Bileşen / Uygulama / Olay" Binding="{Binding ComponentOrAppName}" Width="270"/>
+                    <DataGridTextColumn Header="Süre / Değer" Binding="{Binding DurationOrValue}" Width="240"/>
+                    <DataGridTextColumn Header="Etki &amp; Performans Değerlendirmesi" Binding="{Binding ImpactAssessment}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

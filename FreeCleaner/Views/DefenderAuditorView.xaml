@@ -1,0 +1,69 @@
+<UserControl x:Class="FreeCleaner.Views.DefenderAuditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="WINDOWS DEFENDER GÜVENLİK KALKANI &amp; GİZLİ İSTİSNA (EXCLUSION) DENETÇİSİ"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Gerçek Zamanlı Koruma, Tamper Protection, virüs imza sürümü ve Defender'ın taramadığı gizli istisna klasörlerini (ExclusionPath) denetler."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="🔍 Defender Durumunu Denetle"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanDefenderAuditCommand}"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                            Content="🔄 Virüs İmzalarını Güncelle"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding UpdateDefenderSignaturesCommand}"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="🛡️ Hızlı Tarama Başlat (QuickScan)"
+                            Padding="13,7"
+                            Command="{Binding RunDefenderQuickScanCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding DefenderAuditItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Denetim Kategorisi" Binding="{Binding AuditCategory}" Width="225"/>
+                    <DataGridTextColumn Header="Kalkan / İstisna Yolu" Binding="{Binding SettingOrExclusionName}" Width="310"/>
+                    <DataGridTextColumn Header="Güvenlik Durumu" Binding="{Binding StatusBadge}" Width="210"/>
+                    <DataGridTextColumn Header="Açıklama &amp; Güvenlik Notu" Binding="{Binding SecurityNotes}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

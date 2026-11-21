@@ -175,6 +175,10 @@ public static partial class AppStoragePathsService
         IncludeRedactedFileIfExists(archive, Path.Combine(dataDir, "errors.log"), "errors_sanitized.log");
         IncludeRedactedFileIfExists(archive, Path.Combine(dataDir, "settings.json"), "settings.json");
 
+        string? latestCrashPath = CrashGuardService.GetLatestCrashLogPath(dataDir);
+        if (!string.IsNullOrWhiteSpace(latestCrashPath))
+            IncludeRedactedFileIfExists(archive, latestCrashPath, "latest_crash_sanitized.log");
+
         return fullZipPath;
     }
 

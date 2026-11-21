@@ -57,11 +57,31 @@
                       BorderThickness="1"
                       RowHeight="32">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                    <DataGridTextColumn Header="Sorun Kategorisi" Binding="{Binding Category}" IsReadOnly="True" Width="220"/>
-                    <DataGridTextColumn Header="Açıklama" Binding="{Binding ProblemDescription}" IsReadOnly="True" Width="250"/>
-                    <DataGridTextColumn Header="Bulunamayan Dosya" Binding="{Binding MissingTarget}" IsReadOnly="True" Width="260"/>
-                    <DataGridTextColumn Header="Kayıt Defteri Anahtarı" Binding="{Binding KeyPath}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding Category}" IsReadOnly="True" Width="220">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_RegColIssueCat}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ProblemDescription}" IsReadOnly="True" Width="250">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColDescription}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding MissingTarget}" IsReadOnly="True" Width="260">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_RegColMissing}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding KeyPath}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_RegColKeyPath}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
 
@@ -107,11 +127,31 @@
                               BorderThickness="1"
                               RowHeight="28">
                         <DataGrid.Columns>
-                            <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                            <DataGridTextColumn Header="Tür" Binding="{Binding BackupType}" IsReadOnly="True" Width="90"/>
-                            <DataGridTextColumn Header="Dosya" Binding="{Binding FileName}" IsReadOnly="True" Width="*"/>
-                            <DataGridTextColumn Header="Tarih" Binding="{Binding FormattedDate}" IsReadOnly="True" Width="145"/>
-                            <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" IsReadOnly="True" Width="85"/>
+                            <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45">
+                                <DataGridCheckBoxColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                                </DataGridCheckBoxColumn.Header>
+                            </DataGridCheckBoxColumn>
+                            <DataGridTextColumn Binding="{Binding BackupType}" IsReadOnly="True" Width="90">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_DlColType}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding FileName}" IsReadOnly="True" Width="*">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_RegColFile}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding FormattedDate}" IsReadOnly="True" Width="145">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_RegColDate}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding FormattedSize}" IsReadOnly="True" Width="85">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

@@ -1,0 +1,77 @@
+<UserControl x:Class="FreeCleaner.Views.ClipboardShieldView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="AKILLI PANO (CLIPBOARD) KALKANI &amp; REKLAM TAKİP URL TEMİZLEYİCİ"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Panodaki bağlantılardan izleme parametrelerini (utm_source, fbclid, gclid, si) temizler ve açık API Anahtarı / IBAN verilerini denetler."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="🔍 Panoyu Şimdi Denetle &amp; Analiz Et"
+                            Padding="14,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding InspectClipboardNowCommand}"/>
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Content="🧹 Panoyu Tamamen Sıfırla"
+                            Padding="14,7"
+                            Command="{Binding ClearClipboardNowCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding ClipboardAuditItems}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Saat" Binding="{Binding CapturedAt}" Width="85"/>
+                    <DataGridTextColumn Header="Veri Türü &amp; Risk" Binding="{Binding CategoryBadge}" Width="230"/>
+                    <DataGridTextColumn Header="Pano İçeriği (Önizleme)" Binding="{Binding OriginalPreview}" Width="240"/>
+                    <DataGridTextColumn Header="Arındırılmış / Temiz İçerik" Binding="{Binding SanitizedContent}" Width="240"/>
+                    <DataGridTextColumn Header="Güvenlik Analizi" Binding="{Binding SecurityAdvice}" Width="*"/>
+                    <DataGridTemplateColumn Header="Eylem" Width="150">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource CleanButtonStyle}"
+                                        Content="Temizini Kopyala"
+                                        Padding="8,3"
+                                        FontSize="11"
+                                        Command="{Binding DataContext.ApplySanitizedClipboardCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

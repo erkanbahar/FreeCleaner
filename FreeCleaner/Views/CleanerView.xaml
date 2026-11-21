@@ -207,7 +207,7 @@
                                   Margin="0,0,8,0"
                                   Padding="6,3"
                                   FontSize="11"
-                                  ToolTip="Risk seviyesine göre filtrele"/>
+                                  ToolTip="{DynamicResource Loc_CleanerRiskFilterTip}"/>
                         <Border Grid.Column="2"
                                 Background="{DynamicResource BgCardBrush}"
                                 BorderBrush="{DynamicResource BorderSubtleBrush}"
@@ -220,7 +220,7 @@
                                      CaretBrush="{DynamicResource AccentBlueBrush}"
                                      BorderThickness="0"
                                      FontSize="12"
-                                     ToolTip="Dosya adına göre filtrele"/>
+                                     ToolTip="{DynamicResource Loc_CleanerSearchFilterTip}"/>
                         </Border>
                     </Grid>
 
@@ -242,12 +242,36 @@
                               VirtualizingPanel.VirtualizationMode="Recycling"
                               MouseDoubleClick="DataGrid_MouseDoubleClick">
                         <DataGrid.Columns>
-                            <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                            <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" IsReadOnly="True" Width="135"/>
-                            <DataGridTextColumn Header="Risk" Binding="{Binding RiskLabel}" IsReadOnly="True" Width="70"/>
-                            <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="90"/>
-                            <DataGridTextColumn Header="Durum" Binding="{Binding Status}" IsReadOnly="True" Width="110"/>
-                            <DataGridTextColumn Header="Dosya Yolu" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
+                            <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45">
+                                <DataGridCheckBoxColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                                </DataGridCheckBoxColumn.Header>
+                            </DataGridCheckBoxColumn>
+                            <DataGridTextColumn Binding="{Binding Category}" IsReadOnly="True" Width="135">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_ColCategory}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding RiskLabel}" IsReadOnly="True" Width="85">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_CleanerColRisk}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="90">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding Status}" IsReadOnly="True" Width="110">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Binding="{Binding FullPath}" IsReadOnly="True" Width="*">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="{DynamicResource Loc_CleanerColFilePath}"/>
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

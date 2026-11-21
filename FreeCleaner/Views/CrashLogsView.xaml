@@ -1,0 +1,65 @@
+<UserControl x:Class="FreeCleaner.Views.CrashLogsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="MAVİ EKRAN (BSOD), UYGULAMA ÇÖKMELERİ &amp; OLAY GÜNLÜĞÜ (EVENTLOG) ANALİZCİSİ"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Windows Olay Günlüğü'ndeki son çökme/kritik hata kayıtlarını (AppCrash 1000, Kernel-Power 41, BugCheck) ve Minidump (.dmp) dosyalarını listeler."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="Olay Günlüğü &amp; Çökmeleri Tara"
+                            Padding="12,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanCrashLogsCommand}"/>
+                    <Button Style="{StaticResource DangerButtonStyle}"
+                            Content="Çökme Dökümlerini (.dmp) Temizle"
+                            Padding="12,7"
+                            Command="{Binding CleanCrashDumpsCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding CrashAndEventLogs}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="34">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Tarih / Saat" Binding="{Binding Timestamp}" Width="145"/>
+                    <DataGridTextColumn Header="Hata / Çökme Türü" Binding="{Binding EventType}" Width="230"/>
+                    <DataGridTextColumn Header="Kaynak / Uygulama" Binding="{Binding SourceOrApp}" Width="170"/>
+                    <DataGridTextColumn Header="Event ID / Boyut" Binding="{Binding EventIdOrSize}" Width="115"/>
+                    <DataGridTextColumn Header="Hata Özeti / Ayrıntı" Binding="{Binding MessageSummary}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

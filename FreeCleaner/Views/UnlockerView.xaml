@@ -1,0 +1,101 @@
+<UserControl x:Class="FreeCleaner.Views.UnlockerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                <TextBlock Text="KİLİTLİ DOSYA &amp; KLASÖR ÇÖZÜCÜ (WIN32 RESTART MANAGER)"
+                           FontSize="13"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <TextBlock Text="'Dosya başka bir işlem tarafından kullanılıyor' hatası aldığınız dosya veya klasörü seçin; kilitleyen işlemleri anında tespit edip sonlandırın."
+                           FontSize="11.5"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           Margin="0,3,0,0"/>
+            </StackPanel>
+
+            <Grid Grid.Row="1" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox Grid.Column="0"
+                         Text="{Binding UnlockerTargetPath, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource BgCardBrush}"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
+                         BorderBrush="{DynamicResource BorderSubtleBrush}"
+                         BorderThickness="1"
+                         Padding="10,7"
+                         VerticalContentAlignment="Center"
+                         Margin="0,0,8,0"/>
+
+                <Button Grid.Column="1"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Content="Dosya Seç..."
+                        Padding="12,7"
+                        Margin="0,0,8,0"
+                        Command="{Binding BrowseUnlockerFileCommand}"/>
+
+                <Button Grid.Column="2"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Content="Klasör Seç..."
+                        Padding="12,7"
+                        Margin="0,0,8,0"
+                        Command="{Binding BrowseUnlockerFolderCommand}"/>
+
+                <Button Grid.Column="3"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Content="Kilitleyen İşlemleri Bul"
+                        Padding="14,7"
+                        Command="{Binding ScanLockingProcessesCommand}"/>
+            </Grid>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding LockingProcesses}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="80"/>
+                    <DataGridTextColumn Header="İşlem Adı" Binding="{Binding ProcessName}" Width="180"/>
+                    <DataGridTextColumn Header="Uygulama Türü" Binding="{Binding ApplicationType}" Width="150"/>
+                    <DataGridTextColumn Header="Kilitlenen Hedef" Binding="{Binding LockedTargetPath}" Width="*"/>
+                    <DataGridTemplateColumn Header="Kilidi Aç" Width="150">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="İşlemi Sonlandır"
+                                        Padding="8,4"
+                                        Command="{Binding DataContext.KillLockingProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

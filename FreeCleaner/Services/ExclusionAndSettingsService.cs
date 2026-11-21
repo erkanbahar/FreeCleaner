@@ -22,6 +22,9 @@ public class CleanerConfigData
     public List<string> FavoriteSections { get; set; } = ["Dashboard", "All", "LiveMonitor", "DiskBench", "WingetUpdater"];
     public string SelectedTheme { get; set; } = "ObsidianNeon";
     public string SelectedLanguage { get; set; } = "tr-TR";
+    public bool ProactiveStorageAlertsEnabled { get; set; } = true;
+    public int StorageAlertThresholdDays { get; set; } = 15;
+    public string LastStorageForecastAlertDate { get; set; } = string.Empty;
 }
 
 public static class ExclusionAndSettingsService

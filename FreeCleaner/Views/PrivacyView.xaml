@@ -14,22 +14,22 @@
 
             <Grid Grid.Row="0" Margin="0,0,0,12">
                 <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="Windows Gizlilik, Etkinlik Geçmişi &amp; Kabuk İzleri Kalkanı"
+                    <TextBlock Text="{DynamicResource Loc_PrivTitle}"
                                FontSize="14"
                                FontWeight="SemiBold"
                                Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="Çalıştır (Win+R) geçmişi, Dosya Gezgini arama/adres geçmişi, Görev Çubuğu JumpList, Timeline ve Pano verilerini temizler."
+                    <TextBlock Text="{DynamicResource Loc_PrivSubtitle}"
                                FontSize="11.5"
                                Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
-                            Content="Gizlilik İzlerini Tara"
+                            Content="{DynamicResource Loc_PrivScanBtn}"
                             Command="{Binding ScanPrivacyTracesCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="Seçili İzleri Temizle"
+                            Content="{DynamicResource Loc_PrivCleanBtn}"
                             Command="{Binding CleanPrivacyTracesCommand}"/>
                 </StackPanel>
             </Grid>
@@ -48,11 +48,31 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                    <DataGridTextColumn Header="Kategori" Binding="{Binding Category}" IsReadOnly="True" Width="150"/>
-                    <DataGridTextColumn Header="Gizlilik Öğesi" Binding="{Binding Name}" IsReadOnly="True" Width="280"/>
-                    <DataGridTextColumn Header="Bulunan İz / Boyut" Binding="{Binding StatusText}" IsReadOnly="True" Width="130"/>
-                    <DataGridTextColumn Header="Açıklama" Binding="{Binding Description}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding Category}" IsReadOnly="True" Width="150">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColCategory}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Name}" IsReadOnly="True" Width="280">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_PrivColItem}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding StatusText}" IsReadOnly="True" Width="130">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_PrivColFound}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Description}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColDescription}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>

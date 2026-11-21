@@ -24,18 +24,18 @@
                 <Grid Grid.Row="0" Margin="0,0,0,12">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="+ Dosya Ekle"
+                                Content="{DynamicResource Loc_ShredAddFileBtn}"
                                 Command="{Binding AddShredFilesCommand}"
                                 Margin="0,0,8,0"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                Content="+ Klasör Ekle"
+                                Content="{DynamicResource Loc_ShredAddFolderBtn}"
                                 Command="{Binding AddShredFolderCommand}"
                                 Margin="0,0,8,0"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
-                                Content="Listeyi Temizle"
+                                Content="{DynamicResource Loc_ShredClearBtn}"
                                 Command="{Binding ClearShredQueueCommand}"
                                 Margin="0,0,14,0"/>
-                        <TextBlock Text="Geçiş Sayısı (DoD):" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
+                        <TextBlock Text="{DynamicResource Loc_ShredPassesLabel}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
                         <ComboBox ItemsSource="{Binding AvailableShredPasses}"
                                   SelectedItem="{Binding ShredPassesCount}"
                                   Width="65"
@@ -44,7 +44,7 @@
 
                     <Button Style="{StaticResource CleanButtonStyle}"
                             Background="{DynamicResource DangerRedBrush}"
-                            Content="Kalıcı Olarak Öğüt &amp; İmha Et"
+                            Content="{DynamicResource Loc_ShredExecuteBtn}"
                             HorizontalAlignment="Right"
                             Command="{Binding ExecuteShredderCommand}"/>
                 </Grid>
@@ -64,10 +64,26 @@
                           BorderThickness="1"
                           RowHeight="32">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Dosya / Klasör Adı" Binding="{Binding Name}" Width="210"/>
-                        <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" Width="100"/>
-                        <DataGridTextColumn Header="Durum" Binding="{Binding Status}" Width="150"/>
-                        <DataGridTextColumn Header="Tam Yol" Binding="{Binding FullPath}" Width="*"/>
+                        <DataGridTextColumn Binding="{Binding Name}" Width="210">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ShredColName}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding FormattedSize}" Width="100">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding Status}" Width="150">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Binding="{Binding FullPath}" Width="*">
+                            <DataGridTextColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColFullPath}"/>
+                            </DataGridTextColumn.Header>
+                        </DataGridTextColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
@@ -81,7 +97,7 @@
                 CornerRadius="12"
                 Padding="16">
             <StackPanel>
-                <TextBlock Text="SÜRÜCÜ BOŞ ALAN SİLİCİ (FREE SPACE WIPER)"
+                <TextBlock Text="{DynamicResource Loc_ShredWipeHeader}"
                            FontSize="12"
                            FontWeight="Bold"
                            Foreground="{DynamicResource TextSecondaryBrush}"
@@ -89,28 +105,28 @@
 
                 <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14" Margin="0,0,0,12">
                     <StackPanel>
-                        <TextBlock Text="Kriptografik Boş Sektör Sıfırlama" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                        <TextBlock Text="Daha önce normal yollarla silinmiş dosyaların diskteki boş sektörlerde bıraktığı izleri kriptografik rastgele veri yazarak kurtarılamaz hale getirir (Mevcut dosyalarınıza dokunmaz)."
+                        <TextBlock Text="{DynamicResource Loc_ShredWipeTitle}" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{DynamicResource Loc_ShredWipeDesc}"
                                    FontSize="11.5"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,12"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <TextBlock Text="Sıfırlama Boyutu (MB):" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,10,0"/>
+                            <TextBlock Text="{DynamicResource Loc_ShredWipeSizeLabel}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,10,0"/>
                             <ComboBox ItemsSource="{Binding AvailableSizeThresholdsMb}"
                                       SelectedItem="{Binding FreeSpaceWipeMb}"
                                       Width="90"/>
                         </StackPanel>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="Boş Alanı Şimdi Sıfırla"
+                                Content="{DynamicResource Loc_ShredWipeBtn}"
                                 Command="{Binding WipeFreeSpaceCommand}"/>
                     </StackPanel>
                 </Border>
 
                 <Border Background="#1D1622" BorderBrush="#4C1D24" BorderThickness="1" CornerRadius="10" Padding="14">
                     <StackPanel>
-                        <TextBlock Text="DoD 5220.22-M Standardı Nedir?" FontWeight="SemiBold" Foreground="#F87171" FontSize="12.5"/>
-                        <TextBlock Text="1. Geçiş: Tüm sektörlere 0x00 yazılır.&#x0a;2. Geçiş: Tüm sektörlere 0xFF yazılır.&#x0a;3. Geçiş: Kriptografik rastgele baytlar yazılır, dosya boyutu 0'a indirilir ve MFT dosya adı rastgele değiştirilerek silinir."
+                        <TextBlock Text="{DynamicResource Loc_ShredDodTitle}" FontWeight="SemiBold" Foreground="#F87171" FontSize="12.5"/>
+                        <TextBlock Text="{DynamicResource Loc_ShredDodDesc}"
                                    FontSize="11"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"

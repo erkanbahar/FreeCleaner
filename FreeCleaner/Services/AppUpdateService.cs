@@ -33,9 +33,18 @@ public sealed record UpdateDownloadResult(
 /// </summary>
 public static class AppUpdateService
 {
-    public const string CurrentVersion = "4.1.0";
+    public static string CurrentVersion { get; } = ResolveAssemblyVersion();
     public const string ReleasesApiUrl = "https://api.github.com/repos/erkanbahar/FreeCleaner/releases/latest";
     public const string ReleasesPageUrl = "https://github.com/erkanbahar/FreeCleaner/releases";
+
+    private static string ResolveAssemblyVersion()
+    {
+        Version? v = typeof(AppUpdateService).Assembly.GetName().Version;
+        if (v is null)
+            return "4.3.0";
+
+        return $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build)}";
+    }
 
     private static readonly HttpClient SharedHttpClient = CreateHttpClient();
 

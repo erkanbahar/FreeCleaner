@@ -1,0 +1,61 @@
+<UserControl x:Class="FreeCleaner.Views.LanScannerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="YEREL AĞ (LAN / WI-FI) CİHAZ RADARI &amp; İZİNSİZ CİHAZ AVCISI"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Ağınıza bağlı tüm cihazları paralel Ping taraması ve ARP tablosu ile keşfeder; IP, MAC adresi, üretici türü ve gecikme süresini listeler."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <Button Style="{StaticResource PrimaryButtonStyle}"
+                        Content="📡 Yerel Ağı Şimdi Tara (Ping &amp; ARP Sweep)"
+                        Padding="14,7"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Command="{Binding ScanLanDevicesCommand}"/>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding LanDevices}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Cihaz Rolü / Durum" Binding="{Binding DeviceRoleBadge}" Width="210"/>
+                    <DataGridTextColumn Header="IPv4 Adresi" Binding="{Binding IpAddress}" Width="145"/>
+                    <DataGridTextColumn Header="Fiziksel Adres (MAC)" Binding="{Binding MacAddress}" Width="165"/>
+                    <DataGridTextColumn Header="Cihaz Adı / Host" Binding="{Binding Hostname}" Width="180"/>
+                    <DataGridTextColumn Header="Yanıt Süresi (Ping)" Binding="{Binding PingStatus}" Width="135"/>
+                    <DataGridTextColumn Header="MAC / Donanım Sınıfı" Binding="{Binding VendorName}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

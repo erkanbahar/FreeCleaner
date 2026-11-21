@@ -74,6 +74,41 @@ public partial class MainWindow : Window
         _lazyViews.Register("Settings", () => new SettingsView { DataContext = DataContext });
         _lazyViews.Register("AiModelCleaner", () => new AiModelCleanerView { DataContext = DataContext });
         _lazyViews.Register("WingetUpdater", () => new WingetUpdaterView { DataContext = DataContext });
+        _lazyViews.Register("TasksAndTree", () => new TasksAndTreeView { DataContext = DataContext });
+        _lazyViews.Register("ContextMenu", () => new ContextMenuView { DataContext = DataContext });
+        _lazyViews.Register("Services", () => new ServicesView { DataContext = DataContext });
+        _lazyViews.Register("SmartPower", () => new SmartPowerView { DataContext = DataContext });
+        _lazyViews.Register("RepairCenter", () => new RepairCenterView { DataContext = DataContext });
+        _lazyViews.Register("Unlocker", () => new UnlockerView { DataContext = DataContext });
+        _lazyViews.Register("BrowserExtensions", () => new BrowserExtensionsView { DataContext = DataContext });
+        _lazyViews.Register("DriversUpdates", () => new DriversUpdatesView { DataContext = DataContext });
+        _lazyViews.Register("PathDoctor", () => new PathDoctorView { DataContext = DataContext });
+        _lazyViews.Register("CrashLogs", () => new CrashLogsView { DataContext = DataContext });
+        _lazyViews.Register("WifiDns", () => new WifiDnsView { DataContext = DataContext });
+        _lazyViews.Register("RestoreGodMode", () => new RestoreGodModeView { DataContext = DataContext });
+        _lazyViews.Register("FileAssoc", () => new FileAssocView { DataContext = DataContext });
+        _lazyViews.Register("PortHunter", () => new PortHunterView { DataContext = DataContext });
+        _lazyViews.Register("DiskBench", () => new DiskBenchView { DataContext = DataContext });
+        _lazyViews.Register("HardwareSpecs", () => new HardwareSpecsView { DataContext = DataContext });
+        _lazyViews.Register("UsbForensics", () => new UsbForensicsView { DataContext = DataContext });
+        _lazyViews.Register("ProcessSecurity", () => new ProcessSecurityView { DataContext = DataContext });
+        _lazyViews.Register("BatchRenamer", () => new BatchRenamerView { DataContext = DataContext });
+        _lazyViews.Register("NetworkAdapterDoctor", () => new NetworkAdapterDoctorView { DataContext = DataContext });
+        _lazyViews.Register("FontManager", () => new FontManagerView { DataContext = DataContext });
+        _lazyViews.Register("ClipboardShield", () => new ClipboardShieldView { DataContext = DataContext });
+        _lazyViews.Register("FirewallBlocker", () => new FirewallBlockerView { DataContext = DataContext });
+        _lazyViews.Register("CryptoVault", () => new CryptoVaultView { DataContext = DataContext });
+        _lazyViews.Register("Win11Tweaker", () => new Win11TweakerView { DataContext = DataContext });
+        _lazyViews.Register("BitLocker", () => new BitLockerView { DataContext = DataContext });
+        _lazyViews.Register("LanScanner", () => new LanScannerView { DataContext = DataContext });
+        _lazyViews.Register("SqliteOptimizer", () => new SqliteOptimizerView { DataContext = DataContext });
+        _lazyViews.Register("CredentialSsh", () => new CredentialSshView { DataContext = DataContext });
+        _lazyViews.Register("ProcessPriority", () => new ProcessPriorityView { DataContext = DataContext });
+        _lazyViews.Register("BootPerformance", () => new BootPerformanceView { DataContext = DataContext });
+        _lazyViews.Register("DockerWsl", () => new DockerWslView { DataContext = DataContext });
+        _lazyViews.Register("DefenderAuditor", () => new DefenderAuditorView { DataContext = DataContext });
+        _lazyViews.Register("MonitorGpu", () => new MonitorGpuView { DataContext = DataContext });
+        _lazyViews.Register("GitRepoCompressor", () => new GitRepoCompressorView { DataContext = DataContext });
     }
 
     private void SyncLazyModuleHost(string? sectionKey)
@@ -120,7 +155,13 @@ public partial class MainWindow : Window
                         vm.AnalyzeCommand.Execute(null);
                 }
             },
-            exitAppAction: ExitApplicationFromTray);
+            exitAppAction: ExitApplicationFromTray,
+            balloonClickedAction: () =>
+            {
+                RestoreWindowFromTray();
+                if (DataContext is MainViewModel vm)
+                    vm.ActiveSection = "All";
+            });
 
         if (DataContext is MainViewModel viewModel)
         {

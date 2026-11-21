@@ -124,7 +124,11 @@
                           RowHeight="34"
                           SelectionChanged="SimilarGrid_SelectionChanged">
                     <DataGrid.Columns>
-                        <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50"/>
+                        <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50">
+                            <DataGridCheckBoxColumn.Header>
+                                <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                            </DataGridCheckBoxColumn.Header>
+                        </DataGridCheckBoxColumn>
                         <DataGridTextColumn Binding="{Binding GroupLabel}" IsReadOnly="True" Width="130">
                             <DataGridTextColumn.Header>
                                 <TextBlock Text="{DynamicResource Loc_SimilarColGroup}"/>
@@ -168,7 +172,7 @@
                                             Padding="7,2"
                                             FontSize="11"
                                             HorizontalAlignment="Center"
-                                            ToolTip="Dosya Konumunu Aç"
+                                            ToolTip="{DynamicResource Loc_OpenFileLocationTip}"
                                             Command="{Binding DataContext.OpenSimilarPhotoLocationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
                                 </DataTemplate>

@@ -6,6 +6,16 @@
 
 ## English
 
+### [4.3.0] - 2026-11-21
+#### Added & Improved
+- **Single-Source Version Metadata & Release Pipeline Polish**: `AppUpdateService.CurrentVersion` now derives dynamically from the assembly version (`4.3.0`), upgraded `SQLitePCLRaw.lib.e_sqlite3` to stable `2.1.14`, added `-IncludePortableFlag` & SHA-256 printout to `scripts/Publish-Portable.ps1`, and updated `.github/workflows/release.yml` to build with `-p:TreatWarningsAsErrors=true` and publish both Standard and pre-flagged **USB Portable** `.zip` archives.
+- **Global Crash Guard (`CrashGuardService`)**: Captures unhandled `DispatcherUnhandledException`, `AppDomain.CurrentDomain.UnhandledException`, and `TaskScheduler.UnobservedTaskException` events, writes redacted diagnostics to `crashes/crash-*.log` (auto-pruned to 20 files), offers one-click redacted Desktop Support Bundle `.zip` export, and embeds `latest_crash_sanitized.log` into support bundles.
+- **Proactive System Tray Storage Forecast Alerts (`StorageForecastService` + `SystemTrayService`)**: Configurable threshold days (`7 / 15 / 30`) and daily cooldown alerts notify via tray balloon when `C:` occupancy reaches `>= 90%` or projected days to 90% fall within threshold; clicking the tray notification opens Smart Cleaner directly.
+- **100% Modular Lazy Views & Partial `MainViewModel` Split**: Extracted all remaining 35 inline views into standalone `Views/*.xaml(.cs)` UserControls (**57 Lazy Views** covering **60 section keys** — 0 inline section panels left in `MainWindow.xaml`) and split `MainViewModel` into cohesive domain partials (`WindowsTools`, `HardwareAndForensics`, `SecurityAndTweaks`, `DevOpsAndNetwork`, `Dashboard`).
+- **Complete TR/EN Localization Across Core Views**: Localized all remaining hardcoded strings across 22 core modular Views in `LocalizationService.cs` with validated dictionary key parity.
+- **CLI Headless Dry-Run & JSON Reporting**: Added `--dry-run`, `--profile <name>`, `--report-json <path>`, and `--exit` / `--headless` CLI automation flags generating safe non-destructive `CliAutomationReport` JSON files.
+- **Repository Hygiene, CI Code Coverage & 52 Unit Tests**: Added `.gitattributes` and `.editorconfig`, integrated `coverlet.collector` (`XPlat Code Coverage` + artifact upload) into `dotnet-ci.yml`, and expanded test suite coverage in `V43UpgradesTests.cs` (`52` passing tests).
+
 ### [4.2.0] - 2026-11-21
 #### Added
 - **True Portable Mode (`portable.flag`) & Diagnostic Support Bundle (`.zip`)** (`AppStoragePathsService`): stores settings, history, snapshots, telemetry, and logs inside a local `data\` folder when enabled, and exports a redacted support `.zip` (`diagnostic_report.html`, `system_summary.json`, `activity_sanitized.log`, `errors_sanitized.log`).
@@ -34,6 +44,16 @@
 ---
 
 ## Türkçe
+
+### [4.3.0] - 2026-11-21
+#### Eklenenler ve İyileştirmeler
+- **Tek Kaynak Sürüm Yönetimi & Release Hattı İyileştirmesi**: `AppUpdateService.CurrentVersion` artık derleme (assembly) sürümünden (`4.3.0`) dinamik okunur; `SQLitePCLRaw.lib.e_sqlite3` kararlı `2.1.14` sürümüne yükseltildi; `scripts/Publish-Portable.ps1` `-IncludePortableFlag` ve SHA-256 çıktısı kazandı; `.github/workflows/release.yml` ise `-p:TreatWarningsAsErrors=true` ile hem Standart hem de hazır **`portable.flag` USB Taşınabilir** `.zip` paketi üretecek şekilde güncellendi.
+- **Global Çökme Koruması (`CrashGuardService`)**: Beklenmedik UI (`DispatcherUnhandledException`), `AppDomain` ve `TaskScheduler` hatalarını yakalar, hassas veri/`%USERPROFILE%` sansürlü dökümleri `crashes/crash-*.log` klasörüne kaydeder (en fazla 20 log tutar), tek tıkla Masaüstü Destek Paketi `.zip` üretimi önerir ve destek paketine `latest_crash_sanitized.log` dosyasını ekler.
+- **Proaktif Sistem Tepsisi Depolama Tahmin Uyarısı**: `7 / 15 / 30` gün eşiği ve günlük tekrar koruması (cooldown) ile disk `%90+` olduğunda veya doluluk tahmini kritik gün sınırına indiğinde tepsi uyarısı verir; bildirime tıklandığında Akıllı Temizlik ekranını açar.
+- **%100 Modüler Lazy Views & `MainViewModel` Bölünmesi**: Kalan tüm 35 satır içi ekran `Views/*.xaml(.cs)` bileşenlerine taşındı (**57 Lazy View / 60 ekran anahtarı**; `MainWindow.xaml` içinde 0 satır içi modül kaldı) ve `MainViewModel.cs` 5 yeni konu bazlı `partial` dosyaya (`WindowsTools`, `HardwareAndForensics`, `SecurityAndTweaks`, `DevOpsAndNetwork`, `Dashboard`) ayrıldı.
+- **Çekirdek Görünümlerde Tam TR/EN Yerelleştirme**: Tüm 22 çekirdek modüler ekrandaki sabit Türkçe metin ve tablo başlıkları `LocalizationService.cs` üzerinden çift dilli dinamik kaynaklara taşındı.
+- **CLI Otomasyonu (`--dry-run` / `--profile` / `--report-json` / `--exit`)**: Görev Zamanlayıcı ve scriptler için silme yapmadan kategori bazlı JSON özet üreten CLI bayrakları eklendi.
+- **Depo Hijyeni, CI Kod Kapsamı & 52 Birim Testi**: `.gitattributes` ve `.editorconfig` eklendi, `dotnet-ci.yml` hattına `coverlet.collector` ile `XPlat Code Coverage` ve artifact yükleme eklendi; test sayısı `52`'ye çıkarıldı.
 
 ### [4.2.0] - 2026-11-21
 #### Eklenenler ve İyileştirmeler

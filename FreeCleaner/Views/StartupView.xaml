@@ -41,12 +41,35 @@
                       BorderThickness="1"
                       RowHeight="36">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Durum" Binding="{Binding StatusText}" Width="95"/>
-                    <DataGridTextColumn Header="Uygulama Adı" Binding="{Binding Name}" Width="200"/>
-                    <DataGridTextColumn Header="Açılış Etkisi" Binding="{Binding ImpactLevel}" Width="100"/>
-                    <DataGridTextColumn Header="Konum" Binding="{Binding Location}" Width="190"/>
-                    <DataGridTextColumn Header="Komut / Dosya Yolu" Binding="{Binding Command}" Width="*"/>
-                    <DataGridTemplateColumn Header="İşlemler" Width="190">
+                    <DataGridTextColumn Binding="{Binding StatusText}" Width="95">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColStatus}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Name}" Width="200">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_StartupColAppName}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ImpactLevel}" Width="105">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_StartupColImpact}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Location}" Width="190">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_StartupColLocation}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding Command}" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_StartupColCommand}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTemplateColumn Width="190">
+                        <DataGridTemplateColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColActions}"/>
+                        </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">

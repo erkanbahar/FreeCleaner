@@ -1,0 +1,95 @@
+<UserControl x:Class="FreeCleaner.Views.PortHunterView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                <TextBlock Text="GELİŞTİRİCİ PORT AVCISI (PORT KILLER — HANGİ PORTU KİM KULLANIYOR?)"
+                           FontSize="13"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                <TextBlock Text="'Address already in use' hatası veren portları (3000, 5000, 5173, 8080, 5432 vb.) filtreleyin ve o portu tutan işlemi tek tıkla sonlandırın."
+                           FontSize="11.5"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           Margin="0,3,0,0"/>
+            </StackPanel>
+
+            <Grid Grid.Row="1" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="260"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Port veya İşlem Ara (ör. 5000, node):"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           Margin="0,0,10,0"/>
+
+                <TextBox Grid.Column="1"
+                         Text="{Binding PortFilterText, UpdateSourceTrigger=PropertyChanged}"
+                         Background="{DynamicResource BgCardBrush}"
+                         Foreground="{DynamicResource TextPrimaryBrush}"
+                         BorderBrush="{DynamicResource BorderSubtleBrush}"
+                         BorderThickness="1"
+                         Padding="10,7"
+                         VerticalContentAlignment="Center"
+                         Margin="0,0,8,0"/>
+
+                <Button Grid.Column="2"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Content="Portları Filtrele / Yenile"
+                        Padding="14,7"
+                        Command="{Binding ScanListeningPortsCommand}"/>
+            </Grid>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding ListeningPorts}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Port No" Binding="{Binding PortNumber}" Width="95"/>
+                    <DataGridTextColumn Header="Protokol" Binding="{Binding Protocol}" Width="80"/>
+                    <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="85"/>
+                    <DataGridTextColumn Header="İşlem Adı" Binding="{Binding ProcessName}" Width="195"/>
+                    <DataGridTextColumn Header="Yerel IP Adresi" Binding="{Binding LocalAddress}" Width="155"/>
+                    <DataGridTextColumn Header="Port Türü / Etiket" Binding="{Binding PortBadge}" Width="*"/>
+                    <DataGridTemplateColumn Header="Portu Boşalt" Width="155">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource DangerButtonStyle}"
+                                        Content="Portu Kapat (Kill)"
+                                        Padding="8,4"
+                                        Command="{Binding DataContext.KillPortProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

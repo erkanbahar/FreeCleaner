@@ -367,7 +367,10 @@ public partial class MainViewModel
             SelectedRuleIds = AllRules.Where(rule => rule.IsSelected).Select(rule => rule.Id).ToList(),
             FavoriteSections = _favoriteSectionKeys.ToList(),
             SelectedTheme = SelectedTheme,
-            SelectedLanguage = SelectedLanguage
+            SelectedLanguage = SelectedLanguage,
+            ProactiveStorageAlertsEnabled = ProactiveStorageAlertsEnabled,
+            StorageAlertThresholdDays = StorageAlertThresholdDays,
+            LastStorageForecastAlertDate = _lastStorageForecastAlertDate
         };
     }
 
@@ -478,6 +481,13 @@ public partial class MainViewModel
             ScheduledMaintenanceEnabled = imported.ScheduledMaintenanceEnabled;
             SelectedLanguage = imported.SelectedLanguage;
             SelectedTheme = imported.SelectedTheme;
+            _proactiveStorageAlertsEnabled = imported.ProactiveStorageAlertsEnabled;
+            _storageAlertThresholdDays = imported.StorageAlertThresholdDays is 7 or 15 or 30
+                ? imported.StorageAlertThresholdDays
+                : 15;
+            _lastStorageForecastAlertDate = imported.LastStorageForecastAlertDate ?? string.Empty;
+            OnPropertyChanged(nameof(ProactiveStorageAlertsEnabled));
+            OnPropertyChanged(nameof(StorageAlertThresholdDays));
 
             if (imported.SelectedRuleIds.Count > 0)
             {
@@ -584,12 +594,30 @@ public partial class MainViewModel
             TrayNotificationRequested?.Invoke(alert.Title, alert.Message, true);
             AddLog($"[CANLI TRAY UYARISI] {alert.Message}");
         }
+
+        string todayKey = DateTime.Now.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        if (_lastStorageForecastSummary is null || !string.Equals(_lastForecastSampleDateKey, todayKey, StringComparison.Ordinal))
+        {
+            RefreshStorageForecast(metrics);
+        }
+        else
+        {
+            EvaluateProactiveStorageForecastAlert(_lastStorageForecastSummary, metrics.DriveUsedPercent);
+        }
     }
 
     public async Task ApplyCliLaunchActionAsync(CliLaunchAction action)
     {
+        if (action.Profile is CleaningProfileKind profile)
+            ExecuteApplyCleaningProfile(profile);
+
         switch (action.Kind)
         {
+            case CliLaunchActionKind.ScheduledMaintenance when action.DryRun:
+            case CliLaunchActionKind.DryRunReport:
+                await RunCliDryRunReportAsync(action);
+                return;
+
             case CliLaunchActionKind.ScheduledMaintenance:
                 await RunScheduledMaintenanceAsync(closeWhenFinished: true);
                 break;
@@ -624,6 +652,63 @@ public partial class MainViewModel
                 ActiveSection = "Dashboard";
                 await RunOneClickHealthCheckAsync();
                 break;
+        }
+
+        if (action.ExitWhenFinished && action.Kind != CliLaunchActionKind.ScheduledMaintenance)
+            Application.Current?.Shutdown(0);
+    }
+
+    private async Task RunCliDryRunReportAsync(CliLaunchAction action)
+    {
+        var sw = Stopwatch.StartNew();
+        IsBusy = true;
+        try
+        {
+            List<CleanerRule> rulesToScan = AllRules.Where(r => r.IsSelected).ToList();
+            if (rulesToScan.Count == 0)
+                rulesToScan = AllRules.Where(r => r.RiskLevel == RiskLevel.Low).ToList();
+
+            List<ScannedFileItem> scanned = await _engine.AnalyzeAsync(rulesToScan, ExcludedPaths.ToList());
+            sw.Stop();
+
+            long totalBytes = scanned.Sum(f => f.SizeBytes);
+            List<CliCategoryBreakdownItem> breakdown = scanned
+                .GroupBy(f => string.IsNullOrWhiteSpace(f.Category) ? "Other" : f.Category)
+                .Select(g => new CliCategoryBreakdownItem(g.Key, g.Count(), g.Sum(x => x.SizeBytes)))
+                .OrderByDescending(c => c.Bytes)
+                .ToList();
+
+            string targetJson = string.IsNullOrWhiteSpace(action.ReportJsonPath)
+                ? Path.Combine(AppStoragePathsService.GetDataDirectory(), "cli-dryrun-report.json")
+                : action.ReportJsonPath;
+
+            var report = new CliAutomationReport(
+                GeneratedUtc: DateTime.UtcNow,
+                AppVersion: AppUpdateService.CurrentVersion,
+                Profile: action.Profile?.ToString() ?? "ActiveSelection",
+                DryRun: true,
+                TotalFiles: scanned.Count,
+                TotalBytes: totalBytes,
+                TotalSizeFormatted: CleanerRule.FormatBytes(totalBytes),
+                ElapsedMilliseconds: sw.ElapsedMilliseconds,
+                Categories: breakdown);
+
+            string writtenPath = ShellIntegrationAndProfilesService.WriteCliAutomationReportJson(targetJson, report);
+            StatusMessage = $"[CLI DRY-RUN] {scanned.Count:N0} dosya ({report.TotalSizeFormatted}) tespit edildi (silinmedi). Rapor: {writtenPath}";
+            AddLog($"[CLI DRY-RUN] {scanned.Count:N0} öğe ({report.TotalSizeFormatted}) -> {writtenPath}");
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("CLI DryRun", ex);
+            StatusMessage = $"[CLI DRY-RUN HATA] {ex.Message}";
+            AddLog($"[CLI DRY-RUN][HATA] {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+            CommandManager.InvalidateRequerySuggested();
+            if (action.ExitWhenFinished)
+                Application.Current?.Shutdown(0);
         }
     }
 
@@ -879,6 +964,39 @@ public partial class MainViewModel
     public string ActiveDataDirectoryDisplay =>
         $"Veri Klasörü: {AppStoragePathsService.GetDataDirectory()}";
 
+    public bool ProactiveStorageAlertsEnabled
+    {
+        get => _proactiveStorageAlertsEnabled;
+        set
+        {
+            if (_proactiveStorageAlertsEnabled != value)
+            {
+                _proactiveStorageAlertsEnabled = value;
+                OnPropertyChanged();
+                SaveCurrentSettings();
+                if (_proactiveStorageAlertsEnabled && _lastStorageForecastSummary is not null)
+                    EvaluateProactiveStorageForecastAlert(_lastStorageForecastSummary, SystemMetrics.DriveUsedPercent);
+            }
+        }
+    }
+
+    public int StorageAlertThresholdDays
+    {
+        get => _storageAlertThresholdDays;
+        set
+        {
+            int normalized = value is 7 or 15 or 30 ? value : 15;
+            if (_storageAlertThresholdDays != normalized)
+            {
+                _storageAlertThresholdDays = normalized;
+                OnPropertyChanged();
+                SaveCurrentSettings();
+                if (_proactiveStorageAlertsEnabled && _lastStorageForecastSummary is not null)
+                    EvaluateProactiveStorageForecastAlert(_lastStorageForecastSummary, SystemMetrics.DriveUsedPercent);
+            }
+        }
+    }
+
     public string StorageForecastHeadline
     {
         get => _storageForecastHeadline;
@@ -905,19 +1023,49 @@ public partial class MainViewModel
         }
     }
 
-    private void RefreshStorageForecast()
+    private void RefreshStorageForecast(SystemMetricsSnapshot? metricsOverride = null)
     {
         try
         {
-            List<DailyDriveSample> samples = StorageForecastService.RecordDailySample(SystemMetrics);
+            SystemMetricsSnapshot snapshot = metricsOverride ?? SystemMetrics;
+            List<DailyDriveSample> samples = StorageForecastService.RecordDailySample(snapshot);
             StorageForecastSummary summary = StorageForecastService.ComputeForecast(samples);
+            _lastStorageForecastSummary = summary;
+            _lastForecastSampleDateKey = DateTime.Now.Date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             StorageForecastHeadline = summary.HeadlineText;
             StorageForecastDetail = summary.DetailText;
+            EvaluateProactiveStorageForecastAlert(summary, snapshot.DriveUsedPercent);
         }
         catch
         {
             StorageForecastHeadline = "⏳ Veri bekleniyor";
             StorageForecastDetail = "Disk doluluk trendi hesaplanıyor.";
+        }
+    }
+
+    private void EvaluateProactiveStorageForecastAlert(StorageForecastSummary summary, double usedPercent)
+    {
+        try
+        {
+            StorageAlertEvaluation eval = StorageForecastService.EvaluateProactiveAlert(
+                summary,
+                usedPercent,
+                ProactiveStorageAlertsEnabled,
+                StorageAlertThresholdDays,
+                _lastStorageForecastAlertDate,
+                languageCode: SelectedLanguage);
+
+            if (!eval.ShouldNotify)
+                return;
+
+            _lastStorageForecastAlertDate = eval.TodayDateKey;
+            SaveCurrentSettings();
+            TrayNotificationRequested?.Invoke(eval.Title, eval.Message, true);
+            AddLog($"[PROAKTİF DEPOLAMA UYARISI] {eval.Message}");
+        }
+        catch
+        {
+            // Proactive alert checks should never interrupt dashboard or timer updates.
         }
     }
 

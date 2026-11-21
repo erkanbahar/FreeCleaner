@@ -1,0 +1,124 @@
+<UserControl x:Class="FreeCleaner.Views.CryptoVaultView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <StackPanel>
+                    <TextBlock Text="AES-256-GCM DOSYA ŞİFRELEME KASASI (.FCVAULT) &amp; ÇOKLU HASH DOĞRULAYICI"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Dosyalarınızı PBKDF2 (100.000 İterasyon) + AES-256-GCM ile şifreler/çözer ve aynı anda MD5, SHA-1, SHA-256, SHA-512 bütünlük doğrulaması yapar."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+            </Grid>
+
+            <Border Grid.Row="1"
+                    Background="{DynamicResource BgPrimaryBrush}"
+                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    Padding="12,10"
+                    Margin="0,0,0,10">
+                <StackPanel>
+                    <WrapPanel VerticalAlignment="Center" Margin="0,0,0,8">
+                        <TextBlock Text="Hedef Dosya:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Text="{Binding VaultTargetFilePath, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="380"
+                                 Padding="8,5"
+                                 Background="#0D1422"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                 Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource SecondaryButtonStyle}"
+                                Content="Dosya Seç..."
+                                Padding="12,5"
+                                Margin="0,0,10,0"
+                                Command="{Binding BrowseVaultTargetFileCommand}"/>
+                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                Content="#️⃣ Çoklu Hash Hesapla &amp; Doğrula"
+                                Padding="14,5"
+                                Command="{Binding ComputeMultiHashesCommand}"/>
+                    </WrapPanel>
+
+                    <WrapPanel VerticalAlignment="Center">
+                        <TextBlock Text="Kasa Parolası (AES-256):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBox Text="{Binding VaultPasswordInput, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="175"
+                                 Padding="7,5"
+                                 Background="#0D1422"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                 Margin="0,0,8,0"/>
+                        <Button Style="{StaticResource CleanButtonStyle}"
+                                Content="🔒 AES-256 Şifrele (.fcvault)"
+                                Padding="12,5"
+                                Margin="0,0,8,0"
+                                Command="{Binding EncryptVaultFileCommand}"/>
+                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                Content="🔓 .fcvault Şifresini Çöz"
+                                Padding="12,5"
+                                Margin="0,0,16,0"
+                                Command="{Binding DecryptVaultFileCommand}"/>
+
+                        <TextBlock Text="Beklenen Hash (İsteğe Bağlı):" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBox Text="{Binding ExpectedHashInput, UpdateSourceTrigger=PropertyChanged}"
+                                 Width="210"
+                                 Padding="7,5"
+                                 Background="#0D1422"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                 BorderBrush="{DynamicResource BorderSubtleBrush}"/>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <DataGrid Grid.Row="2"
+                      ItemsSource="{Binding CryptoVaultResults}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Algoritma / İşlem" Binding="{Binding AlgorithmOrOperation}" Width="185"/>
+                    <DataGridTextColumn Header="Dosya Adı" Binding="{Binding FileName}" Width="190"/>
+                    <DataGridTextColumn Header="Kriptografik Hash / Çıktı Dosyası" Binding="{Binding HashOrOutputValue}" Width="*"/>
+                    <DataGridTextColumn Header="Doğrulama Durumu" Binding="{Binding VerificationStatus}" Width="245"/>
+                    <DataGridTemplateColumn Header="Kopyala" Width="105">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Content="Kopyala"
+                                        Padding="8,3"
+                                        FontSize="11"
+                                        Command="{Binding DataContext.CopyHashValueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

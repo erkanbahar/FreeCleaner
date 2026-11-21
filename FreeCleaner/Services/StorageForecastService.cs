@@ -19,6 +19,12 @@ public sealed record StorageForecastSummary(
     string DetailText,
     int SampleCount);
 
+public sealed record StorageAlertEvaluation(
+    bool ShouldNotify,
+    string Title,
+    string Message,
+    string TodayDateKey);
+
 public static class StorageForecastService
 {
     private const int MaxStoredDays = 90;
@@ -189,5 +195,52 @@ public static class StorageForecastService
             headline,
             $"Ortalama +{dailyRateText} büyüme ({samples.Count} günlük analiz).",
             samples.Count);
+    }
+
+    public static StorageAlertEvaluation EvaluateProactiveAlert(
+        StorageForecastSummary forecast,
+        double currentUsedPercent,
+        bool alertsEnabled,
+        int thresholdDays,
+        string? lastAlertDateKey,
+        DateTime? nowOverride = null,
+        string? languageCode = null)
+    {
+        ArgumentNullException.ThrowIfNull(forecast);
+
+        string todayKey = (nowOverride ?? DateTime.Now).Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        if (!alertsEnabled || string.Equals(lastAlertDateKey, todayKey, StringComparison.Ordinal))
+            return new StorageAlertEvaluation(false, string.Empty, string.Empty, todayKey);
+
+        int safeThresholdDays = Math.Max(1, thresholdDays);
+        bool isUsedCritical = currentUsedPercent >= 90.0;
+        bool isDaysCritical = forecast.EstimatedDaysTo90Percent is int days && days <= safeThresholdDays;
+
+        if (!isUsedCritical && !isDaysCritical)
+            return new StorageAlertEvaluation(false, string.Empty, string.Empty, todayKey);
+
+        bool isEn = LocalizationService.NormalizeLanguageCode(languageCode ?? LocalizationService.CurrentLanguage) == "en-US";
+        CultureInfo msgCulture = isEn ? CultureInfo.InvariantCulture : CultureInfo.GetCultureInfo("tr-TR");
+        string pctText = currentUsedPercent.ToString("F1", msgCulture);
+        if (isUsedCritical)
+        {
+            string title = isEn
+                ? "FreeCleaner Pro — Critical Disk Space Alert"
+                : "FreeCleaner Pro — Kritik Disk Doluluk Uyarısı";
+            string message = isEn
+                ? $"System drive occupancy reached {pctText}% (>= 90%). Click to open Smart Cleaner."
+                : $"Sistem diski %{pctText} doluluğa ulaştı. Akıllı Temizliği açmak için tıklayın.";
+            return new StorageAlertEvaluation(true, title, message, todayKey);
+        }
+
+        int remainingDays = forecast.EstimatedDaysTo90Percent!.Value;
+        string forecastTitle = isEn
+            ? "FreeCleaner Pro — Storage Forecast Alert"
+            : "FreeCleaner Pro — Proaktif Depolama Uyarısı";
+        string forecastMessage = isEn
+            ? $"At current growth rate, your drive may exceed 90% in ~{remainingDays} day(s). Click to clean up now."
+            : $"Mevcut dolma hızıyla diskiniz ~{remainingDays} gün içinde %90 sınırına ulaşabilir. Temizlik için tıklayın.";
+
+        return new StorageAlertEvaluation(true, forecastTitle, forecastMessage, todayKey);
     }
 }

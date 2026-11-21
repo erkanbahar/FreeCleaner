@@ -1,0 +1,65 @@
+<UserControl x:Class="FreeCleaner.Views.SqliteOptimizerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border
+            Background="{DynamicResource BgSecondaryBrush}"
+            BorderBrush="{DynamicResource BorderSubtleBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="16">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="TARAYICI &amp; IDE SQLITE VERİTABANI SIKIŞTIRICI (ZERO-DATA-LOSS OPTIMIZER)"
+                               FontSize="13"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="Chrome, Edge, Brave, Firefox, VS Code ve Cursor SQLite3 veritabanlarındaki boş sayfaları (freelist) ve WAL günlük şişkinliğini veri silmeden temizler."
+                               FontSize="11.5"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,3,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Content="🗄️ SQLite Veritabanlarını Analiz Et"
+                            Padding="13,7"
+                            Margin="0,0,8,0"
+                            Command="{Binding ScanSqliteDatabasesCommand}"/>
+                    <Button Style="{StaticResource CleanButtonStyle}"
+                            Content="⚡ Seçili Veritabanlarını Optimize Et"
+                            Padding="13,7"
+                            Command="{Binding OptimizeSqliteDatabasesCommand}"/>
+                </StackPanel>
+            </Grid>
+
+            <DataGrid Grid.Row="1"
+                      ItemsSource="{Binding SqliteDatabases}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Background="{DynamicResource BgPrimaryBrush}"
+                      RowBackground="{DynamicResource BgSecondaryBrush}"
+                      AlternatingRowBackground="{DynamicResource BgCardBrush}"
+                      Foreground="{DynamicResource TextPrimaryBrush}"
+                      BorderBrush="{DynamicResource BorderSubtleBrush}"
+                      BorderThickness="1"
+                      RowHeight="36">
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="55"/>
+                    <DataGridTextColumn Header="Uygulama / Tarayıcı" Binding="{Binding AppName}" IsReadOnly="True" Width="195"/>
+                    <DataGridTextColumn Header="Veritabanı Dosyası" Binding="{Binding DatabaseName}" IsReadOnly="True" Width="190"/>
+                    <DataGridTextColumn Header="Toplam Boyut" Binding="{Binding FormattedTotalSize}" IsReadOnly="True" Width="115"/>
+                    <DataGridTextColumn Header="Kazanılabilir" Binding="{Binding FormattedReclaimable}" IsReadOnly="True" Width="115"/>
+                    <DataGridTextColumn Header="SQLite Sayfa &amp; WAL Analizi" Binding="{Binding HealthDetails}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Border>
+</UserControl>

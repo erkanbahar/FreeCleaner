@@ -30,28 +30,28 @@
                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <TextBlock Text="&#xE943;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource AccentBlueBrush}" FontSize="15" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Text="Visual Studio Projeleri: Debug &amp; Retail / Release Otomatik Temizleyici"
+                            <TextBlock Text="{DynamicResource Loc_DevVsTitle}"
                                        FontWeight="Bold"
                                        FontSize="13.5"
                                        Foreground="{DynamicResource TextPrimaryBrush}"/>
                         </StackPanel>
-                        <TextBlock Text="Seçilen klasör altındaki tüm .sln, .slnx, .csproj ve .vcxproj projelerinin Debug, Retail, Release, x64 ve obj derleme çıktılarını otomatik bulur ve siler."
+                        <TextBlock Text="{DynamicResource Loc_DevVsSubtitle}"
                                    FontSize="11.5"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    Margin="0,0,0,8"/>
                         <StackPanel Orientation="Horizontal">
                             <CheckBox IsChecked="{Binding VsIncludeDebug}"
-                                      Content="Debug Klasörleri (bin\Debug, obj\Debug, x64\Debug)"
+                                      Content="{DynamicResource Loc_DevVsCheckDebug}"
                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                       FontSize="12"
                                       Margin="0,0,16,0"/>
                             <CheckBox IsChecked="{Binding VsIncludeRetailAndRelease}"
-                                      Content="Retail &amp; Release Klasörleri (Retail, Release)"
+                                      Content="{DynamicResource Loc_DevVsCheckRetail}"
                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                       FontSize="12"
                                       Margin="0,0,16,0"/>
                             <CheckBox IsChecked="{Binding VsIncludeObjAndVs}"
-                                      Content=".vs, ipch &amp; Ara Derleme (obj) Klasörleri"
+                                      Content="{DynamicResource Loc_DevVsCheckObj}"
                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                       FontSize="12"/>
                         </StackPanel>
@@ -59,11 +59,11 @@
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
                         <Button Style="{StaticResource PrimaryButtonStyle}"
-                                Content="VS Debug/Retail Tara"
+                                Content="{DynamicResource Loc_DevVsScanBtn}"
                                 Command="{Binding ScanVsDebugRetailCommand}"
                                 Margin="0,0,8,0"/>
                         <Button Style="{StaticResource CleanButtonStyle}"
-                                Content="VS Debug &amp; Retail Otomatik Sil"
+                                Content="{DynamicResource Loc_DevVsAutoCleanBtn}"
                                 Command="{Binding AutoCleanVsDebugRetailCommand}"/>
                     </StackPanel>
                 </Grid>
@@ -77,7 +77,7 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Projeler Kök Dizini:" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="{DynamicResource Loc_DevWorkspaceLabel}" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
                     <TextBox Text="{Binding DevWorkspacePath, UpdateSourceTrigger=PropertyChanged}"
                              Width="260"
                              Background="{DynamicResource BgCardBrush}"
@@ -87,21 +87,21 @@
                              VerticalContentAlignment="Center"
                              Margin="0,0,6,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Klasör Seç..."
+                            Content="{DynamicResource Loc_SettingsBrowseBtn}"
                             Command="{Binding BrowseDevWorkspaceCommand}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Tüm Proje Çıktılarını Tara (node_modules, .venv)"
+                            Content="{DynamicResource Loc_DevScanAllBtn}"
                             Command="{Binding ScanDevProjectsCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
-                            Content="Oyun &amp; Paket Önbellekleri (Steam, Shader, NuGet)"
+                            Content="{DynamicResource Loc_DevScanGamerBtn}"
                             Command="{Binding ScanGamerCachesCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
-                            Content="Listeden Seçilileri Sil"
+                            Content="{DynamicResource Loc_DevCleanSelBtn}"
                             Command="{Binding CleanDevArtifactsCommand}"/>
                 </StackPanel>
             </Grid>
@@ -120,12 +120,36 @@
                       BorderThickness="1"
                       RowHeight="32">
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Header="Seç" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45"/>
-                    <DataGridTextColumn Header="Proje / Hedef Adı" Binding="{Binding ProjectName}" IsReadOnly="True" Width="210"/>
-                    <DataGridTextColumn Header="Klasör Türü" Binding="{Binding ArtifactType}" IsReadOnly="True" Width="150"/>
-                    <DataGridTextColumn Header="Boyut" Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="105"/>
-                    <DataGridTextColumn Header="Son Değişiklik" Binding="{Binding FormattedDate}" IsReadOnly="True" Width="125"/>
-                    <DataGridTextColumn Header="Tam Klasör Yolu" Binding="{Binding FullPath}" IsReadOnly="True" Width="*"/>
+                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="45">
+                        <DataGridCheckBoxColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSelect}"/>
+                        </DataGridCheckBoxColumn.Header>
+                    </DataGridCheckBoxColumn>
+                    <DataGridTextColumn Binding="{Binding ProjectName}" IsReadOnly="True" Width="210">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DevColProject}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding ArtifactType}" IsReadOnly="True" Width="150">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DevColType}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedSize}" SortMemberPath="SizeBytes" IsReadOnly="True" Width="105">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_ColSize}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FormattedDate}" IsReadOnly="True" Width="125">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_DiskColModified}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
+                    <DataGridTextColumn Binding="{Binding FullPath}" IsReadOnly="True" Width="*">
+                        <DataGridTextColumn.Header>
+                            <TextBlock Text="{DynamicResource Loc_PkgColFolder}"/>
+                        </DataGridTextColumn.Header>
+                    </DataGridTextColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
