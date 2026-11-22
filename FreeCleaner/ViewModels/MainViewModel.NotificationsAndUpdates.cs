@@ -162,7 +162,7 @@ public partial class MainViewModel
         if (selected.Count == 0)
             return;
 
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             LocalizationService.GetText(
                 $"{selected.Count} yedek dosyası kalıcı olarak silinecek. Devam edilsin mi?",
                 $"Delete {selected.Count} selected backup files permanently?",

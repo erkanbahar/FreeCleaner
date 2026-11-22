@@ -43,6 +43,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0"
                              Text="{Binding NewExclusionInput, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.Name="{DynamicResource Loc_A11y_ExclusionsInput}"
                              Background="{DynamicResource BgCardBrush}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
                              CaretBrush="{DynamicResource AccentBlueBrush}"
@@ -52,17 +53,20 @@
                     <Button Grid.Column="1"
                             Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_SettingsAddBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_SettingsAddBtn}"
                             Padding="14,6"
                             Command="{Binding AddExclusionCommand}"
                             Margin="0,0,6,0"/>
                     <Button Grid.Column="2"
                             Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_SettingsBrowseBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_SettingsBrowseBtn}"
                             Command="{Binding BrowseExclusionFolderCommand}"/>
                 </Grid>
 
                 <ListBox Grid.Row="2"
                          ItemsSource="{Binding ExcludedPaths}"
+                         AutomationProperties.Name="{DynamicResource Loc_A11y_ExclusionsList}"
                          Background="{DynamicResource BgPrimaryBrush}"
                          BorderBrush="{DynamicResource BorderSubtleBrush}"
                          Foreground="{DynamicResource TextPrimaryBrush}">
@@ -115,6 +119,7 @@
                                 <TextBlock Text="{DynamicResource Loc_SettingsThemeLabel}" Width="95" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                 <ComboBox ItemsSource="{Binding AvailableThemes}"
                                           SelectedItem="{Binding SelectedTheme}"
+                                          AutomationProperties.Name="{DynamicResource Loc_SettingsThemeLabel}"
                                           Width="210"/>
                             </StackPanel>
                             <TextBlock Text="{DynamicResource Loc_SettingsThemeSystemAutoHint}"
@@ -128,10 +133,12 @@
                                           DisplayMemberPath="DisplayName"
                                           SelectedValuePath="Code"
                                           SelectedValue="{Binding SelectedLanguage}"
+                                          AutomationProperties.Name="{DynamicResource Loc_SettingsLangLabel}"
                                           Width="210"/>
                             </StackPanel>
                             <Button Style="{StaticResource SubtleButtonStyle}"
                                     Content="{DynamicResource Loc_SettingsReopenOnboardBtn}"
+                                    AutomationProperties.Name="{DynamicResource Loc_SettingsReopenOnboardBtn}"
                                     Command="{Binding OpenOnboardingCommand}"
                                     HorizontalAlignment="Left"/>
                         </StackPanel>

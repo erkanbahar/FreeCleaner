@@ -31,14 +31,14 @@ public partial class MainViewModel
         }
         else
         {
-            MessageBox.Show(msg, "Başlangıç Yöneticisi", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(msg, "Başlangıç Yöneticisi", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         LoadStartupItems();
     }
 
     private void DeleteStartupItem(StartupItemModel item)
     {
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"'{item.Name}' öğesini başlangıç listesinden kalıcı olarak kaldırmak istiyor musunuz?",
             "Başlangıç Öğesini Kaldır",
             MessageBoxButton.YesNo,
@@ -54,7 +54,7 @@ public partial class MainViewModel
         }
         else
         {
-            MessageBox.Show(msg, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            ShowDialog(msg, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -99,7 +99,7 @@ public partial class MainViewModel
         string backupFile = RegistryCleanerService.ExportBackupFile(selected);
         StatusMessage = $"Kayıt defteri yedeği oluşturuldu: {backupFile}";
         AddLog($"[YEDEK] .reg yedeği kaydedildi: {backupFile}");
-        MessageBox.Show($"Seçili {selected.Count} kayıt için yedek dosyası oluşturuldu:\n\n{backupFile}", "Yedekleme Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
+        ShowDialog($"Seçili {selected.Count} kayıt için yedek dosyası oluşturuldu:\n\n{backupFile}", "Yedekleme Başarılı", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void RunRegistryFix()
@@ -107,7 +107,7 @@ public partial class MainViewModel
         var selected = RegistryIssues.Where(x => x.IsSelected).ToList();
         if (selected.Count == 0) return;
 
-        var res = MessageBox.Show(
+        var res = ShowDialog(
             $"Seçili {selected.Count} adet geçersiz kayıt defteri girdisi temizlenecek.\n\n" +
             "İşlem öncesinde otomatik olarak .reg yedek dosyası oluşturulacaktır. Devam edilsin mi?",
             "Kayıt Defteri Onarımı",
@@ -132,7 +132,7 @@ public partial class MainViewModel
         string? backupPath = RegistryCleanerService.GetLatestBackupFile();
         if (backupPath is null) return;
 
-        if (MessageBox.Show(
+        if (ShowDialog(
                 $"Son registry yedeği geri yüklenecek:\n\n{backupPath}\n\nDevam edilsin mi?",
                 "Registry Yedeğini Geri Yükle",
                 MessageBoxButton.YesNo,
@@ -143,7 +143,7 @@ public partial class MainViewModel
         StatusMessage = result.Message;
         AddLog($"[GERİ YÜKLEME] {result.Message}");
         if (!result.Success)
-            MessageBox.Show(result.Message, "Registry Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(result.Message, "Registry Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     private void LoadBackups()
@@ -162,7 +162,7 @@ public partial class MainViewModel
         BackupFileItem? backup = BackupFiles.FirstOrDefault(x => x.IsSelected);
         if (backup is null) return;
 
-        if (MessageBox.Show(
+        if (ShowDialog(
                 $"Seçilen {backup.BackupType} yedeği geri yüklenecek:\n\n{backup.FileName}\n\nDevam edilsin mi?",
                 "Yedeği Geri Yükle",
                 MessageBoxButton.YesNo,
@@ -173,7 +173,7 @@ public partial class MainViewModel
         StatusMessage = result.Message;
         AddLog($"[GERİ YÜKLEME] {result.Message}");
         if (!result.Success)
-            MessageBox.Show(result.Message, "Yedek Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(result.Message, "Yedek Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
         else
             LoadBackups();
     }
@@ -286,7 +286,7 @@ public partial class MainViewModel
         if (selected.Count == 0) return;
 
         long totalBytes = selected.Sum(x => x.SizeBytes);
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selected.Count} dosya ({CleanerRule.FormatBytes(totalBytes)}) Geri Dönüşüm Kutusu'na taşınarak silinecek.\n\nOnaylıyor musunuz?",
             "Disk Analizörü - Dosya Silme Onayı",
             MessageBoxButton.YesNo,
@@ -371,7 +371,7 @@ public partial class MainViewModel
         if (selected.Count == 0) return;
 
         long bytes = selected.Sum(x => x.SizeBytes);
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selected.Count} yetim uygulama klasörü ({CleanerRule.FormatBytes(bytes)}) silinecek.\n\nDevam etmek istiyor musunuz?",
             "Yetim Klasör Temizliği",
             MessageBoxButton.YesNo,

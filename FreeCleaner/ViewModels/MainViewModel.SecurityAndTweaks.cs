@@ -177,7 +177,7 @@ public partial class MainViewModel
         }
         else
         {
-            MessageBox.Show(msg, "İşlem Sonlandırılamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(msg, "İşlem Sonlandırılamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 

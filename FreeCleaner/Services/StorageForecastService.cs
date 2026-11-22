@@ -42,11 +42,9 @@ public static class StorageForecastService
         string path = string.IsNullOrWhiteSpace(customFilePath) ? DefaultTelemetryPath : customFilePath;
         try
         {
-            if (!File.Exists(path))
-                return [];
-
-            string json = File.ReadAllText(path, Encoding.UTF8);
-            return JsonSerializer.Deserialize<List<DailyDriveSample>>(json) ?? [];
+            return AtomicFileStorageService.ReadJsonWithBackupFallback<List<DailyDriveSample>>(
+                path,
+                logArea: "Depolama tahmin verisi okuma") ?? [];
         }
         catch (Exception ex)
         {
@@ -81,13 +79,11 @@ public static class StorageForecastService
 
         try
         {
-            string? dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir))
-                Directory.CreateDirectory(dir);
-
-            string tempPath = $"{path}.{Guid.NewGuid():N}.tmp";
-            File.WriteAllText(tempPath, JsonSerializer.Serialize(samples, JsonOptions), Encoding.UTF8);
-            File.Move(tempPath, path, overwrite: true);
+            AtomicFileStorageService.WriteAllTextAtomic(
+                path,
+                JsonSerializer.Serialize(samples, JsonOptions),
+                Encoding.UTF8,
+                createBackup: true);
         }
         catch (Exception ex)
         {

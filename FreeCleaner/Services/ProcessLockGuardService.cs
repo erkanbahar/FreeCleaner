@@ -168,17 +168,17 @@ public static class ProcessLockGuardService
         {
             try
             {
-                using var wslProc = Process.Start(new ProcessStartInfo
-                {
-                    FileName = "wsl.exe",
-                    Arguments = "--shutdown",
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                });
-                if (wslProc is not null)
-                    await wslProc.WaitForExitAsync(ct).ConfigureAwait(false);
-
-                notes.Add("WSL2 alt sistemi 'wsl --shutdown' ile kapatıldı.");
+                ProcessStartInfo wslPsi = SafeProcessRunner.BuildDirectProcessStartInfo("wsl.exe", ["--shutdown"]);
+                ProcessRunResult wslRun = await SafeProcessRunner.RunAsync(wslPsi, TimeSpan.FromSeconds(20), ct).ConfigureAwait(false);
+                notes.Add(wslRun.Started && !wslRun.TimedOut && wslRun.ExitCode == 0
+                    ? "WSL2 alt sistemi 'wsl --shutdown' ile kapatıldı."
+                    : wslRun.TimedOut
+                        ? "WSL2 kapatma komutu zaman aşımına uğradı."
+                        : $"WSL2 kapatılamadı (Çıkış kodu: {wslRun.ExitCode}).");
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {

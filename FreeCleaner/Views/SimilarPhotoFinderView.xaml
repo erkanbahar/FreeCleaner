@@ -59,6 +59,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0"
                          Text="{Binding SimilarPhotosFolderPath, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.Name="{DynamicResource Loc_A11y_SimilarPhotoFolderInput}"
                          Background="{DynamicResource BgCardBrush}"
                          Foreground="{DynamicResource TextPrimaryBrush}"
                          CaretBrush="{DynamicResource AccentBlueBrush}"
@@ -69,16 +70,19 @@
                 <Button Grid.Column="1"
                         Style="{StaticResource SubtleButtonStyle}"
                         Content="{DynamicResource Loc_SimilarBrowseBtn}"
+                        AutomationProperties.Name="{DynamicResource Loc_SimilarBrowseBtn}"
                         Command="{Binding BrowseSimilarPhotosFolderCommand}"
                         Margin="0,0,6,0"/>
                 <Button Grid.Column="2"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_SimilarScanBtn}"
+                        AutomationProperties.Name="{DynamicResource Loc_SimilarScanBtn}"
                         Command="{Binding ScanSimilarPhotosCommand}"
                         Margin="0,0,6,0"/>
                 <Button Grid.Column="3"
                         Style="{StaticResource DangerButtonStyle}"
                         Content="{DynamicResource Loc_SimilarCleanBtn}"
+                        AutomationProperties.Name="{DynamicResource Loc_SimilarCleanBtn}"
                         Command="{Binding CleanSelectedSimilarPhotosCommand}"/>
             </Grid>
 
@@ -97,6 +101,7 @@
                           DisplayMemberPath="Label"
                           SelectedValuePath="MaxDistance"
                           SelectedValue="{Binding SimilarPhotosMaxDistance}"
+                          AutomationProperties.Name="{DynamicResource Loc_SimilarSensitivityLabel}"
                           Width="220"/>
             </StackPanel>
 
@@ -111,6 +116,7 @@
                 <DataGrid Grid.Column="0"
                           ItemsSource="{Binding SimilarPhotoItems}"
                           SelectedItem="{Binding SelectedSimilarPhoto}"
+                          AutomationProperties.Name="{DynamicResource Loc_A11y_SimilarPhotoGrid}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           HeadersVisibility="Column"
@@ -169,6 +175,7 @@
                                 <DataTemplate>
                                     <Button Style="{StaticResource SubtleButtonStyle}"
                                             Content="📂"
+                                            AutomationProperties.Name="{DynamicResource Loc_OpenFileLocationTip}"
                                             Padding="7,2"
                                             FontSize="11"
                                             HorizontalAlignment="Center"

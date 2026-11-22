@@ -20,28 +20,19 @@ public static class SixthGenHardwareAndDevSuiteService
 
     public static async Task<List<ListeningPortItem>> GetListeningPortsAsync(string? filterText = null)
     {
-        return await Task.Run(() =>
+        var results = new List<ListeningPortItem>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        try
         {
-            var results = new List<ListeningPortItem>();
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo("netstat.exe", ["-ano"], redirectOutput: true);
+            ProcessRunResult run = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            if (!run.Started || run.TimedOut || string.IsNullOrWhiteSpace(run.StandardOutput))
+                return results;
 
-            try
+            string output = run.StandardOutput;
+            await Task.Run(() =>
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "netstat.exe",
-                    Arguments = "-ano",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is null) return results;
-
-                string output = proc.StandardOutput.ReadToEnd();
-                proc.WaitForExit(5000);
-
                 var pidNameCache = new Dictionary<int, string>();
                 foreach (var p in Process.GetProcesses())
                 {
@@ -95,24 +86,24 @@ public static class SixthGenHardwareAndDevSuiteService
                         }
                     }
 
-                    results.Add(new ListeningPortItem
-                    {
-                        Protocol = proto,
-                        LocalAddress = ipPart,
-                        PortNumber = port,
-                        ProcessId = pid,
-                        ProcessName = procName,
-                        PortBadge = badge
-                    });
-                }
-            }
-            catch { }
+                        results.Add(new ListeningPortItem
+                        {
+                            Protocol = proto,
+                            LocalAddress = ipPart,
+                            PortNumber = port,
+                            ProcessId = pid,
+                            ProcessName = procName,
+                            PortBadge = badge
+                        });
+                    }
+                }).ConfigureAwait(false);
+        }
+        catch { }
 
-            return results
-                .OrderByDescending(x => CommonDevPorts.Contains(x.PortNumber))
-                .ThenBy(x => x.PortNumber)
-                .ToList();
-        });
+        return results
+            .OrderByDescending(x => CommonDevPorts.Contains(x.PortNumber))
+            .ThenBy(x => x.PortNumber)
+            .ToList();
     }
 
     public static bool KillProcessByPortPid(int pid, int port, out string message)
@@ -193,24 +184,20 @@ public static class SixthGenHardwareAndDevSuiteService
 
     public static async Task<int> RemoveSelectedAppxPackagesAsync(IEnumerable<AppxBloatwareItem> items)
     {
-        return await Task.Run(() =>
+        int removed = 0;
+        foreach (var item in items.Where(x => x.IsSelected))
         {
-            int removed = 0;
-            foreach (var item in items.Where(x => x.IsSelected))
+            try
             {
-                try
-                {
-                    string script = SafeProcessRunner.BuildRemoveAppxScript(item.PackageFullName);
-                    ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script);
-                    using var proc = Process.Start(psi);
-                    proc?.WaitForExit(10000);
-                    if (proc?.ExitCode == 0)
-                        removed++;
-                }
-                catch { }
+                string script = SafeProcessRunner.BuildRemoveAppxScript(item.PackageFullName);
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script);
+                ProcessRunResult run = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(25)).ConfigureAwait(false);
+                if (run.Started && !run.TimedOut && run.ExitCode == 0)
+                    removed++;
             }
-            return removed;
-        });
+            catch { }
+        }
+        return removed;
     }
 
     // ==================== 3. LIVE SSD / NVME SEQUENTIAL READ & WRITE BENCHMARK ====================

@@ -288,11 +288,8 @@ public static class NextGenForensicsAndRescueService
         try
         {
             ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo("netsh.exe", arguments, redirectOutput: true);
-            using var proc = Process.Start(psi);
-            if (proc is null) return string.Empty;
-            string output = proc.StandardOutput.ReadToEnd();
-            proc.WaitForExit(4000);
-            return output;
+            ProcessRunResult result = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(4));
+            return result.Started && !result.TimedOut ? result.StandardOutput : string.Empty;
         }
         catch
         {

@@ -168,7 +168,7 @@ public partial class MainViewModel
         if (selected.Count == 0) return;
 
         long totalBytes = selected.Sum(x => x.SizeBytes);
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selected.Count} öğe ({CleanerRule.FormatBytes(totalBytes)}) temizlenecek.\n\n" +
             "Kurulum/arşiv dosyaları Geri Dönüşüm Kutusu'na taşınır, boş klasörler kaldırılır. Devam edilsin mi?",
             "İndirilenler & Boş Klasör Temizliği",
@@ -227,7 +227,7 @@ public partial class MainViewModel
         var selected = ContextMenuEntries.Where(x => x.IsSelected).ToList();
         if (selected.Count == 0) return;
 
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selected.Count} sağ tık bağlam menüsü öğesi Kayıt Defteri'nden (HKCR) kaldırılacak.\n\nOnaylıyor musunuz?",
             "Sağ Tık Menüsü Öğesini Kaldır",
             MessageBoxButton.YesNo,
@@ -271,7 +271,7 @@ public partial class MainViewModel
             AddLog($"[SERVİSLER] {msg}");
             if (!ok)
             {
-                MessageBox.Show(msg, "Servis Kontrolü", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowDialog(msg, "Servis Kontrolü", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             await LoadOptimizableServicesAsync();
         }
@@ -433,7 +433,7 @@ public partial class MainViewModel
 
     private async Task KillLockingProcessAndRescanAsync(LockingProcessItem proc)
     {
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"'{proc.ProcessName}' (PID: {proc.ProcessId}) işlemini sonlandırıp dosya kilidini açmak istiyor musunuz?",
             "Kilitli Dosya Çözücü",
             MessageBoxButton.YesNo,
@@ -449,7 +449,7 @@ public partial class MainViewModel
         }
         else
         {
-            MessageBox.Show(msg, "Kilit Çözücü Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(msg, "Kilit Çözücü Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -479,7 +479,7 @@ public partial class MainViewModel
         var selected = BrowserExtensions.Where(x => x.IsSelected).ToList();
         if (selected.Count == 0) return;
 
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selected.Count} tarayıcı eklenti klasörü silinecek (Tarayıcının kapalı olduğundan emin olun).\n\nDevam edilsin mi?",
             "Tarayıcı Eklentisini Kaldır",
             MessageBoxButton.YesNo,
@@ -602,7 +602,7 @@ public partial class MainViewModel
             }
             else if (!ok)
             {
-                MessageBox.Show(msg, "Pil Sağlık Raporu", MessageBoxButton.OK, MessageBoxImage.Information);
+                ShowDialog(msg, "Pil Sağlık Raporu", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
         finally

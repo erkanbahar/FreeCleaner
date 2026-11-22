@@ -269,52 +269,54 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
 
     public static async Task<(bool Success, string Message)> BlockExecutableInFirewallAsync(string exeFullPath)
     {
-        return await Task.Run(() =>
+        if (string.IsNullOrWhiteSpace(exeFullPath) || !File.Exists(exeFullPath))
+            return (false, "Lütfen geçerli bir .exe uygulama dosyası seçin.");
+
+        try
         {
-            if (string.IsNullOrWhiteSpace(exeFullPath) || !File.Exists(exeFullPath))
-                return (false, "Lütfen geçerli bir .exe uygulama dosyası seçin.");
+            string appName = Path.GetFileNameWithoutExtension(exeFullPath);
+            string ruleName = $"FreeCleaner_Block_{appName}";
 
-            try
-            {
-                string appName = Path.GetFileNameWithoutExtension(exeFullPath);
-                string ruleName = $"FreeCleaner_Block_{appName}";
+            string script = SafeProcessRunner.BuildFirewallBlockScript(ruleName, exeFullPath);
+            ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: true);
+            ProcessRunResult run = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(15)).ConfigureAwait(false);
 
-                string script = SafeProcessRunner.BuildFirewallBlockScript(ruleName, exeFullPath);
-                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: true);
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(10000);
+            if (!run.Started)
+                return (false, "Firewall komutu başlatılamadı.");
+            if (run.TimedOut)
+                return (false, "Firewall kuralı ekleme işlemi zaman aşımına uğradı.");
+            if (run.ExitCode != 0)
+                return (false, $"Firewall kuralı eklenemedi (Çıkış kodu: {run.ExitCode}).");
 
-                return (true, $"'{appName}.exe' uygulamasının gelen ve giden tüm internet erişimi Güvenlik Duvarı (Firewall) üzerinden engellendi!");
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Firewall kuralı eklenemedi: {ex.Message}");
-            }
-        });
+            return (true, $"'{appName}.exe' uygulamasının gelen ve giden tüm internet erişimi Güvenlik Duvarı (Firewall) üzerinden engellendi!");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Firewall kuralı eklenemedi: {ex.Message}");
+        }
     }
 
     public static async Task<(int RemovedCount, string Message)> RemoveSelectedFirewallRulesAsync(IEnumerable<FirewallBlockRuleItem> items)
     {
-        return await Task.Run(() =>
+        var selected = items.Where(x => x.IsSelected).ToList();
+        if (selected.Count == 0)
+            return (0, "Kaldırılacak güvenlik duvarı kuralı seçilmedi.");
+
+        try
         {
-            var selected = items.Where(x => x.IsSelected).ToList();
-            if (selected.Count == 0)
-                return (0, "Kaldırılacak güvenlik duvarı kuralı seçilmedi.");
+            string script = SafeProcessRunner.BuildFirewallDeleteScript(selected.Select(r => r.RuleName));
+            ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: true);
+            ProcessRunResult run = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(15)).ConfigureAwait(false);
 
-            try
-            {
-                string script = SafeProcessRunner.BuildFirewallDeleteScript(selected.Select(r => r.RuleName));
-                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: true);
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(10000);
+            if (!run.Started || run.TimedOut || run.ExitCode != 0)
+                return (0, run.TimedOut ? "Firewall kuralı kaldırma işlemi zaman aşımına uğradı." : "Firewall kuralları kaldırılamadı.");
 
-                return (selected.Count, $"{selected.Count} Güvenlik Duvarı engelleme kuralı kaldırıldı ve uygulamanın internet erişimi açıldı.");
-            }
-            catch (Exception ex)
-            {
-                return (0, $"Kural silinemedi: {ex.Message}");
-            }
-        });
+            return (selected.Count, $"{selected.Count} Güvenlik Duvarı engelleme kuralı kaldırıldı ve uygulamanın internet erişimi açıldı.");
+        }
+        catch (Exception ex)
+        {
+            return (0, $"Kural silinemedi: {ex.Message}");
+        }
     }
 
     // ==================== 3. AES-256-GCM FILE VAULT & MULTI-HASH VERIFIER ====================
@@ -1061,45 +1063,45 @@ Get-Volume | Where-Object { $_.DriveLetter } | ForEach-Object {
 
     public static async Task<(bool Success, string Message)> MountDiskImageAsync(string isoOrVhdPath)
     {
-        return await Task.Run(() =>
-        {
-            if (string.IsNullOrWhiteSpace(isoOrVhdPath) || !File.Exists(isoOrVhdPath))
-                return (false, "Bağlanacak geçerli bir .iso, .vhd veya .vhdx dosyası seçin.");
+        if (string.IsNullOrWhiteSpace(isoOrVhdPath) || !File.Exists(isoOrVhdPath))
+            return (false, "Bağlanacak geçerli bir .iso, .vhd veya .vhdx dosyası seçin.");
 
-            try
-            {
-                string script = SafeProcessRunner.BuildMountDiskImageScript(isoOrVhdPath);
-                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script);
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(10000);
-                return proc?.ExitCode == 0
-                    ? (true, $"'{Path.GetFileName(isoOrVhdPath)}' sanal sürücü olarak başarıyla bağlandı (Mount edildi)!")
-                    : (false, "İmaj bağlanamadı (Dosya zaten bağlı olabilir veya Yönetici izni gerekiyor).");
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Mount hatası: {ex.Message}");
-            }
-        });
+        try
+        {
+            string script = SafeProcessRunner.BuildMountDiskImageScript(isoOrVhdPath);
+            ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script);
+            ProcessRunResult run = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(15)).ConfigureAwait(false);
+            if (run.Started && !run.TimedOut && run.ExitCode == 0)
+                return (true, $"'{Path.GetFileName(isoOrVhdPath)}' sanal sürücü olarak başarıyla bağlandı (Mount edildi)!");
+
+            return (false, run.TimedOut
+                ? "İmaj bağlama işlemi zaman aşımına uğradı."
+                : "İmaj bağlanamadı (Dosya zaten bağlı olabilir veya Yönetici izni gerekiyor).");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Mount hatası: {ex.Message}");
+        }
     }
 
     public static async Task<(bool Success, string Message)> DismountVolumeOrImageAsync(VolumeSecurityAndMountItem item)
     {
-        return await Task.Run(() =>
+        try
         {
-            try
-            {
-                char driveLetter = !string.IsNullOrEmpty(item.DriveRoot) ? item.DriveRoot[0] : 'C';
-                string ps = SafeProcessRunner.BuildDismountDiskImageScript(item.BackingImagePath, driveLetter);
-                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps);
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(8000);
+            char driveLetter = !string.IsNullOrEmpty(item.DriveRoot) ? item.DriveRoot[0] : 'C';
+            string ps = SafeProcessRunner.BuildDismountDiskImageScript(item.BackingImagePath, driveLetter);
+            ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps);
+            ProcessRunResult run = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(15)).ConfigureAwait(false);
+            if (run.Started && !run.TimedOut && run.ExitCode == 0)
                 return (true, $"{item.DriveRoot} ({item.VolumeLabel}) sanal diski / ISO imajı sistemden ayrıldı (Dismount).");
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Dismount hatası: {ex.Message}");
-            }
-        });
+
+            return (false, run.TimedOut
+                ? "İmaj ayırma işlemi zaman aşımına uğradı."
+                : $"{item.DriveRoot} ({item.VolumeLabel}) sanal diski ayrılamadı (Yönetici izni gerekiyor veya aygıt kullanımda olabilir).");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Dismount hatası: {ex.Message}");
+        }
     }
 }

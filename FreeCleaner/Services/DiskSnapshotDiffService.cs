@@ -81,10 +81,8 @@ public static class DiskSnapshotDiffService
             TotalBytes: totalBytes,
             Entries: snapshotEntries);
 
-        string tempFile = $"{filePath}.{Guid.NewGuid():N}.tmp";
         string json = JsonSerializer.Serialize(snapshot, JsonOptions);
-        File.WriteAllText(tempFile, json, Encoding.UTF8);
-        File.Move(tempFile, filePath, overwrite: true);
+        AtomicFileStorageService.WriteAllTextAtomic(filePath, json, Encoding.UTF8, createBackup: true);
 
         return snapshot;
     }
@@ -97,14 +95,9 @@ public static class DiskSnapshotDiffService
         try
         {
             string filePath = GetSnapshotFilePath(rootPath, snapshotDir);
-            if (!File.Exists(filePath))
-                return null;
-
-            string json = File.ReadAllText(filePath, Encoding.UTF8);
-            if (string.IsNullOrWhiteSpace(json))
-                return null;
-
-            return JsonSerializer.Deserialize<DiskFolderSnapshot>(json);
+            return AtomicFileStorageService.ReadJsonWithBackupFallback<DiskFolderSnapshot>(
+                filePath,
+                logArea: "Disk snapshot okuma");
         }
         catch (Exception ex)
         {

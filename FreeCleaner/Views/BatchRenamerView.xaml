@@ -29,11 +29,13 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Style="{StaticResource SecondaryButtonStyle}"
                             Content="{DynamicResource Loc_M_RenameUndoBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_M_RenameUndoBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding UndoBatchRenameCommand}"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_M_RenameApplyBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_M_RenameApplyBtn}"
                             Padding="14,7"
                             Command="{Binding ApplyBatchRenameCommand}"/>
                 </StackPanel>
@@ -50,6 +52,7 @@
                     <WrapPanel VerticalAlignment="Center" Margin="0,0,0,8">
                         <TextBlock Text="{DynamicResource Loc_DiskTargetFolder}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBox Text="{Binding BatchRenameFolderPath, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="{DynamicResource Loc_DiskTargetFolder}"
                                  Width="360"
                                  Padding="8,5"
                                  Background="{DynamicResource BgPrimaryBrush}"
@@ -58,30 +61,33 @@
                                  Margin="0,0,8,0"/>
                         <Button Style="{StaticResource SecondaryButtonStyle}"
                                 Content="{DynamicResource Loc_SettingsBrowseBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_SettingsBrowseBtn}"
                                 Padding="10,5"
                                 Margin="0,0,12,0"
                                 Command="{Binding BrowseRenameFolderCommand}"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_M_RenamePreviewBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_M_RenamePreviewBtn}"
                                 Padding="12,5"
                                 Command="{Binding PreviewBatchRenameCommand}"/>
                     </WrapPanel>
 
                     <WrapPanel VerticalAlignment="Center">
                         <TextBlock Text="{DynamicResource Loc_M_RenameFindLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox Text="{Binding BatchRenameFindText, UpdateSourceTrigger=PropertyChanged}" Width="110" Padding="6,4" Background="{DynamicResource BgPrimaryBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+                        <TextBox Text="{Binding BatchRenameFindText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{DynamicResource Loc_M_RenameFindLabel}" Width="110" Padding="6,4" Background="{DynamicResource BgPrimaryBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
 
                         <TextBlock Text="{DynamicResource Loc_M_RenameReplaceLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox Text="{Binding BatchRenameReplaceText, UpdateSourceTrigger=PropertyChanged}" Width="110" Padding="6,4" Background="{DynamicResource BgPrimaryBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+                        <TextBox Text="{Binding BatchRenameReplaceText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{DynamicResource Loc_M_RenameReplaceLabel}" Width="110" Padding="6,4" Background="{DynamicResource BgPrimaryBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
 
                         <TextBlock Text="{DynamicResource Loc_M_RenamePrefixLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox Text="{Binding BatchRenamePrefixText, UpdateSourceTrigger=PropertyChanged}" Width="95" Padding="6,4" Background="{DynamicResource BgPrimaryBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+                        <TextBox Text="{Binding BatchRenamePrefixText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{DynamicResource Loc_M_RenamePrefixLabel}" Width="95" Padding="6,4" Background="{DynamicResource BgPrimaryBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
 
                         <TextBlock Text="{DynamicResource Loc_M_RenameSuffixLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBox Text="{Binding BatchRenameSuffixText, UpdateSourceTrigger=PropertyChanged}" Width="95" Padding="6,4" Background="{DynamicResource BgPrimaryBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
+                        <TextBox Text="{Binding BatchRenameSuffixText, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="{DynamicResource Loc_M_RenameSuffixLabel}" Width="95" Padding="6,4" Background="{DynamicResource BgPrimaryBrush}" Foreground="{DynamicResource TextPrimaryBrush}" BorderBrush="{DynamicResource BorderSubtleBrush}" Margin="0,0,10,0"/>
 
                         <ComboBox ItemsSource="{Binding AvailableRenameCaseModes}"
                                   SelectedItem="{Binding BatchRenameCaseMode}"
+                                  AutomationProperties.Name="{DynamicResource Loc_A11y_RenameCaseMode}"
                                   Width="185"
                                   Padding="6,4"
                                   Margin="0,0,12,0"/>

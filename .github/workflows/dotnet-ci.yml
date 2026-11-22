@@ -32,8 +32,9 @@ jobs:
         if: always()
         shell: pwsh
         run: |
+          $minLineCoverage = 32.0
           $cov = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue | Select-Object -First 1
-          if ($cov -and $env:GITHUB_STEP_SUMMARY) {
+          if ($cov) {
             [xml]$x = Get-Content $cov.FullName
             $lr = [math]::Round([double]$x.coverage.'line-rate' * 100, 2)
             $br = [math]::Round([double]$x.coverage.'branch-rate' * 100, 2)
@@ -41,13 +42,22 @@ jobs:
             $lv = $x.coverage.'lines-valid'
             $bc = $x.coverage.'branches-covered'
             $bv = $x.coverage.'branches-valid'
-            @"
+            $floorPass = $lr -ge $minLineCoverage
+            $floorBadge = if ($floorPass) { "PASS (>= $minLineCoverage%)" } else { "FAIL (< $minLineCoverage%)" }
+            if ($env:GITHUB_STEP_SUMMARY) {
+              @"
           ## FreeCleaner CI Coverage Summary
           | Metric | Coverage | Covered / Total |
           | :--- | :---: | :---: |
           | Line Coverage | **$lr%** | $lc / $lv |
           | Branch Coverage | **$br%** | $bc / $bv |
+          | Minimum Line Coverage Floor | **$floorBadge** | Threshold: $minLineCoverage% |
           "@ | Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding UTF8
+            }
+            if (-not $floorPass) {
+              Write-Error "Line coverage $lr% fell below the required CI floor ($minLineCoverage%)."
+              exit 1
+            }
           }
 
       - name: Upload test & coverage artifacts

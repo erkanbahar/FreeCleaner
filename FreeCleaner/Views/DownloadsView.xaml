@@ -31,16 +31,19 @@
                         <TextBlock Text="{DynamicResource Loc_DlInstallerAgeLabel}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
                         <ComboBox ItemsSource="{Binding AvailableInstallerAgeDays}"
                                   SelectedItem="{Binding InstallerMinAgeDays}"
+                                  AutomationProperties.Name="{DynamicResource Loc_DlInstallerAgeLabel}"
                                   Width="65"
                                   VerticalContentAlignment="Center"
                                   Margin="0,0,12,0"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_DlScanInstallersBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_DlScanInstallersBtn}"
                                 Command="{Binding ScanOldInstallersCommand}"
                                 Margin="0,0,14,0"/>
 
                         <TextBlock Text="{DynamicResource Loc_DlEmptyTargetLabel}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
                         <TextBox Text="{Binding EmptyFolderScanTarget, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="{DynamicResource Loc_DlEmptyTargetLabel}"
                                  Width="185"
                                  Background="{DynamicResource BgCardBrush}"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
@@ -50,16 +53,19 @@
                                  Margin="0,0,6,0"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
                                 Content="{DynamicResource Loc_BtnSelectDots}"
+                                AutomationProperties.Name="{DynamicResource Loc_BtnBrowse}"
                                 Command="{Binding BrowseEmptyFolderTargetCommand}"
                                 Margin="0,0,6,0"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_DlScanEmptyBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_DlScanEmptyBtn}"
                                 Command="{Binding ScanEmptyFoldersCommand}"/>
                     </StackPanel>
 
                     <Button Grid.Column="1"
                             Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_DlCleanSelectedBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_DlCleanSelectedBtn}"
                             Command="{Binding CleanDownloadsAndEmptyCommand}"/>
                 </Grid>
 

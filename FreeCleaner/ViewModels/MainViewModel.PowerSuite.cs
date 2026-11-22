@@ -91,7 +91,7 @@ public partial class MainViewModel
 
         if (ExclusionAndSettingsService.IsPathExcluded(node.FullPath, ExcludedPaths.ToList()))
         {
-            MessageBox.Show(
+            ShowDialog(
                 $"'{node.FullPath}' Beyaz Liste (korunan klasörler) içinde yer aldığı için silinemez.",
                 "Beyaz Liste Koruması",
                 MessageBoxButton.OK,
@@ -101,7 +101,7 @@ public partial class MainViewModel
 
         if (SmartDiskAdvisorService.IsProtectedSystemPath(node.FullPath))
         {
-            MessageBox.Show(
+            ShowDialog(
                 $"'{node.FullPath}' kritik bir Windows sistem yoludur ve doğrudan silmeye karşı korunmaktadır.",
                 "Sistem Koruması",
                 MessageBoxButton.OK,
@@ -109,7 +109,7 @@ public partial class MainViewModel
             return;
         }
 
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"'{node.Name}' ({node.FormattedSize}) Geri Dönüşüm Kutusuna taşınacak.\n\n" +
             $"Danışman Notu: {node.AdvisorSummary}\n" +
             $"Yol: {node.FullPath}\n\nDevam edilsin mi?",
@@ -141,7 +141,7 @@ public partial class MainViewModel
                 string lockMsg = $"'{node.Name}' şu anda açık bir uygulama tarafından kullanılıyor olabilir (örneğin Chrome veya Claude açıkken kilitli olabilir).";
                 StatusMessage = lockMsg;
                 AddLog($"[TREEMAP UYARI] {lockMsg}");
-                MessageBox.Show(lockMsg, "Dosya Kullanımda / Taşınamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowDialog(lockMsg, "Dosya Kullanımda / Taşınamadı", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
         finally
@@ -183,7 +183,7 @@ public partial class MainViewModel
     {
         if (IsBusy || !item.CanExecuteAction) return;
 
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"'{item.Title}' çalıştırılacak.\n\nAçıklama: {item.Description}\n\nDevam edilsin mi?",
             "Dev Sistem Alanı Kurtarıcısı",
             MessageBoxButton.YesNo,
@@ -211,7 +211,7 @@ public partial class MainViewModel
 
             if (!success)
             {
-                MessageBox.Show(message, "Sistem Alanı Kurtarma Uyarısı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowDialog(message, "Sistem Alanı Kurtarma Uyarısı", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             else
             {
@@ -297,7 +297,7 @@ public partial class MainViewModel
 
         long totalBytes = selected.Sum(x => x.SizeBytes);
         string modeText = UseRecycleBinSafety ? "Geri Dönüşüm Kutusuna taşınacak" : "KALICI OLARAK SİLİNECEK";
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selected.Count} benzer kopya fotoğraf ({CleanerRule.FormatBytes(totalBytes)}) {modeText}.\n\nEn yüksek çözünürlüklü asıl kopyalar korunur. Devam edilsin mi?",
             "Benzer Fotoğraf Temizliği",
             MessageBoxButton.YesNo,
@@ -423,7 +423,7 @@ public partial class MainViewModel
         StatusMessage = message;
         AddLog($"[SAĞ TIK MENÜSÜ] {message}");
         if (!success)
-            MessageBox.Show(message, "Gezgin Sağ Tık Menüsü", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(message, "Gezgin Sağ Tık Menüsü", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     private void ExecuteRemoveExplorerContextMenu()
@@ -565,7 +565,7 @@ public partial class MainViewModel
         catch (Exception ex)
         {
             StatusMessage = $"Ayar içe aktarılamadı: {ex.Message}";
-            MessageBox.Show($"Ayar dosyası okunamadı:\n{ex.Message}", "İçe Aktarma Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog($"Ayar dosyası okunamadı:\n{ex.Message}", "İçe Aktarma Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -579,7 +579,7 @@ public partial class MainViewModel
         }
 
         long potentialBytes = selectedDuplicates.Sum(x => x.SizeBytes);
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selectedDuplicates.Count} kopya dosya ({CleanerRule.FormatBytes(potentialBytes)}) NTFS Hardlink ile orijinallerine bağlanacak.\n\n" +
             "• İki dosya yolu da diskte yerinde kalır (0 veri kaybı).\n" +
             "• Yalnızca aynı NTFS sürücüdeki SHA-256 birebir eşleşen dosyalar bağlanır.\n\nDevam edilsin mi?",
@@ -899,7 +899,7 @@ public partial class MainViewModel
                 else
                 {
                     StatusMessage = message;
-                    MessageBox.Show(message, "Windows Otomatik Başlatma", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowDialog(message, "Windows Otomatik Başlatma", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
         }
@@ -1011,7 +1011,7 @@ public partial class MainViewModel
                 else
                 {
                     StatusMessage = message;
-                    MessageBox.Show(message, "Taşınabilir Mod", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowDialog(message, "Taşınabilir Mod", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
             }
         }
@@ -1255,7 +1255,7 @@ public partial class MainViewModel
         if (OrganizerPlanItems.Count == 0)
             return;
 
-        if (MessageBox.Show(
+        if (ShowDialog(
                 $"'{OrganizerTargetFolder}' içindeki {OrganizerPlanItems.Count} dosya uzantı kategorilerine (Kurulumlar, Belgeler, Görseller, Medya, Arşivler, Kod) taşınacak.\n\nİsterseniz sonradan 'Son Düzenlemeyi Geri Al' ile tamamını geri alabilirsiniz. Devam edilsin mi?",
                 "Akıllı Klasör Düzenleyici",
                 MessageBoxButton.YesNo,

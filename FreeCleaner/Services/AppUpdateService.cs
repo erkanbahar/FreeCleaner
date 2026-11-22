@@ -50,7 +50,7 @@ public static class AppUpdateService
     {
         Version? v = typeof(AppUpdateService).Assembly.GetName().Version;
         if (v is null)
-            return "4.8.0";
+            return "4.9.0";
 
         return $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build)}";
     }

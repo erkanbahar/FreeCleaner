@@ -342,9 +342,27 @@ public partial class MainWindow : Window
             }
         }
 
+        if (e.Key == Key.F1 && Keyboard.Modifiers == ModifierKeys.None)
+        {
+            if (ShortcutsOverlay.Visibility == Visibility.Visible)
+                CloseShortcutsOverlay();
+            else
+                OpenShortcutsOverlay();
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.Escape && ShortcutsOverlay.Visibility == Visibility.Visible)
+        {
+            CloseShortcutsOverlay();
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.F5 &&
             Keyboard.Modifiers == ModifierKeys.None &&
             CommandPaletteOverlay.Visibility != Visibility.Visible &&
+            ShortcutsOverlay.Visibility != Visibility.Visible &&
             DataContext is MainViewModel refreshVm)
         {
             refreshVm.RefreshActiveSection();
@@ -381,10 +399,30 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OpenShortcutsOverlay_Click(object sender, RoutedEventArgs e) => OpenShortcutsOverlay();
+
+    private void CloseShortcutsOverlay_Click(object sender, RoutedEventArgs e) => CloseShortcutsOverlay();
+
+    private void OpenShortcutsOverlay()
+    {
+        CloseCommandPalette();
+        ShortcutsOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void CloseShortcutsOverlay()
+    {
+        ShortcutsOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void ShortcutsBackdrop_MouseDown(object sender, MouseButtonEventArgs e) => CloseShortcutsOverlay();
+
+    private void ShortcutsCard_MouseDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
+
     private void OpenCommandPalette_Click(object sender, RoutedEventArgs e) => OpenCommandPalette();
 
     private void OpenCommandPalette()
     {
+        CloseShortcutsOverlay();
         CommandPaletteOverlay.Visibility = Visibility.Visible;
         CommandPaletteInput.Text = string.Empty;
         RefreshCommandPaletteList(string.Empty);

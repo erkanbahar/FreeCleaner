@@ -117,7 +117,7 @@ public partial class MainViewModel
         if (selected.Count == 0) return;
 
         long totalSize = selected.Sum(x => x.SizeBytes);
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selected.Count} küresel paket önbelleği ({CleanerRule.FormatBytes(totalSize)}) temizlenecek.\n\nDevam edilsin mi?",
             "Küresel Paket Önbelleği Temizliği",
             MessageBoxButton.YesNo,
@@ -148,7 +148,7 @@ public partial class MainViewModel
     {
         if (IsBusy || !item.IsVhdxVirtualDisk) return;
 
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"'{item.CacheName}' ({item.FormattedSize}) sanal diski DiskPart (compact vdisk) ile boş bloklardan arındırılacak.\n\n" +
             $"Yol: {item.FolderPath}\n\n" +
             "Not: Yönetici yetkisi gerekir ve ilgili uygulama (Claude Desktop / Docker Desktop / WSL2) tamamen kapalı olmalıdır. Devam edilsin mi?",
@@ -163,7 +163,7 @@ public partial class MainViewModel
         if (vhdxConflicts.Count > 0)
         {
             string conflictNames = string.Join("\n", vhdxConflicts.Select(g => $"• {g.FriendlyName} ({g.RunningInstanceCount} işlem)"));
-            var closeChoice = MessageBox.Show(
+            var closeChoice = ShowDialog(
                 $"Bu sanal diski kilitleyen çalışan süreçler algılandı:\n\n{conflictNames}\n\n" +
                 "DiskPart compact vdisk'in başarılı olması için bu süreçler (ve gerekirse WSL2) kapatılmalıdır.\n\n" +
                 "• Evet: İlgili uygulamaları / WSL2'yi şimdi kapatıp sıkıştır\n" +
@@ -210,7 +210,7 @@ public partial class MainViewModel
             StatusMessage = message;
             AddLog($"[VHDX SIKISTIRMA] {message}");
             if (!success)
-                MessageBox.Show(message, "VHDX Sıkıştırma Uyarısı", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ShowDialog(message, "VHDX Sıkıştırma Uyarısı", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
         finally
         {
@@ -391,7 +391,7 @@ public partial class MainViewModel
 
     private async Task KillPortAndRefreshAsync(ListeningPortItem item)
     {
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Port {item.PortNumber} ({item.Protocol}) şu anda '{item.ProcessName}' (PID: {item.ProcessId}) tarafından kullanılıyor.\n\nBu işlemi sonlandırıp portu serbest bırakmak istiyor musunuz?",
             "Portu Boşalt (Kill Process)",
             MessageBoxButton.YesNo,
@@ -407,7 +407,7 @@ public partial class MainViewModel
         }
         else
         {
-            MessageBox.Show(msg, "Port Avcısı Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(msg, "Port Avcısı Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -437,7 +437,7 @@ public partial class MainViewModel
         var selected = AppxBloatwareItems.Where(x => x.IsSelected).ToList();
         if (selected.Count == 0) return;
 
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selected.Count} Windows mağaza uygulaması (Appx) kaldırılacak.\n\nDevam edilsin mi?",
             "Bloatware Kaldırıcı",
             MessageBoxButton.YesNo,

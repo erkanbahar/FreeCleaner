@@ -63,6 +63,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBox Grid.Column="0"
                          Text="{Binding TreemapCurrentPath, UpdateSourceTrigger=PropertyChanged}"
+                         AutomationProperties.Name="{DynamicResource Loc_A11y_TreemapPathInput}"
                          Background="{DynamicResource BgCardBrush}"
                          Foreground="{DynamicResource TextPrimaryBrush}"
                          CaretBrush="{DynamicResource AccentBlueBrush}"
@@ -74,21 +75,25 @@
                 <Button Grid.Column="1"
                         Style="{StaticResource SubtleButtonStyle}"
                         Content="{DynamicResource Loc_TreemapBrowseBtn}"
+                        AutomationProperties.Name="{DynamicResource Loc_TreemapBrowseBtn}"
                         Command="{Binding BrowseTreemapFolderCommand}"
                         Margin="0,0,6,0"/>
                 <Button Grid.Column="2"
                         Style="{StaticResource SubtleButtonStyle}"
                         Content="{DynamicResource Loc_TreemapUpBtn}"
+                        AutomationProperties.Name="{DynamicResource Loc_TreemapUpBtn}"
                         Command="{Binding NavigateTreemapParentCommand}"
                         Margin="0,0,6,0"/>
                 <Button Grid.Column="3"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_TreemapScanBtn}"
+                        AutomationProperties.Name="{DynamicResource Loc_TreemapScanBtn}"
                         Command="{Binding AnalyzeTreemapCommand}"
                         Margin="0,0,6,0"/>
                 <Button Grid.Column="4"
                         Style="{StaticResource SubtleButtonStyle}"
                         Content="{DynamicResource Loc_TreemapOpenFolderBtn}"
+                        AutomationProperties.Name="{DynamicResource Loc_TreemapOpenFolderBtn}"
                         Command="{Binding OpenTreemapCurrentFolderCommand}"/>
             </Grid>
 
@@ -486,6 +491,7 @@
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <Button Style="{StaticResource SubtleButtonStyle}"
                                             Content="📂"
+                                            AutomationProperties.Name="{DynamicResource Loc_TreemapTipDrill}"
                                             Padding="7,2"
                                             FontSize="11"
                                             Margin="0,0,4,0"
@@ -494,6 +500,7 @@
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource SubtleButtonStyle}"
                                             Content="🔍"
+                                            AutomationProperties.Name="{DynamicResource Loc_TreemapTipExplorer}"
                                             Padding="7,2"
                                             FontSize="11"
                                             Margin="0,0,4,0"
@@ -502,6 +509,7 @@
                                             CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource DangerButtonStyle}"
                                             Content="🗑️"
+                                            AutomationProperties.Name="{DynamicResource Loc_TreemapDeleteBtn}"
                                             Padding="7,2"
                                             FontSize="11"
                                             IsEnabled="{Binding CanSafeDelete}"

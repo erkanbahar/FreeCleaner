@@ -38,6 +38,7 @@
                     <WrapPanel VerticalAlignment="Center" Margin="0,0,0,8">
                         <TextBlock Text="{DynamicResource Loc_M_CryptoFileLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBox Text="{Binding VaultTargetFilePath, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="{DynamicResource Loc_M_CryptoFileLabel}"
                                  Width="380"
                                  Padding="8,5"
                                  Background="{DynamicResource BgPrimaryBrush}"
@@ -46,11 +47,13 @@
                                  Margin="0,0,8,0"/>
                         <Button Style="{StaticResource SecondaryButtonStyle}"
                                 Content="{DynamicResource Loc_M_CryptoPickBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_M_CryptoPickBtn}"
                                 Padding="12,5"
                                 Margin="0,0,10,0"
                                 Command="{Binding BrowseVaultTargetFileCommand}"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_M_CryptoHashBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_M_CryptoHashBtn}"
                                 Padding="14,5"
                                 Command="{Binding ComputeMultiHashesCommand}"/>
                     </WrapPanel>
@@ -58,6 +61,7 @@
                     <WrapPanel VerticalAlignment="Center">
                         <TextBlock Text="{DynamicResource Loc_M_CryptoPassLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBox Text="{Binding VaultPasswordInput, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="{DynamicResource Loc_M_CryptoPassLabel}"
                                  Width="175"
                                  Padding="7,5"
                                  Background="{DynamicResource BgPrimaryBrush}"
@@ -66,17 +70,20 @@
                                  Margin="0,0,8,0"/>
                         <Button Style="{StaticResource CleanButtonStyle}"
                                 Content="{DynamicResource Loc_M_CryptoEncBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_M_CryptoEncBtn}"
                                 Padding="12,5"
                                 Margin="0,0,8,0"
                                 Command="{Binding EncryptVaultFileCommand}"/>
                         <Button Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_M_CryptoDecBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_M_CryptoDecBtn}"
                                 Padding="12,5"
                                 Margin="0,0,16,0"
                                 Command="{Binding DecryptVaultFileCommand}"/>
 
                         <TextBlock Text="{DynamicResource Loc_M_CryptoExpectedLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBox Text="{Binding ExpectedHashInput, UpdateSourceTrigger=PropertyChanged}"
+                                 AutomationProperties.Name="{DynamicResource Loc_M_CryptoExpectedLabel}"
                                  Width="210"
                                  Padding="7,5"
                                  Background="{DynamicResource BgPrimaryBrush}"

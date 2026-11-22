@@ -16,6 +16,31 @@ public static partial class AppStoragePathsService
 {
     public const string PortableFlagFileName = "portable.flag";
     private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
+    private static readonly AsyncLocal<string?> ScopedDataDirectoryOverride = new();
+
+    private sealed class DataDirectoryScope(string? previousValue) : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            ScopedDataDirectoryOverride.Value = previousValue;
+        }
+    }
+
+    /// <summary>
+    /// Temporarily scopes GetDataDirectory() for headless unit tests so production %LocalAppData%\FreeCleaner is never mutated.
+    /// </summary>
+    public static IDisposable BeginScopedDataDirectory(string directoryPath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(directoryPath);
+        string? previous = ScopedDataDirectoryOverride.Value;
+        ScopedDataDirectoryOverride.Value = Path.GetFullPath(directoryPath);
+        return new DataDirectoryScope(previous);
+    }
 
     public static string GetBaseAppDirectory(string? baseDirOverride = null)
         => string.IsNullOrWhiteSpace(baseDirOverride) ? AppContext.BaseDirectory : baseDirOverride;
@@ -44,9 +69,17 @@ public static partial class AppStoragePathsService
         => Path.Combine(GetBaseAppDirectory(baseDirOverride), "data");
 
     public static string GetDataDirectory(string? baseDirOverride = null)
-        => IsPortableModeEnabled(baseDirOverride)
+    {
+        if (string.IsNullOrWhiteSpace(baseDirOverride) &&
+            !string.IsNullOrWhiteSpace(ScopedDataDirectoryOverride.Value))
+        {
+            return ScopedDataDirectoryOverride.Value!;
+        }
+
+        return IsPortableModeEnabled(baseDirOverride)
             ? GetPortableDataDirectory(baseDirOverride)
             : GetStandardDataDirectory();
+    }
 
     public static string GetRegistryBackupsDirectory(string? baseDirOverride = null)
         => Path.Combine(GetDataDirectory(baseDirOverride), "RegistryBackups");

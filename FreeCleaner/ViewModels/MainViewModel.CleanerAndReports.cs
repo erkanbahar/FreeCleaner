@@ -116,7 +116,7 @@ public partial class MainViewModel
         if (selectedHighRiskRules.Count > 0)
         {
             string highRiskNames = string.Join(", ", selectedHighRiskRules.Select(rule => rule.Name));
-            var highRiskConfirmation = MessageBox.Show(
+            var highRiskConfirmation = ShowDialog(
                 LocalizationService.GetText(
                     $"Yüksek riskli temizlik seçenekleri seçildi:\n\n{highRiskNames}\n\n" +
                     "Bu işlemler oturum verilerini, geçmişleri veya geri alınması zor sistem verilerini etkileyebilir. " +
@@ -145,7 +145,7 @@ public partial class MainViewModel
                 "Selected files will be permanently deleted (locked in-use files are safely skipped).",
                 _selectedLanguage);
 
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             LocalizationService.GetText(
                 $"Toplam {selectedCount:N0} adet gereksiz öğe ({selectedSize}) temizlenecek.\n\nMod: {modeDescription}\n\nTemizleme işlemini onaylıyor musunuz?",
                 $"Clean {selectedCount:N0} selected items ({selectedSize})?\n\nMode: {modeDescription}",
@@ -162,7 +162,7 @@ public partial class MainViewModel
 
         if (DiscoveredFiles.Any(x => x.IsSelected && x.IsRecycleBinItem))
         {
-            var recycleBinConfirm = MessageBox.Show(
+            var recycleBinConfirm = ShowDialog(
                 LocalizationService.GetText(
                     "Bu işlem Geri Dönüşüm Kutusu'nu tamamen boşaltacaktır ve geri alınamaz.\n\nDevam etmek istediğinizden emin misiniz?",
                     "This action will permanently empty the Recycle Bin and cannot be undone.\n\nAre you sure you want to continue?",
@@ -186,7 +186,7 @@ public partial class MainViewModel
         if (lockConflicts.Count > 0)
         {
             string lockList = string.Join("\n", lockConflicts.Select(g => $"• {g.FriendlyName} ({g.RunningInstanceCount})"));
-            var lockPrompt = MessageBox.Show(
+            var lockPrompt = ShowDialog(
                 LocalizationService.GetText(
                     $"Temizlenecek önbellekleri şu anda kullanan açık uygulamalar tespit edildi:\n\n{lockList}\n\n" +
                     "• Evet: Bu uygulamaları güvenle kapatıp tüm kilitli dosyaları temizle\n" +
@@ -496,7 +496,7 @@ public partial class MainViewModel
                 return;
             }
 
-            var confirm = MessageBox.Show(
+            var confirm = ShowDialog(
                 LocalizationService.GetText(
                     $"Zamanlanmış güvenli bakımda {results.Count:N0} düşük riskli öğe " +
                     $"({CleanerRule.FormatBytes(results.Sum(item => item.SizeBytes))}) bulundu.\n\n" +

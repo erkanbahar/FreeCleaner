@@ -505,7 +505,7 @@ public partial class MainViewModel
                     false);
                 if (!string.IsNullOrWhiteSpace(_latestDownloadAssetUrl))
                 {
-                    var ask = MessageBox.Show(
+                    var ask = ShowDialog(
                         LocalizationService.GetText(
                             $"{result.StatusMessage}\n\nDosya: {_latestDownloadAssetName}\nDoğrudan uygulama içinden SHA-256 doğrulamalı indirme ve güncelleme başlatılsın mı?",
                             $"{result.StatusMessage}\n\nFile: {_latestDownloadAssetName}\nStart SHA-256 verified in-app download and update now?",
@@ -521,7 +521,7 @@ public partial class MainViewModel
                 }
                 else
                 {
-                    var ask = MessageBox.Show(
+                    var ask = ShowDialog(
                         LocalizationService.GetText(
                             $"{result.StatusMessage}\n\nGitHub Releases indirme sayfasını tarayıcıda açmak ister misiniz?",
                             $"{result.StatusMessage}\n\nOpen the GitHub Releases page in your browser?",
@@ -590,7 +590,7 @@ public partial class MainViewModel
 
             if (!dl.Success || string.IsNullOrEmpty(dl.FilePath))
             {
-                MessageBox.Show(
+                ShowDialog(
                     dl.Message,
                     LocalizationService.GetText("Güncelleme Hatası", "Update Error", _selectedLanguage),
                     MessageBoxButton.OK,
@@ -605,7 +605,7 @@ public partial class MainViewModel
 
             if (!canSelfReplace)
             {
-                MessageBox.Show(
+                ShowDialog(
                     LocalizationService.GetText(
                         $"{dl.Message}\n\nDoğrulanan dosya indirildi:\n{dl.FilePath}\n\nGeliştirme ortamında çalışıldığı için klasör Gezgin'de açılacak.",
                         $"{dl.Message}\n\nVerified package downloaded to:\n{dl.FilePath}\n\nOpening folder in Explorer.",
@@ -627,7 +627,7 @@ public partial class MainViewModel
                     "Note: No SHA-256 checksum provided in release; continuing with user confirmation.",
                     _selectedLanguage);
 
-            var installAsk = MessageBox.Show(
+            var installAsk = ShowDialog(
                 LocalizationService.GetText(
                     $"Yeni sürüm hazır!\n{verifyNote}\n\nUygulama kapatılıp yeni sürüm otomatik kurulup yeniden başlatılsın mı?",
                     $"New version ready!\n{verifyNote}\n\nClose app now, install update automatically, and restart?",

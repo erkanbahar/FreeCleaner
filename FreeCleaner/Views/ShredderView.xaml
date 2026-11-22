@@ -25,19 +25,23 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Button Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_ShredAddFileBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_ShredAddFileBtn}"
                                 Command="{Binding AddShredFilesCommand}"
                                 Margin="0,0,8,0"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
                                 Content="{DynamicResource Loc_ShredAddFolderBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_ShredAddFolderBtn}"
                                 Command="{Binding AddShredFolderCommand}"
                                 Margin="0,0,8,0"/>
                         <Button Style="{StaticResource SubtleButtonStyle}"
                                 Content="{DynamicResource Loc_ShredClearBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_ShredClearBtn}"
                                 Command="{Binding ClearShredQueueCommand}"
                                 Margin="0,0,14,0"/>
                         <TextBlock Text="{DynamicResource Loc_ShredPassesLabel}" VerticalAlignment="Center" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
                         <ComboBox ItemsSource="{Binding AvailableShredPasses}"
                                   SelectedItem="{Binding ShredPassesCount}"
+                                  AutomationProperties.Name="{DynamicResource Loc_ShredPassesLabel}"
                                   Width="65"
                                   VerticalContentAlignment="Center"/>
                     </StackPanel>
@@ -45,12 +49,14 @@
                     <Button Style="{StaticResource CleanButtonStyle}"
                             Background="{DynamicResource DangerRedBrush}"
                             Content="{DynamicResource Loc_ShredExecuteBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_ShredExecuteBtn}"
                             HorizontalAlignment="Right"
                             Command="{Binding ExecuteShredderCommand}"/>
                 </Grid>
 
                 <DataGrid Grid.Row="1"
                           ItemsSource="{Binding ShredQueueItems}"
+                          AutomationProperties.Name="{DynamicResource Loc_A11y_ShredQueueGrid}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"

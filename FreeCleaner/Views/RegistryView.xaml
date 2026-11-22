@@ -27,24 +27,29 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_RegistryScanBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_RegistryScanBtn}"
                             Command="{Binding ScanRegistryCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_RegistryBackupOnlyBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_RegistryBackupOnlyBtn}"
                             Command="{Binding BackupRegistryCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_RegistryRestoreLastBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_RegistryRestoreLastBtn}"
                             Command="{Binding RestoreRegistryBackupCommand}"
                             Margin="0,0,8,0"/>
                     <Button Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_RegistryFixBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_RegistryFixBtn}"
                             Command="{Binding FixRegistryCommand}"/>
                 </StackPanel>
             </Grid>
 
             <DataGrid Grid.Row="1"
                       ItemsSource="{Binding RegistryIssues}"
+                      AutomationProperties.Name="{DynamicResource Loc_RegistryHeader}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
                       HeadersVisibility="Column"
@@ -123,6 +128,7 @@
                     </Grid>
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding BackupFiles}"
+                              AutomationProperties.Name="{DynamicResource Loc_RegistryBackupsHeader}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               IsReadOnly="False"

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using FreeCleaner.Models;
 using Microsoft.Win32;
@@ -196,13 +197,11 @@ public static class ShellIntegrationAndProfilesService
         ArgumentNullException.ThrowIfNull(report);
 
         string fullPath = Path.GetFullPath(outputPath);
-        string? dir = Path.GetDirectoryName(fullPath);
-        if (!string.IsNullOrEmpty(dir))
-            Directory.CreateDirectory(dir);
-
-        string tempPath = $"{fullPath}.{Guid.NewGuid():N}.tmp";
-        File.WriteAllText(tempPath, JsonSerializer.Serialize(report, JsonOptions));
-        File.Move(tempPath, fullPath, overwrite: true);
+        AtomicFileStorageService.WriteAllTextAtomic(
+            fullPath,
+            JsonSerializer.Serialize(report, JsonOptions),
+            Encoding.UTF8,
+            createBackup: false);
         return fullPath;
     }
 
@@ -437,12 +436,8 @@ public static class ShellIntegrationAndProfilesService
         ArgumentNullException.ThrowIfNull(config);
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
 
-        string? dir = Path.GetDirectoryName(Path.GetFullPath(filePath));
-        if (!string.IsNullOrEmpty(dir))
-            Directory.CreateDirectory(dir);
-
         string json = JsonSerializer.Serialize(config, JsonOptions);
-        File.WriteAllText(filePath, json);
+        AtomicFileStorageService.WriteAllTextAtomic(filePath, json, Encoding.UTF8, createBackup: true);
     }
 
     public static CleanerConfigData ImportSettingsFromFile(string filePath)

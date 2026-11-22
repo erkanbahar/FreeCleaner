@@ -309,7 +309,7 @@ public partial class MainViewModel
         if (selected.Count == 0) return;
 
         long totalBytes = selected.Sum(x => x.SizeBytes);
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Seçili {selected.Count} adet geliştirici/oyun önbellek klasörü ({CleanerRule.FormatBytes(totalBytes)}) temizlenecek.\n\nOnaylıyor musunuz?",
             "DevCleaner & Gamer Temizlik Onayı",
             MessageBoxButton.YesNo,
@@ -396,7 +396,7 @@ public partial class MainViewModel
     {
         if (ShredQueueItems.Count == 0) return;
 
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"DİKKAT! Listede bulunan {ShredQueueItems.Count} öğe ({ShredPassesCount} geçişli DoD 5220.22-M algoritmasıyla) üzerine yazılarak KALICI OLARAK İMHA EDİLECEKTİR!\n\n" +
             "Bu işlem sonrasında dosyalar hiçbir veri kurtarma yazılımıyla geri getirilemez.\n\nDevam etmek istiyor musunuz?",
             "Güvenli Dosya Öğütücü - Kalıcı İmha Onayı",
@@ -436,7 +436,7 @@ public partial class MainViewModel
 
     private async Task RunFreeSpaceWiperAsync()
     {
-        var confirm = MessageBox.Show(
+        var confirm = ShowDialog(
             $"Boş disk sektörlerindeki eski silinmiş dosya kalıntılarını temizlemek için {FreeSpaceWipeMb} MB kriptografik sıfırlama işlemi uygulanacak.\n\nBaşlatılsın mı?",
             "Boş Disk Alanı Sıfırlayıcı (Free Space Wiper)",
             MessageBoxButton.YesNo,
@@ -549,7 +549,7 @@ public partial class MainViewModel
         }
         else
         {
-            MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -562,13 +562,13 @@ public partial class MainViewModel
             AddLog($"[HOSTS] {msg}");
         }
         else
-            MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     private void DeleteHostEntry(HostsEntryItem? item)
     {
         if (item is null ||
-            MessageBox.Show($"'{item.Hostname}' hosts kaydı silinecek. Devam edilsin mi?",
+            ShowDialog($"'{item.Hostname}' hosts kaydı silinecek. Devam edilsin mi?",
                 "Hosts Kaydı Sil", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
             return;
 
@@ -579,7 +579,7 @@ public partial class MainViewModel
             AddLog($"[HOSTS] {msg}");
         }
         else
-            MessageBox.Show(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(msg, "Hosts Dosyası", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     private void RestoreLatestHostsBackup()
@@ -587,7 +587,7 @@ public partial class MainViewModel
         string? backupPath = PrivacyAndNetworkShieldService.GetLatestHostsBackup();
         if (backupPath is null) return;
 
-        if (MessageBox.Show(
+        if (ShowDialog(
                 $"Son hosts yedeği geri yüklenecek:\n\n{backupPath}\n\nDevam edilsin mi?",
                 "Hosts Yedeğini Geri Yükle",
                 MessageBoxButton.YesNo,
@@ -600,7 +600,7 @@ public partial class MainViewModel
         if (result.Success)
             LoadHostsEntries();
         else
-            MessageBox.Show(result.Message, "Hosts Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
+            ShowDialog(result.Message, "Hosts Geri Yükleme", MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
 }

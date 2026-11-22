@@ -216,13 +216,13 @@ public class V45UpgradesTests
     {
         ToastNotificationItem toast = ToastNotificationService.BuildToast(
             "  Update Ready  ",
-            "  v4.8.0 released  ",
+            "  v4.9.0 released  ",
             ToastSeverity.Success,
             "  View  ",
             "OPEN_SETTINGS_UPDATE");
 
         Assert.Equal("Update Ready", toast.Title);
-        Assert.Equal("v4.8.0 released", toast.Message);
+        Assert.Equal("v4.9.0 released", toast.Message);
         Assert.Equal(ToastSeverity.Success, toast.Severity);
         Assert.Equal("✅", toast.SeverityIcon);
         Assert.True(toast.HasAction);
@@ -256,7 +256,7 @@ public class V45UpgradesTests
     {
         string repoRoot = FindRepoRoot();
         string version = AppUpdateService.CurrentVersion;
-        Assert.Equal("4.8.0", version);
+        Assert.Equal("4.9.0", version);
 
         string[] governanceFiles =
         [

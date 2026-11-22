@@ -825,7 +825,31 @@ public static class LocalizationService
         ["Loc_RegistryPruneBackupsBtn"] = "🧹 Eski Yedekleri Budama",
         ["Loc_ToastDismissTip"] = "Bildirimi Kapat",
         ["Loc_ToastOpenUpdatesBtn"] = "Güncellemeyi Gör",
-        ["Loc_ToastOpenFolderBtn"] = "Klasörü Aç"
+        ["Loc_ToastOpenFolderBtn"] = "Klasörü Aç",
+        ["Loc_Dialog_OK"] = "Tamam",
+        ["Loc_Dialog_Yes"] = "Evet",
+        ["Loc_Dialog_No"] = "Hayır",
+        ["Loc_Dialog_Cancel"] = "İptal",
+        ["Loc_ShortcutsBtn"] = "⌨️ F1",
+        ["Loc_ShortcutsBtnTip"] = "Klavye Kısayolları Rehberi (F1)",
+        ["Loc_ShortcutsOverlayTitle"] = "⌨️ Klavye Kısayolları Rehberi",
+        ["Loc_ShortcutsOverlaySubtitle"] = "FreeCleaner Pro içinde hızlı gezinme, tarama ve ayarlar için yerleşik klavye kısayolları",
+        ["Loc_ShortcutsCloseBtn"] = "Kapat (Esc)",
+        ["Loc_Shortcut_CmdPalette"] = "Ctrl+K — Hızlı Komut Paletini aç / kapat",
+        ["Loc_Shortcut_Search"] = "Ctrl+F — Sol menüde modül arama kutusuna odaklan",
+        ["Loc_Shortcut_Settings"] = "Ctrl+, — Ayarlar, tema ve güncelleme ekranını aç",
+        ["Loc_Shortcut_QuickJump"] = "Ctrl+1..6 — Panel, Temizleyici, Treemap, Canlı Monitör, Winget, Ayarlar",
+        ["Loc_Shortcut_Refresh"] = "F5 — Aktif ekranın verilerini yenile / yeniden tara",
+        ["Loc_Shortcut_Help"] = "F1 — Bu klavye kısayolları rehberini aç / kapat",
+        ["Loc_Shortcut_Escape"] = "Esc — Açık katmanı veya diyalog penceresini kapat",
+        ["Loc_A11y_ExclusionsInput"] = "Beyaz listeye eklenecek dosya veya klasör yolu",
+        ["Loc_A11y_ExclusionsList"] = "Korunan beyaz liste dosya ve klasörleri",
+        ["Loc_A11y_RenameCaseMode"] = "Dosya adı harf dönüşüm modu",
+        ["Loc_A11y_TreemapPathInput"] = "Disk treemap analizi için hedef klasör yolu",
+        ["Loc_A11y_ShredQueueGrid"] = "Kalıcı imha (shredder) dosya ve klasör kuyruğu",
+        ["Loc_A11y_SimilarPhotoFolderInput"] = "Benzer fotoğraf taraması için klasör yolu",
+        ["Loc_A11y_SimilarPhotoGrid"] = "Bulunan benzer ve kopya fotoğraf grupları listesi",
+        ["Loc_A11y_CleanerFilesGrid"] = "Tarama sonucunda bulunan temizlenebilir dosyalar listesi"
     };
 
     private static readonly Dictionary<string, string> EnStrings = new(StringComparer.Ordinal)
@@ -1635,7 +1659,31 @@ public static class LocalizationService
         ["Loc_RegistryPruneBackupsBtn"] = "🧹 Prune Old Backups",
         ["Loc_ToastDismissTip"] = "Dismiss Notification",
         ["Loc_ToastOpenUpdatesBtn"] = "View Update",
-        ["Loc_ToastOpenFolderBtn"] = "Open Folder"
+        ["Loc_ToastOpenFolderBtn"] = "Open Folder",
+        ["Loc_Dialog_OK"] = "OK",
+        ["Loc_Dialog_Yes"] = "Yes",
+        ["Loc_Dialog_No"] = "No",
+        ["Loc_Dialog_Cancel"] = "Cancel",
+        ["Loc_ShortcutsBtn"] = "⌨️ F1",
+        ["Loc_ShortcutsBtnTip"] = "Keyboard Shortcuts Guide (F1)",
+        ["Loc_ShortcutsOverlayTitle"] = "⌨️ Keyboard Shortcuts Guide",
+        ["Loc_ShortcutsOverlaySubtitle"] = "Built-in keyboard shortcuts for fast navigation, scanning, and settings in FreeCleaner Pro",
+        ["Loc_ShortcutsCloseBtn"] = "Close (Esc)",
+        ["Loc_Shortcut_CmdPalette"] = "Ctrl+K — Toggle Quick Command Palette",
+        ["Loc_Shortcut_Search"] = "Ctrl+F — Focus module search box in left sidebar",
+        ["Loc_Shortcut_Settings"] = "Ctrl+, — Open Settings, theme, and updates view",
+        ["Loc_Shortcut_QuickJump"] = "Ctrl+1..6 — Dashboard, Cleaner, Disk Treemap, Live Monitor, Winget, Settings",
+        ["Loc_Shortcut_Refresh"] = "F5 — Refresh or rescan the active view",
+        ["Loc_Shortcut_Help"] = "F1 — Toggle this keyboard shortcuts guide",
+        ["Loc_Shortcut_Escape"] = "Esc — Dismiss open overlay or dialog window",
+        ["Loc_A11y_ExclusionsInput"] = "File or folder path to add to whitelist exclusions",
+        ["Loc_A11y_ExclusionsList"] = "Protected whitelist files and folders",
+        ["Loc_A11y_RenameCaseMode"] = "Filename casing transformation mode",
+        ["Loc_A11y_TreemapPathInput"] = "Target folder path for disk treemap analysis",
+        ["Loc_A11y_ShredQueueGrid"] = "Secure shredder target files and folders queue",
+        ["Loc_A11y_SimilarPhotoFolderInput"] = "Folder path for similar photo duplicate scan",
+        ["Loc_A11y_SimilarPhotoGrid"] = "Detected similar and duplicate photo groups list",
+        ["Loc_A11y_CleanerFilesGrid"] = "Cleanable files discovered during system scan"
     };
 
     public static IReadOnlyCollection<string> GetAllKeys(string? langCode)
@@ -1660,6 +1708,69 @@ public static class LocalizationService
 
     public static string GetText(string turkish, string english, string? langOverride = null)
         => IsEnglish(langOverride ?? CurrentLanguage) ? english : turkish;
+
+    private static readonly Dictionary<string, string> DialogTitleTranslations = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Dikkat - Oturum Verisi"] = "Caution - Session Data",
+        ["Başlangıç Yöneticisi"] = "Startup Manager",
+        ["Başlangıç Öğesini Kaldır"] = "Remove Startup Item",
+        ["Hata"] = "Error",
+        ["Yedekleme Başarılı"] = "Backup Succeeded",
+        ["Kayıt Defteri Onarımı"] = "Registry Repair",
+        ["Registry Yedeğini Geri Yükle"] = "Restore Registry Backup",
+        ["Registry Geri Yükleme"] = "Registry Restore",
+        ["Yedeği Geri Yükle"] = "Restore Backup",
+        ["Yedek Geri Yükleme"] = "Backup Restore",
+        ["Disk Analizörü - Dosya Silme Onayı"] = "Disk Analyzer - Confirm File Deletion",
+        ["Yetim Klasör Temizliği"] = "Orphan Folder Cleanup",
+        ["Kaldırıcı Hatası"] = "Uninstaller Error",
+        ["Küresel Paket Önbelleği Temizliği"] = "Global Package Cache Cleanup",
+        ["VHDX Sanal Disk Sıkıştırma"] = "VHDX Virtual Disk Compaction",
+        ["Sanal Disk Kilit Koruması (Process Lock Guard)"] = "Virtual Disk Lock Guard",
+        ["VHDX Sıkıştırma Uyarısı"] = "VHDX Compaction Warning",
+        ["Portu Boşalt (Kill Process)"] = "Release Port (Kill Process)",
+        ["Port Avcısı Hatası"] = "Port Hunter Error",
+        ["Bloatware Kaldırıcı"] = "Bloatware Remover",
+        ["Beyaz Liste Koruması"] = "Whitelist Protection",
+        ["Sistem Koruması"] = "System Protection",
+        ["Geri Dönüşüm Kutusuna Taşı"] = "Move to Recycle Bin",
+        ["Dosya Kullanımda / Taşınamadı"] = "File In Use / Could Not Move",
+        ["Dev Sistem Alanı Kurtarıcısı"] = "Deep System Space Recovery",
+        ["Sistem Alanı Kurtarma Uyarısı"] = "System Space Recovery Warning",
+        ["Benzer Fotoğraf Temizliği"] = "Similar Photo Cleanup",
+        ["Gezgin Sağ Tık Menüsü"] = "Explorer Context Menu",
+        ["İçe Aktarma Hatası"] = "Import Error",
+        ["NTFS Hardlink ile Birleştir"] = "Deduplicate via NTFS Hardlinks",
+        ["Windows Otomatik Başlatma"] = "Windows Auto-Start",
+        ["Taşınabilir Mod"] = "Portable Mode",
+        ["Akıllı Klasör Düzenleyici"] = "Smart Folder Organizer",
+        ["İşlem Sonlandırılamadı"] = "Failed to Terminate Process",
+        ["DevCleaner & Gamer Temizlik Onayı"] = "DevCleaner & Gamer Cleanup Confirmation",
+        ["Güvenli Dosya Öğütücü - Kalıcı İmha Onayı"] = "Secure File Shredder - Permanent Destruction",
+        ["Boş Disk Alanı Sıfırlayıcı (Free Space Wiper)"] = "Free Space Wiper",
+        ["Hosts Dosyası"] = "Hosts File",
+        ["Hosts Kaydı Sil"] = "Remove Hosts Entry",
+        ["Hosts Yedeğini Geri Yükle"] = "Restore Hosts Backup",
+        ["Hosts Geri Yükleme"] = "Hosts Restore",
+        ["İndirilenler & Boş Klasör Temizliği"] = "Downloads & Empty Folders Cleanup",
+        ["Sağ Tık Menüsü Öğesini Kaldır"] = "Remove Context Menu Entry",
+        ["Servis Kontrolü"] = "Service Control",
+        ["Kilitli Dosya Çözücü"] = "Locked File Unlocker",
+        ["Kilit Çözücü Hatası"] = "File Unlocker Error",
+        ["Tarayıcı Eklentisini Kaldır"] = "Remove Browser Extension",
+        ["Pil Sağlık Raporu"] = "Battery Health Report"
+    };
+
+    public static string TranslateDialogTitle(string title, string? languageCode = null)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+            return "FreeCleaner Pro";
+
+        if (!IsEnglish(languageCode ?? CurrentLanguage))
+            return title;
+
+        return DialogTitleTranslations.TryGetValue(title, out string? translated) ? translated : title;
+    }
 
     private sealed record LocalizedRuleCopy(
         string TrName,

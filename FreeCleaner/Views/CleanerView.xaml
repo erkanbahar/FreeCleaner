@@ -78,18 +78,21 @@
                     <ComboBox ItemsSource="{Binding CustomProfiles}"
                               DisplayMemberPath="Name"
                               SelectedItem="{Binding SelectedCustomProfile}"
+                              AutomationProperties.Name="{DynamicResource Loc_CustomProfileLabel}"
                               Width="165"
                               Padding="6,3"
                               FontSize="11.5"
                               Margin="0,0,6,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_CustomProfileApplyBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_CustomProfileApplyBtn}"
                             Command="{Binding ApplyCustomProfileCommand}"
                             Padding="8,4"
                             FontSize="11.5"
                             Margin="0,0,4,0"/>
                     <Button Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_CustomProfileDeleteBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_CustomProfileDeleteBtn}"
                             Command="{Binding DeleteCustomProfileCommand}"
                             Padding="8,4"
                             FontSize="11.5"
@@ -119,6 +122,7 @@
                                 </TextBlock.Style>
                             </TextBlock>
                             <TextBox Text="{Binding NewCustomProfileName, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="{DynamicResource Loc_CustomProfileNameHint}"
                                      Background="Transparent"
                                      BorderThickness="0"
                                      Foreground="{DynamicResource TextPrimaryBrush}"
@@ -129,6 +133,7 @@
                     </Border>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_CustomProfileSaveBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_CustomProfileSaveBtn}"
                             Command="{Binding SaveCustomProfileCommand}"
                             Padding="10,4"
                             FontSize="11.5"/>
@@ -136,6 +141,7 @@
 
                 <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
                     <Button Style="{StaticResource PrimaryButtonStyle}"
+                            AutomationProperties.Name="{DynamicResource Loc_CleanerAnalyzeBtn}"
                             Command="{Binding AnalyzeCommand}"
                             Margin="0,0,10,0">
                         <StackPanel Orientation="Horizontal">
@@ -145,6 +151,7 @@
                     </Button>
 
                     <Button Style="{StaticResource CleanButtonStyle}"
+                            AutomationProperties.Name="{DynamicResource Loc_CleanerStartBtn}"
                             Command="{Binding CleanCommand}">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center" Margin="0,0,8,0"/>
@@ -291,6 +298,7 @@
                         <ComboBox Grid.Column="1"
                                   ItemsSource="{Binding AvailableRiskFilters}"
                                   SelectedItem="{Binding RiskFilter, UpdateSourceTrigger=PropertyChanged}"
+                                  AutomationProperties.Name="{DynamicResource Loc_CleanerRiskFilterTip}"
                                   Margin="0,0,8,0"
                                   Padding="6,3"
                                   FontSize="11"
@@ -302,6 +310,7 @@
                                 CornerRadius="6"
                                 Padding="8,4">
                             <TextBox Text="{Binding SearchFilter, UpdateSourceTrigger=PropertyChanged}"
+                                     AutomationProperties.Name="{DynamicResource Loc_CleanerSearchFilterTip}"
                                      Background="Transparent"
                                      Foreground="{DynamicResource TextPrimaryBrush}"
                                      CaretBrush="{DynamicResource AccentBlueBrush}"
@@ -313,6 +322,7 @@
 
                     <DataGrid Grid.Row="1"
                               ItemsSource="{Binding FilteredFilesView}"
+                              AutomationProperties.Name="{DynamicResource Loc_A11y_CleanerFilesGrid}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               HeadersVisibility="Column"

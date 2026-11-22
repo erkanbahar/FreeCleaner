@@ -79,6 +79,7 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
 {
     private bool _disposed;
     private readonly CleanerEngine _engine = new();
+    private readonly IUserDialogService _dialogService;
     private readonly DispatcherTimer _autoMonitorTimer;
     private readonly DispatcherTimer _liveTelemetryTimer;
     private readonly DispatcherTimer _trayWatcherTimer;
@@ -616,8 +617,15 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
         ? (IsAdmin ? "Administrator Mode" : "Standard User Mode")
         : (IsAdmin ? "Yönetici Modu (Admin)" : "Standart Kullanıcı Modu");
 
-    public MainViewModel()
+    public IUserDialogService DialogService => _dialogService;
+
+    public MainViewModel() : this(dialogService: null)
     {
+    }
+
+    public MainViewModel(IUserDialogService? dialogService)
+    {
+        _dialogService = dialogService ?? new WpfUserDialogService();
         _systemMetrics = SystemInfoService.GetMetrics();
 
         // Load saved settings & exclusions
@@ -752,7 +760,7 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 if (UninstallerAndOrphanService.LaunchUninstaller(app, out string msg))
                     AddLog($"[KALDIRICI] {msg}");
                 else
-                    MessageBox.Show(msg, "Kaldırıcı Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowDialog(msg, "Kaldırıcı Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         });
         ScanOrphanFoldersCommand = CreateAsyncCommand(async _ => await RunScanOrphanFoldersAsync(), _ => !IsBusy);
@@ -1800,6 +1808,40 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
 
     // ==================== 1. CLEANER LOGIC ====================
 
+    private MessageBoxResult ShowDialog(
+        string message,
+        string title,
+        MessageBoxButton button,
+        MessageBoxImage image)
+    {
+        AppDialogButtons appButtons = button switch
+        {
+            MessageBoxButton.YesNo => AppDialogButtons.YesNo,
+            MessageBoxButton.YesNoCancel => AppDialogButtons.YesNoCancel,
+            _ => AppDialogButtons.OK
+        };
+
+        AppDialogIcon appIcon = image switch
+        {
+            MessageBoxImage.Question => AppDialogIcon.Question,
+            MessageBoxImage.Warning => AppDialogIcon.Warning,
+            MessageBoxImage.Error => AppDialogIcon.Error,
+            _ => AppDialogIcon.Information
+        };
+
+        string translatedTitle = LocalizationService.TranslateDialogTitle(title, _selectedLanguage);
+        AppDialogResult result = _dialogService.Show(message, translatedTitle, appButtons, appIcon);
+
+        return result switch
+        {
+            AppDialogResult.OK => MessageBoxResult.OK,
+            AppDialogResult.Yes => MessageBoxResult.Yes,
+            AppDialogResult.No => MessageBoxResult.No,
+            AppDialogResult.Cancel => MessageBoxResult.Cancel,
+            _ => MessageBoxResult.None
+        };
+    }
+
     private void OnRulePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(CleanerRule.IsSelected) && sender is CleanerRule changedRule)
@@ -1809,8 +1851,13 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
                 (changedRule.RequiresWarning || changedRule.RiskLevel == RiskLevel.High) &&
                 !string.IsNullOrEmpty(changedRule.WarningMessage))
             {
-                var res = MessageBox.Show(
+                string promptMessage = LocalizationService.GetText(
                     $"{changedRule.WarningMessage}\n\nYine de bu seçeneği etkinleştirmek istiyor musunuz?",
+                    $"{changedRule.WarningMessage}\n\nDo you still want to enable this cleanup option?",
+                    _selectedLanguage);
+
+                var res = ShowDialog(
+                    promptMessage,
                     "Dikkat - Oturum Verisi",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);

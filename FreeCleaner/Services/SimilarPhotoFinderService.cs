@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.IO;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using FreeCleaner.Models;
 using Drawing = System.Drawing;
 using Drawing2D = System.Drawing.Drawing2D;
@@ -27,24 +28,69 @@ public static class SimilarPhotoFinderService
         ulong Hash);
 
     public static ulong ComputeDifferenceHash(Drawing.Bitmap source)
+        => ComputeDifferenceHash((Drawing.Image)source);
+
+    public static ulong ComputeDifferenceHash(Drawing.Image source)
     {
-        using var resized = new Drawing.Bitmap(9, 8, DrawingImaging.PixelFormat.Format24bppRgb);
+        ArgumentNullException.ThrowIfNull(source);
+
+        (Drawing.RotateFlipType flip, bool swapsDimensions) = GetExifOrientationTransform(source);
+        int targetWidth = swapsDimensions ? 8 : 9;
+        int targetHeight = swapsDimensions ? 9 : 8;
+
+        using var resized = new Drawing.Bitmap(targetWidth, targetHeight, DrawingImaging.PixelFormat.Format24bppRgb);
         using (var g = Drawing.Graphics.FromImage(resized))
         {
             g.InterpolationMode = Drawing2D.InterpolationMode.HighQualityBilinear;
             g.SmoothingMode = Drawing2D.SmoothingMode.HighSpeed;
             g.PixelOffsetMode = Drawing2D.PixelOffsetMode.HighQuality;
-            g.DrawImage(source, 0, 0, 9, 8);
+            g.DrawImage(source, 0, 0, targetWidth, targetHeight);
+        }
+
+        if (flip != Drawing.RotateFlipType.RotateNoneFlipNone)
+            resized.RotateFlip(flip);
+
+        var rect = new Drawing.Rectangle(0, 0, resized.Width, resized.Height);
+        DrawingImaging.BitmapData bmpData = resized.LockBits(
+            rect,
+            DrawingImaging.ImageLockMode.ReadOnly,
+            DrawingImaging.PixelFormat.Format24bppRgb);
+
+        byte[] pixelBytes;
+        int stride = Math.Abs(bmpData.Stride);
+        int height = resized.Height;
+        int width = resized.Width;
+
+        try
+        {
+            pixelBytes = new byte[stride * height];
+            if (bmpData.Stride >= 0)
+            {
+                Marshal.Copy(bmpData.Scan0, pixelBytes, 0, pixelBytes.Length);
+            }
+            else
+            {
+                for (int row = 0; row < height; row++)
+                {
+                    IntPtr rowPtr = IntPtr.Add(bmpData.Scan0, row * bmpData.Stride);
+                    Marshal.Copy(rowPtr, pixelBytes, row * stride, stride);
+                }
+            }
+        }
+        finally
+        {
+            resized.UnlockBits(bmpData);
         }
 
         ulong hash = 0;
         int bitIndex = 0;
-        for (int y = 0; y < 8; y++)
+        for (int y = 0; y < height; y++)
         {
-            double prevLum = GetLuminance(resized.GetPixel(0, y));
-            for (int x = 1; x < 9; x++)
+            int rowOffset = y * stride;
+            double prevLum = GetLuminanceBgr(pixelBytes, rowOffset);
+            for (int x = 1; x < width; x++)
             {
-                double curLum = GetLuminance(resized.GetPixel(x, y));
+                double curLum = GetLuminanceBgr(pixelBytes, rowOffset + x * 3);
                 if (prevLum > curLum)
                     hash |= 1UL << bitIndex;
                 prevLum = curLum;
@@ -54,8 +100,39 @@ public static class SimilarPhotoFinderService
         return hash;
     }
 
-    private static double GetLuminance(Drawing.Color c)
-        => 0.299 * c.R + 0.587 * c.G + 0.114 * c.B;
+    private static (Drawing.RotateFlipType Flip, bool SwapsDimensions) GetExifOrientationTransform(Drawing.Image source)
+    {
+        try
+        {
+            const int exifOrientationId = 0x0112;
+            if (Array.IndexOf(source.PropertyIdList, exifOrientationId) < 0)
+                return (Drawing.RotateFlipType.RotateNoneFlipNone, false);
+
+            DrawingImaging.PropertyItem? prop = source.GetPropertyItem(exifOrientationId);
+            if (prop?.Value is not { Length: >= 2 } val)
+                return (Drawing.RotateFlipType.RotateNoneFlipNone, false);
+
+            ushort orientation = BitConverter.ToUInt16(val, 0);
+            return orientation switch
+            {
+                2 => (Drawing.RotateFlipType.RotateNoneFlipX, false),
+                3 => (Drawing.RotateFlipType.Rotate180FlipNone, false),
+                4 => (Drawing.RotateFlipType.Rotate180FlipX, false),
+                5 => (Drawing.RotateFlipType.Rotate90FlipX, true),
+                6 => (Drawing.RotateFlipType.Rotate90FlipNone, true),
+                7 => (Drawing.RotateFlipType.Rotate270FlipX, true),
+                8 => (Drawing.RotateFlipType.Rotate270FlipNone, true),
+                _ => (Drawing.RotateFlipType.RotateNoneFlipNone, false)
+            };
+        }
+        catch
+        {
+            return (Drawing.RotateFlipType.RotateNoneFlipNone, false);
+        }
+    }
+
+    private static double GetLuminanceBgr(byte[] bgrBytes, int offset)
+        => 0.299 * bgrBytes[offset + 2] + 0.587 * bgrBytes[offset + 1] + 0.114 * bgrBytes[offset];
 
     public static int HammingDistance(ulong a, ulong b)
         => BitOperations.PopCount(a ^ b);
@@ -107,17 +184,23 @@ public static class SimilarPhotoFinderService
                     token.ThrowIfCancellationRequested();
                     try
                     {
-                        byte[] bytes = File.ReadAllBytes(filePath);
-                        using var ms = new MemoryStream(bytes, writable: false);
-                        using var img = Drawing.Image.FromStream(ms, useEmbeddedColorManagement: false, validateImageData: false);
-                        using var bmp = new Drawing.Bitmap(img);
-                        ulong hash = ComputeDifferenceHash(bmp);
+                        long fileLength = new FileInfo(filePath).Length;
+                        using var fs = new FileStream(
+                            filePath,
+                            FileMode.Open,
+                            FileAccess.Read,
+                            FileShare.Read,
+                            bufferSize: 65536,
+                            FileOptions.SequentialScan);
+                        using var img = Drawing.Image.FromStream(fs, useEmbeddedColorManagement: false, validateImageData: false);
+                        (_, bool swapsDimensions) = GetExifOrientationTransform(img);
+                        ulong hash = ComputeDifferenceHash(img);
                         hashedBag.Add(new HashedPhotoEntry(
                             FileName: Path.GetFileName(filePath),
                             FullPath: filePath,
-                            SizeBytes: bytes.LongLength,
-                            Width: bmp.Width,
-                            Height: bmp.Height,
+                            SizeBytes: fileLength,
+                            Width: swapsDimensions ? img.Height : img.Width,
+                            Height: swapsDimensions ? img.Width : img.Height,
                             Hash: hash));
                     }
                     catch
@@ -157,14 +240,51 @@ public static class SimilarPhotoFinderService
             }
 
             int threshold = Math.Clamp(maxHammingDistance, 0, 24);
-            for (int i = 0; i < n; i++)
+            if (n >= 256)
             {
-                ct.ThrowIfCancellationRequested();
-                ulong hi = photos[i].Hash;
-                for (int j = i + 1; j < n; j++)
+                var edgeBuckets = new ConcurrentBag<List<(int A, int B)>>();
+                Parallel.For(
+                    0,
+                    n,
+                    new ParallelOptions
+                    {
+                        MaxDegreeOfParallelism = Math.Clamp(Environment.ProcessorCount, 2, 8),
+                        CancellationToken = ct
+                    },
+                    () => new List<(int A, int B)>(),
+                    (i, _, localEdges) =>
+                    {
+                        ulong hi = photos[i].Hash;
+                        for (int j = i + 1; j < n; j++)
+                        {
+                            if (HammingDistance(hi, photos[j].Hash) <= threshold)
+                                localEdges.Add((i, j));
+                        }
+                        return localEdges;
+                    },
+                    localEdges =>
+                    {
+                        if (localEdges.Count > 0)
+                            edgeBuckets.Add(localEdges);
+                    });
+
+                foreach (List<(int A, int B)> bucket in edgeBuckets)
                 {
-                    if (HammingDistance(hi, photos[j].Hash) <= threshold)
-                        Union(i, j);
+                    foreach ((int a, int b) in bucket)
+                        Union(a, b);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    ulong hi = photos[i].Hash;
+                    for (int j = i + 1; j < n; j++)
+                    {
+                        if (HammingDistance(hi, photos[j].Hash) <= threshold)
+                            Union(i, j);
+                    }
                 }
             }
 
@@ -182,7 +302,9 @@ public static class SimilarPhotoFinderService
 
             var results = new List<SimilarPhotoItem>();
             int groupNo = 1;
-            foreach (List<HashedPhotoEntry> cluster in clusters.Values.Where(c => c.Count >= 2))
+            foreach (List<HashedPhotoEntry> cluster in clusters.Values
+                .Where(c => c.Count >= 2)
+                .OrderBy(c => c.Min(p => p.FullPath), StringComparer.OrdinalIgnoreCase))
             {
                 // Keep highest pixel area (tiebreak: largest file size) unselected as primary keeper.
                 List<HashedPhotoEntry> ordered = cluster

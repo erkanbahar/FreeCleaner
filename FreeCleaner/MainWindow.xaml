@@ -81,6 +81,15 @@
                                 Click="OpenCommandPalette_Click"/>
 
                         <Button Style="{StaticResource SubtleButtonStyle}"
+                                Content="{DynamicResource Loc_ShortcutsBtn}"
+                                AutomationProperties.Name="{DynamicResource Loc_ShortcutsOverlayTitle}"
+                                Padding="8,5"
+                                FontSize="11"
+                                Margin="0,0,6,0"
+                                ToolTip="{DynamicResource Loc_ShortcutsBtnTip}"
+                                Click="OpenShortcutsOverlay_Click"/>
+
+                        <Button Style="{StaticResource SubtleButtonStyle}"
                                 Content="{Binding FavoriteButtonText}"
                                 AutomationProperties.Name="{Binding FavoriteButtonText}"
                                 Padding="9,5"
@@ -241,18 +250,21 @@
                             <UniformGrid Columns="2" Margin="0,7,0,0">
                                 <Button Style="{StaticResource SubtleButtonStyle}"
                                         Content="{DynamicResource Loc_ExpandAllBtn}"
+                                        AutomationProperties.Name="{DynamicResource Loc_ExpandAllBtn}"
                                         Padding="6,5"
                                         FontSize="11"
                                         Margin="0,0,3,4"
                                         Click="ExpandAllNavGroups_Click"/>
                                 <Button Style="{StaticResource SubtleButtonStyle}"
                                         Content="{DynamicResource Loc_CollapseAllBtn}"
+                                        AutomationProperties.Name="{DynamicResource Loc_CollapseAllBtn}"
                                         Padding="6,5"
                                         FontSize="11"
                                         Margin="3,0,0,4"
                                         Click="CollapseAllNavGroups_Click"/>
                                 <Button Style="{StaticResource SubtleButtonStyle}"
                                         Content="{DynamicResource Loc_QuickDashboardBtn}"
+                                        AutomationProperties.Name="{DynamicResource Loc_QuickDashboardBtn}"
                                         Padding="6,5"
                                         FontSize="11"
                                         Margin="0,0,3,0"
@@ -260,6 +272,7 @@
                                         CommandParameter="Dashboard"/>
                                 <Button Style="{StaticResource SubtleButtonStyle}"
                                         Content="{DynamicResource Loc_QuickLiveBtn}"
+                                        AutomationProperties.Name="{DynamicResource Loc_QuickLiveBtn}"
                                         Padding="6,5"
                                         FontSize="11"
                                         Margin="3,0,0,0"
@@ -1351,6 +1364,68 @@
                                    HorizontalAlignment="Right"
                                    Margin="0,8,2,0"/>
                     </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ==================== KEYBOARD SHORTCUTS OVERLAY (F1) ==================== -->
+            <Grid x:Name="ShortcutsOverlay"
+                  Grid.RowSpan="2"
+                  Panel.ZIndex="92"
+                  Background="#AA000000"
+                  Visibility="Collapsed"
+                  MouseDown="ShortcutsBackdrop_MouseDown">
+                <Border Background="{DynamicResource BgSecondaryBrush}"
+                        BorderBrush="{DynamicResource AccentBlueBrush}"
+                        BorderThickness="1.5"
+                        CornerRadius="14"
+                        Width="560"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Center"
+                        Padding="22"
+                        MouseDown="ShortcutsCard_MouseDown">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{DynamicResource Loc_ShortcutsOverlayTitle}"
+                                           FontSize="16"
+                                           FontWeight="Bold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <TextBlock Text="{DynamicResource Loc_ShortcutsOverlaySubtitle}"
+                                           FontSize="11.5"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           TextWrapping="Wrap"
+                                           Margin="0,3,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Style="{StaticResource SubtleButtonStyle}"
+                                    Content="{DynamicResource Loc_ShortcutsCloseBtn}"
+                                    AutomationProperties.Name="{DynamicResource Loc_ShortcutsCloseBtn}"
+                                    VerticalAlignment="Top"
+                                    Padding="10,5"
+                                    FontSize="11.5"
+                                    Click="CloseShortcutsOverlay_Click"/>
+                        </Grid>
+
+                        <Border Background="{DynamicResource BgCardBrush}"
+                                BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="14">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Loc_Shortcut_CmdPalette}" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource Loc_Shortcut_Search}" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource Loc_Shortcut_Settings}" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource Loc_Shortcut_QuickJump}" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource Loc_Shortcut_Refresh}" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource Loc_Shortcut_Help}" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <TextBlock Text="{DynamicResource Loc_Shortcut_Escape}" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
                 </Border>
             </Grid>
 

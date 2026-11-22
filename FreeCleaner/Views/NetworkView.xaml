@@ -28,12 +28,14 @@
                                VerticalAlignment="Center"/>
                     <Button Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_NetConnRefreshBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_NetConnRefreshBtn}"
                             Padding="12,6"
                             HorizontalAlignment="Right"
                             Command="{Binding RefreshConnectionsCommand}"/>
                 </Grid>
                 <DataGrid Grid.Row="1"
                           ItemsSource="{Binding ActiveConnections}"
+                          AutomationProperties.Name="{DynamicResource Loc_NetConnTitle}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="True"
@@ -121,6 +123,7 @@
                     </Grid.ColumnDefinitions>
                     <TextBox Grid.Column="0"
                              Text="{Binding NewHostIp, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.Name="{DynamicResource Loc_NetHostIpTip}"
                              Background="{DynamicResource BgCardBrush}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
                              CaretBrush="{DynamicResource AccentBlueBrush}"
@@ -130,6 +133,7 @@
                              ToolTip="{DynamicResource Loc_NetHostIpTip}"/>
                     <TextBox Grid.Column="1"
                              Text="{Binding NewHostDomain, UpdateSourceTrigger=PropertyChanged}"
+                             AutomationProperties.Name="{DynamicResource Loc_NetHostDomainTip}"
                              Background="{DynamicResource BgCardBrush}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
                              CaretBrush="{DynamicResource AccentBlueBrush}"
@@ -140,12 +144,14 @@
                     <Button Grid.Column="2"
                             Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_NetHostAddBtn}"
+                            AutomationProperties.Name="{DynamicResource Loc_NetHostAddBtn}"
                             Padding="12,5"
                             Command="{Binding AddHostEntryCommand}"/>
                 </Grid>
 
                 <DataGrid Grid.Row="2"
                           ItemsSource="{Binding HostsEntries}"
+                          AutomationProperties.Name="{DynamicResource Loc_NetHostsTitle}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
                           IsReadOnly="False"
