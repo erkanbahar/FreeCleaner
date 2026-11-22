@@ -51,7 +51,7 @@
                     <TextBox Text="{Binding GitWorkspacePath, UpdateSourceTrigger=PropertyChanged}"
                              Width="390"
                              Padding="8,5"
-                             Background="#0D1422"
+                             Background="{DynamicResource BgPrimaryBrush}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
                              BorderBrush="{DynamicResource BorderSubtleBrush}"
                              Margin="0,0,8,0"/>

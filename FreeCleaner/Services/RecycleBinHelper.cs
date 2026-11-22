@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace FreeCleaner.Services;
 
-public static class RecycleBinHelper
+public static partial class RecycleBinHelper
 {
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
     private struct SHQUERYRBINFO
@@ -44,14 +44,20 @@ public static class RecycleBinHelper
     private const ushort FOF_NOERRORUI = 0x0400;
     private const ushort FOF_SILENT = 0x0004;
 
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    private static extern int SHQueryRecycleBin(string? pszRootPath, ref SHQUERYRBINFO pSHQueryRBInfo);
+    [LibraryImport("shell32.dll", EntryPoint = "SHQueryRecycleBinW", StringMarshalling = StringMarshalling.Utf16)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial int SHQueryRecycleBin(string? pszRootPath, ref SHQUERYRBINFO pSHQueryRBInfo);
 
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    private static extern int SHEmptyRecycleBin(IntPtr hwnd, string? pszRootPath, RecycleFlags dwFlags);
+    [LibraryImport("shell32.dll", EntryPoint = "SHEmptyRecycleBinW", StringMarshalling = StringMarshalling.Utf16)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial int SHEmptyRecycleBin(IntPtr hwnd, string? pszRootPath, RecycleFlags dwFlags);
 
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    // Non-blittable SHFILEOPSTRUCT with string fields uses source-safe DllImport pinned to System32.
+#pragma warning disable SYSLIB1054
+    [DllImport("shell32.dll", EntryPoint = "SHFileOperationW", CharSet = CharSet.Unicode)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern int SHFileOperation(ref SHFILEOPSTRUCT lpFileOp);
+#pragma warning restore SYSLIB1054
 
     public static (long SizeBytes, int ItemCount) QueryRecycleBin()
     {

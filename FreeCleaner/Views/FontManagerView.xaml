@@ -29,7 +29,7 @@
                     <TextBox Text="{Binding FontSearchFilter, UpdateSourceTrigger=PropertyChanged}"
                              Width="175"
                              Padding="8,6"
-                             Background="#0D1422"
+                             Background="{DynamicResource BgPrimaryBrush}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
                              BorderBrush="{DynamicResource BorderSubtleBrush}"
                              Margin="0,0,8,0"/>

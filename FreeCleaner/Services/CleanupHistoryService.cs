@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using FreeCleaner.Models;
 
@@ -22,11 +23,9 @@ public static class CleanupHistoryService
         string path = string.IsNullOrWhiteSpace(customFilePath) ? DefaultHistoryPath : customFilePath;
         try
         {
-            if (!File.Exists(path))
-                return [];
-
-            string json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<List<CleanupHistoryEntry>>(json) ?? [];
+            return AtomicFileStorageService.ReadJsonWithBackupFallback<List<CleanupHistoryEntry>>(
+                path,
+                logArea: "Temizlik geçmişi okuma") ?? [];
         }
         catch (Exception ex)
         {
@@ -57,12 +56,8 @@ public static class CleanupHistoryService
             if (entries.Count > MaxStoredEntries)
                 entries = entries.Skip(entries.Count - MaxStoredEntries).ToList();
 
-            string? dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrWhiteSpace(dir))
-                Directory.CreateDirectory(dir);
-
             string json = JsonSerializer.Serialize(entries, IndentedJsonOptions);
-            File.WriteAllText(path, json);
+            AtomicFileStorageService.WriteAllTextAtomic(path, json, Encoding.UTF8, createBackup: true);
         }
         catch (Exception ex)
         {

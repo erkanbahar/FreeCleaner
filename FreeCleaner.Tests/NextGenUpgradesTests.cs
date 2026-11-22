@@ -886,12 +886,12 @@ public class NextGenUpgradesTests
     }
 
     [Fact]
-    public void AppUpdateService_CurrentVersionMatches470AndComparesCorrectly()
+    public void AppUpdateService_CurrentVersionMatches480AndComparesCorrectly()
     {
-        Assert.Equal("4.7.0", AppUpdateService.CurrentVersion);
-        Assert.True(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.8.0"));
+        Assert.Equal("4.8.0", AppUpdateService.CurrentVersion);
+        Assert.True(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.9.0"));
+        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.8.0"));
         Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.7.0"));
-        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.6.0"));
     }
 
     [Fact]

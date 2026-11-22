@@ -200,8 +200,19 @@ public static class UninstallerAndOrphanService
             {
                 foreach (var proc in Process.GetProcesses())
                 {
-                    if (!string.IsNullOrWhiteSpace(proc.ProcessName) && proc.ProcessName.Length >= 3)
-                        knownKeywords.Add(proc.ProcessName);
+                    try
+                    {
+                        if (!string.IsNullOrWhiteSpace(proc.ProcessName) && proc.ProcessName.Length >= 3)
+                            knownKeywords.Add(proc.ProcessName);
+                    }
+                    catch
+                    {
+                        // Ignore protected process name access.
+                    }
+                    finally
+                    {
+                        proc.Dispose();
+                    }
                 }
             }
             catch
@@ -234,6 +245,7 @@ public static class UninstallerAndOrphanService
             {
                 ct.ThrowIfCancellationRequested();
                 if (dir.Name.StartsWith('.')) continue;
+                if ((dir.Attributes & FileAttributes.ReparsePoint) != 0) continue;
 
                 // Only consider folders not modified in the last 30 days to be extra safe
                 if (dir.LastWriteTimeUtc > DateTime.UtcNow.AddDays(-30))
@@ -246,10 +258,16 @@ public static class UninstallerAndOrphanService
                 if (matchesInstalled)
                     continue;
 
-                // Check if directory contains any .exe (if it has an .exe it might be a standalone app)
+                // Check if directory contains any .exe without following NTFS reparse points
                 try
                 {
-                    if (dir.GetFiles("*.exe", SearchOption.AllDirectories).Length > 0)
+                    var exeOpts = new EnumerationOptions
+                    {
+                        RecurseSubdirectories = true,
+                        IgnoreInaccessible = true,
+                        AttributesToSkip = FileAttributes.ReparsePoint
+                    };
+                    if (Directory.EnumerateFiles(dir.FullName, "*.exe", exeOpts).Any())
                         continue;
 
                     long folderSize = CalculateFolderSizeSafe(dir, maxDepth: 3);
@@ -280,7 +298,8 @@ public static class UninstallerAndOrphanService
 
     private static long CalculateFolderSizeSafe(DirectoryInfo dir, int maxDepth)
     {
-        if (maxDepth < 0) return 0;
+        if (maxDepth < 0 || (dir.Attributes & FileAttributes.ReparsePoint) != 0)
+            return 0;
         long total = 0;
         try
         {
@@ -290,7 +309,11 @@ public static class UninstallerAndOrphanService
             if (maxDepth > 0)
             {
                 foreach (var sub in dir.GetDirectories())
+                {
+                    if ((sub.Attributes & FileAttributes.ReparsePoint) != 0)
+                        continue;
                     total += CalculateFolderSizeSafe(sub, maxDepth - 1);
+                }
             }
         }
         catch

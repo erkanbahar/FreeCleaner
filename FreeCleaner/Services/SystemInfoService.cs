@@ -23,12 +23,12 @@ public record SystemMetricsSnapshot(
         $"{CleanerRule.FormatBytes(RamTotalBytes - RamAvailableBytes)} / {CleanerRule.FormatBytes(RamTotalBytes)} ({RamUsedPercent:F0}% Kullanımda)";
 }
 
-public static class SystemInfoService
+public static partial class SystemInfoService
 {
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private sealed class MEMORYSTATUSEX
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MEMORYSTATUSEX
     {
-        public uint dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>();
+        public uint dwLength;
         public uint dwMemoryLoad;
         public ulong ullTotalPhys;
         public ulong ullAvailPhys;
@@ -39,9 +39,10 @@ public static class SystemInfoService
         public ulong ullAvailExtendedVirtual;
     }
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
+    private static partial bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
 
     public static SystemMetricsSnapshot GetMetrics()
     {
@@ -78,8 +79,8 @@ public static class SystemInfoService
 
         try
         {
-            var mem = new MEMORYSTATUSEX();
-            if (GlobalMemoryStatusEx(mem))
+            var mem = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
+            if (GlobalMemoryStatusEx(ref mem))
             {
                 ramTotal = (long)mem.ullTotalPhys;
                 ramAvail = (long)mem.ullAvailPhys;
@@ -111,9 +112,11 @@ public static class SystemInfoService
 
         foreach (string procName in browserProcessNames)
         {
+            System.Diagnostics.Process[]? procs = null;
             try
             {
-                if (System.Diagnostics.Process.GetProcessesByName(procName).Length > 0)
+                procs = System.Diagnostics.Process.GetProcessesByName(procName);
+                if (procs.Length > 0)
                 {
                     active.Add(procName switch
                     {
@@ -130,6 +133,14 @@ public static class SystemInfoService
             catch
             {
                 // Ignore process query errors
+            }
+            finally
+            {
+                if (procs is not null)
+                {
+                    foreach (System.Diagnostics.Process p in procs)
+                        p.Dispose();
+                }
             }
         }
 

@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using FreeCleaner.Models;
 using Microsoft.Win32.SafeHandles;
-using FileTime = System.Runtime.InteropServices.ComTypes.FILETIME;
 
 namespace FreeCleaner.Services;
 
@@ -13,15 +12,22 @@ public sealed record HardlinkDeduplicationResult(
     long BytesReclaimed,
     List<string> Warnings);
 
-public static class NtfsHardlinkService
+public static partial class NtfsHardlinkService
 {
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeFileTime
+    {
+        public uint dwLowDateTime;
+        public uint dwHighDateTime;
+    }
+
     [StructLayout(LayoutKind.Sequential)]
     private struct BY_HANDLE_FILE_INFORMATION
     {
         public uint FileAttributes;
-        public FileTime CreationTime;
-        public FileTime LastAccessTime;
-        public FileTime LastWriteTime;
+        public NativeFileTime CreationTime;
+        public NativeFileTime LastAccessTime;
+        public NativeFileTime LastWriteTime;
         public uint VolumeSerialNumber;
         public uint FileSizeHigh;
         public uint FileSizeLow;
@@ -30,16 +36,18 @@ public static class NtfsHardlinkService
         public uint FileIndexLow;
     }
 
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [LibraryImport("kernel32.dll", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CreateHardLinkW(
+    private static partial bool CreateHardLinkW(
         string lpFileName,
         string lpExistingFileName,
         IntPtr lpSecurityAttributes);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetFileInformationByHandle(
+    private static partial bool GetFileInformationByHandle(
         SafeFileHandle hFile,
         out BY_HANDLE_FILE_INFORMATION lpFileInformation);
 

@@ -6,6 +6,16 @@
 
 ## English
 
+### [4.8.0] - 2026-11-22
+#### Streaming CryptoVault v2, UI Fluidity, Atomic Persistence, FluentLight Polish, `[LibraryImport]` & ARM64
+- **Streaming Chunked CryptoVault v2 (`FCVAULT2`) & Zeroization (`EighthGenAiAndSecuritySuiteService`)**: Upgraded AES-256-GCM encryption to stream in 1 MiB chunks (`FCVAULT2`) with per-chunk derived nonces, header/index/final-chunk AAD binding, OWASP-aligned **600,000 PBKDF2-SHA256** iterations, atomic temp-file swap, and `CryptographicOperations.ZeroMemory` scrubbing of keys/passphrases/plaintext buffers — while keeping full backward compatibility with legacy `FCVAULT1` vaults.
+- **Crash-Safe Atomic JSON Persistence & `.bak` Recovery (`AtomicFileStorageService`)**: Routed `ExclusionAndSettingsService` (`settings.json`), `CleanupHistoryService` (`history.json`), and `SmartFolderOrganizerService` (undo journal) through disk-flushed `.tmp` -> `.bak` -> atomic move writes with automatic `.bak` fallback recovery on corrupted JSON.
+- **UI Thread Telemetry Offload & Process/ReparsePoint Hygiene**: Moved 1-second live telemetry & top-process snapshot polling (`TickLiveTelemetryAsync`) off the WPF Dispatcher thread with atomic overlap guards; ensured deterministic `Dispose()` of `Process` handles across `UninstallerAndOrphanService`, `SystemInfoService`, and `EighthGenAiAndSecuritySuiteService`; and blocked NTFS `ReparsePoint` traversal during orphan-folder `.exe` and size scans.
+- **`FluentLight` Theme Polish & XAML Hygiene**: Replaced all 15 hardcoded dark surface hex colors across `BatchRenamerView.xaml`, `CryptoVaultView.xaml`, `FontManagerView.xaml`, `GitRepoCompressorView.xaml`, `ShredderView.xaml`, `DiskBenchView.xaml`, `TasksAndTreeView.xaml`, and `MainWindow.xaml` with theme-adaptive `{DynamicResource ...}` brushes.
+- **Modern .NET 10 `[LibraryImport]` P/Invoke & System32 Search Hardening**: Enabled `AllowUnsafeBlocks`, migrated 10 blittable/UTF-16 Win32 P/Invokes (`WindowsShellVisualService`, `LiveSystemTelemetrySampler`, `NtfsHardlinkService`, `SystemBoosterAndReportService`, `SystemInfoService`, `RecycleBinHelper`, `EnterprisePowerToolsService`) to compile-time `[LibraryImport]` source generators, and pinned all 13 Win32 P/Invoke declarations with `[DefaultDllImportSearchPaths(DllImportSearchPath.System32)]`.
+- **Native Windows ARM64 (`win-arm64`) Release & CI Coverage Summary**: Added `-Runtime win-x64|win-arm64` to `scripts/Publish-Portable.ps1`, added `FreeCleaner-Portable-win-arm64-$tag.zip` (with SHA-256 + SLSA attestation) to `.github/workflows/release.yml`, and added a live Markdown Cobertura summary table (`$env:GITHUB_STEP_SUMMARY`) to `.github/workflows/dotnet-ci.yml`.
+- **Expanded Regression Suite (`89` Tests | `33.89%` Line / `24.46%` Branch Coverage)**: Added 6 regression and architectural invariant tests in `V48UpgradesTests.cs` (`89 / 89` passing tests under `-p:TreatWarningsAsErrors=true`, raising Cobertura coverage from `32.27%` / `23.38%` to `33.89%` line / `24.46%` branch coverage).
+
 ### [4.7.0] - 2026-11-22
 #### Supply-Chain Security, Process Concurrency, Shredder Protection & Analyzer Modernization
 - **Hardened Self-Updater (`AppUpdateService`)**: Replaced naive `.EndsWith(".exe")` / `.EndsWith(".zip")` loops with deterministic `SelectPortableReleaseAsset` priority (exact `FreeCleaner.exe` -> portable ZIP -> fallback, explicitly skipping `FreeCleaner-Setup-*.exe` and `Winget-Manifests-*.zip`), added `IsTrustedDownloadUri` HTTPS GitHub allowlist checks, added `requireHash` fail-closed verification when `SHA256SUMS.txt` is published, and switched self-update script launch to `SafeProcessRunner.BuildDirectProcessStartInfo`.
@@ -78,6 +88,16 @@
 ---
 
 ## Türkçe
+
+### [4.8.0] - 2026-11-22
+#### Akışlı CryptoVault v2, Akıcı Arayüz, Atomik Kayıt, FluentLight Cila, `[LibraryImport]` & ARM64
+- **Akış Tabanlı CryptoVault v2 (`FCVAULT2`) & Bellek Temizliği (`EighthGenAiAndSecuritySuiteService`)**: AES-256-GCM dosya şifreleme 1 MiB bloklar halinde akışlı çalışan, blok sırası/son blok AAD bağlamalı, **600.000 PBKDF2-SHA256** iterasyonlu ve `CryptographicOperations.ZeroMemory` ile anahtar/parola bellek temizliği yapan `FCVAULT2` formatına yükseltildi; eski `FCVAULT1` kasalarıyla geriye dönük uyumluluk eksiksiz korundu.
+- **Çökme Korumalı Atomik JSON Kaydı & `.bak` Kurtarma (`AtomicFileStorageService`)**: `settings.json` (`ExclusionAndSettingsService`), `history.json` (`CleanupHistoryService`) ve geri alma günlüğü (`SmartFolderOrganizerService`) diske flush edilen `.tmp` → `.bak` → atomik taşıma hattına geçirildi; bozuk JSON tespitinde otomatik `.bak` kurtarma eklendi.
+- **UI Thread Telemetri Boşaltımı & Süreç/Junction Hijyeni**: 1 saniyelik Canlı İzleme telemetri ve ilk-10 süreç örneklemesi (`TickLiveTelemetryAsync`) çakışma korumalı `Task.Run` ile arka plana alındı; `UninstallerAndOrphanService`, `SystemInfoService` ve `EighthGenAiAndSecuritySuiteService` içindeki tüm `Process` tutamaçlarına `Dispose()` garantisi ve yetim klasör taramasına NTFS `ReparsePoint` koruması eklendi.
+- **`FluentLight` Açık Tema Cilası**: `BatchRenamerView.xaml`, `CryptoVaultView.xaml`, `FontManagerView.xaml`, `GitRepoCompressorView.xaml`, `ShredderView.xaml`, `DiskBenchView.xaml`, `TasksAndTreeView.xaml` ve `MainWindow.xaml` içindeki 15 sabit koyu hex renk tema uyumlu `{DynamicResource ...}` fırçalarına taşındı.
+- **Modern .NET 10 `[LibraryImport]` & `System32` DLL Güvenliği**: `AllowUnsafeBlocks` etkinleştirilerek 10 Win32 P/Invoke bildirimi (`WindowsShellVisualService`, `LiveSystemTelemetrySampler`, `NtfsHardlinkService`, `SystemBoosterAndReportService`, `SystemInfoService`, `RecycleBinHelper`, `EnterprisePowerToolsService`) derleme zamanı `[LibraryImport]` kaynak üreticilerine geçirildi ve tüm 13 P/Invoke bildirimine `[DefaultDllImportSearchPaths(DllImportSearchPath.System32)]` eklendi.
+- **Yerel Windows ARM64 (`win-arm64`) & CI Kapsam Özeti**: `scripts/Publish-Portable.ps1` içine `-Runtime win-x64|win-arm64` desteği, `release.yml` içine `FreeCleaner-Portable-win-arm64-$tag.zip` (hash + SLSA attestation dahil) ve `dotnet-ci.yml` içine `$env:GITHUB_STEP_SUMMARY` Markdown kapsam tablosu eklendi.
+- **Genişletilmiş Test Suite (`89` Test | `%33.89` Satır / `%24.46` Dal Kapsamı)**: `V48UpgradesTests.cs` içinde 6 yeni regresyon ve mimari testi eklendi (`89 / 89` başarılı test, `-p:TreatWarningsAsErrors=true` ile `0 Uyarı`, Cobertura kapsamı `%32.27` / `%23.38` → `%33.89` satır / `%24.46` dal).
 
 ### [4.7.0] - 2026-11-22
 #### Tedarik Zinciri Güvenliği, Eşzamanlı Süreç Yönetimi, Öğütücü Kalkanı & Modernizasyon

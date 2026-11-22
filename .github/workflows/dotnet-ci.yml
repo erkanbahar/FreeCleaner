@@ -28,6 +28,28 @@ jobs:
       - name: Run unit tests with code coverage
         run: dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory TestResults --logger "trx;LogFileName=test-results.trx"
 
+      - name: Publish Test & Coverage Summary
+        if: always()
+        shell: pwsh
+        run: |
+          $cov = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($cov -and $env:GITHUB_STEP_SUMMARY) {
+            [xml]$x = Get-Content $cov.FullName
+            $lr = [math]::Round([double]$x.coverage.'line-rate' * 100, 2)
+            $br = [math]::Round([double]$x.coverage.'branch-rate' * 100, 2)
+            $lc = $x.coverage.'lines-covered'
+            $lv = $x.coverage.'lines-valid'
+            $bc = $x.coverage.'branches-covered'
+            $bv = $x.coverage.'branches-valid'
+            @"
+          ## FreeCleaner CI Coverage Summary
+          | Metric | Coverage | Covered / Total |
+          | :--- | :---: | :---: |
+          | Line Coverage | **$lr%** | $lc / $lv |
+          | Branch Coverage | **$br%** | $bc / $bv |
+          "@ | Add-Content -Path $env:GITHUB_STEP_SUMMARY -Encoding UTF8
+          }
+
       - name: Upload test & coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4

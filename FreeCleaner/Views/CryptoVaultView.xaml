@@ -40,7 +40,7 @@
                         <TextBox Text="{Binding VaultTargetFilePath, UpdateSourceTrigger=PropertyChanged}"
                                  Width="380"
                                  Padding="8,5"
-                                 Background="#0D1422"
+                                 Background="{DynamicResource BgPrimaryBrush}"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
                                  Margin="0,0,8,0"/>
@@ -60,7 +60,7 @@
                         <TextBox Text="{Binding VaultPasswordInput, UpdateSourceTrigger=PropertyChanged}"
                                  Width="175"
                                  Padding="7,5"
-                                 Background="#0D1422"
+                                 Background="{DynamicResource BgPrimaryBrush}"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
                                  Margin="0,0,8,0"/>
@@ -79,7 +79,7 @@
                         <TextBox Text="{Binding ExpectedHashInput, UpdateSourceTrigger=PropertyChanged}"
                                  Width="210"
                                  Padding="7,5"
-                                 Background="#0D1422"
+                                 Background="{DynamicResource BgPrimaryBrush}"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderBrush="{DynamicResource BorderSubtleBrush}"/>
                     </WrapPanel>

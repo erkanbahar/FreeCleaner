@@ -492,34 +492,52 @@ public partial class MainViewModel
         }
     }
 
-    private void TickLiveTelemetry()
+    private async Task TickLiveTelemetryAsync()
     {
-        var (cpu, ram, downKbps, upKbps) = _telemetrySampler.SampleNext();
-        LiveCpuPercent = cpu;
-        LiveRamPercent = ram;
-        LiveNetDownText = FormatNetRate(downKbps);
-        LiveNetUpText = FormatNetRate(upKbps);
+        if (_disposed || Interlocked.Exchange(ref _telemetrySamplingInProgress, 1) == 1)
+            return;
 
-        _cpuHistory.Add(cpu);
-        _ramHistory.Add(ram);
-        _netDownHistory.Add(downKbps);
-        _netUpHistory.Add(upKbps);
+        try
+        {
+            var ((cpu, ram, downKbps, upKbps), topProcs) = await Task.Run(() =>
+                (_telemetrySampler.SampleNext(), FlagshipTelemetryAndThemeService.GetTopProcessesSnapshot(10)));
 
-        TrimHistory(_cpuHistory);
-        TrimHistory(_ramHistory);
-        TrimHistory(_netDownHistory);
-        TrimHistory(_netUpHistory);
+            if (_disposed)
+                return;
 
-        CpuSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_cpuHistory, 100.0, 260, 74);
-        RamSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_ramHistory, 100.0, 260, 74);
-        double maxNet = Math.Max(50.0, Math.Max(_netDownHistory.Max(), _netUpHistory.Max()));
-        NetDownSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_netDownHistory, maxNet, 260, 74);
-        NetUpSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_netUpHistory, maxNet, 260, 74);
+            LiveCpuPercent = cpu;
+            LiveRamPercent = ram;
+            LiveNetDownText = FormatNetRate(downKbps);
+            LiveNetUpText = FormatNetRate(upKbps);
 
-        var topProcs = FlagshipTelemetryAndThemeService.GetTopProcessesSnapshot(10);
-        LiveTopProcesses.Clear();
-        foreach (var p in topProcs)
-            LiveTopProcesses.Add(p);
+            _cpuHistory.Add(cpu);
+            _ramHistory.Add(ram);
+            _netDownHistory.Add(downKbps);
+            _netUpHistory.Add(upKbps);
+
+            TrimHistory(_cpuHistory);
+            TrimHistory(_ramHistory);
+            TrimHistory(_netDownHistory);
+            TrimHistory(_netUpHistory);
+
+            CpuSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_cpuHistory, 100.0, 260, 74);
+            RamSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_ramHistory, 100.0, 260, 74);
+            double maxNet = Math.Max(50.0, Math.Max(_netDownHistory.Max(), _netUpHistory.Max()));
+            NetDownSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_netDownHistory, maxNet, 260, 74);
+            NetUpSparklinePoints = FlagshipTelemetryAndThemeService.BuildSparklinePoints(_netUpHistory, maxNet, 260, 74);
+
+            LiveTopProcesses.Clear();
+            foreach (var p in topProcs)
+                LiveTopProcesses.Add(p);
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("Canlı Telemetri", ex);
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _telemetrySamplingInProgress, 0);
+        }
     }
 
     private static void TrimHistory(List<double> list, int maxPoints = 40)

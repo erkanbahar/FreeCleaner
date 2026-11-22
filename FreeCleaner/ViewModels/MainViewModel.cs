@@ -92,6 +92,7 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
         AppStoragePathsService.GetDataDirectory(),
         "activity.log");
     private CancellationTokenSource? _cts;
+    private int _telemetrySamplingInProgress;
     private DateTime _lastDiskAlertUtc = DateTime.MinValue;
     private DateTime _lastRamAlertUtc = DateTime.MinValue;
     private string _explorerContextMenuStatusText = string.Empty;
@@ -1188,7 +1189,17 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
         {
             Interval = TimeSpan.FromSeconds(1)
         };
-        _liveTelemetryTimer.Tick += (_, _) => TickLiveTelemetry();
+        _liveTelemetryTimer.Tick += async (_, _) =>
+        {
+            try
+            {
+                await TickLiveTelemetryAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorLogService.Log("Canlı Telemetri", ex);
+            }
+        };
 
         _trayWatcherTimer = new DispatcherTimer
         {
@@ -1410,7 +1421,7 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
 
                 if (_activeSection == "LiveMonitor")
                 {
-                    TickLiveTelemetry();
+                    _ = TickLiveTelemetryAsync();
                     if (!_liveTelemetryTimer.IsEnabled)
                         _liveTelemetryTimer.Start();
                 }

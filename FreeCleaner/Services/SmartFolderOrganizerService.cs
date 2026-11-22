@@ -174,7 +174,11 @@ public static class SmartFolderOrganizerService
                 Directory.CreateDirectory(jDir);
 
             var journal = new OrganizeUndoJournal(DateTime.UtcNow, Path.GetFullPath(rootFolder), movedEntries);
-            File.WriteAllText(journalPath, JsonSerializer.Serialize(journal, JsonOptions), Encoding.UTF8);
+            AtomicFileStorageService.WriteAllTextAtomic(
+                journalPath,
+                JsonSerializer.Serialize(journal, JsonOptions),
+                Encoding.UTF8,
+                createBackup: true);
         }
 
         return (movedEntries.Count, failed, notes);
@@ -194,13 +198,14 @@ public static class SmartFolderOrganizerService
             ? DefaultUndoJournalPath
             : journalPathOverride;
 
-        if (!File.Exists(journalPath))
+        if (!File.Exists(journalPath) && !File.Exists(journalPath + ".bak"))
             return (0, 0, "Geri alınacak klasör düzenleme kaydı bulunamadı.");
 
         try
         {
-            string json = File.ReadAllText(journalPath, Encoding.UTF8);
-            var journal = JsonSerializer.Deserialize<OrganizeUndoJournal>(json);
+            var journal = AtomicFileStorageService.ReadJsonWithBackupFallback<OrganizeUndoJournal>(
+                journalPath,
+                logArea: "SmartOrganizer:Undo");
             if (journal is null || journal.Moves.Count == 0)
                 return (0, 0, "Geri alma kaydı boş.");
 

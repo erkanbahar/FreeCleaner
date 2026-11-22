@@ -7,12 +7,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>4.7.0</Version>
-    <AssemblyVersion>4.7.0.0</AssemblyVersion>
-    <FileVersion>4.7.0.0</FileVersion>
+    <Version>4.8.0</Version>
+    <AssemblyVersion>4.8.0.0</AssemblyVersion>
+    <FileVersion>4.8.0.0</FileVersion>
     <Product>FreeCleaner Pro</Product>
     <AssemblyTitle>FreeCleaner Pro (.NET 10)</AssemblyTitle>
     <Company>FreeCleaner Open Source</Company>

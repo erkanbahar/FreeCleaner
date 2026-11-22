@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
@@ -318,7 +319,29 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
 
     // ==================== 3. AES-256-GCM FILE VAULT & MULTI-HASH VERIFIER ====================
 
-    private static readonly byte[] VaultMagicHeader = "FCVAULT1"u8.ToArray();
+    private static readonly byte[] VaultMagicHeaderV1 = "FCVAULT1"u8.ToArray();
+    private static readonly byte[] VaultMagicHeaderV2 = "FCVAULT2"u8.ToArray();
+    private const int VaultV1Iterations = 100_000;
+    private const int VaultV2Iterations = 600_000;
+    public const int DefaultVaultChunkSizeBytes = 1024 * 1024;
+    private const int VaultV2HeaderLength = 8 + 4 + 4 + 16 + 12;
+    private const int VaultTagLength = 16;
+
+    private static void DeriveChunkNonce(ReadOnlySpan<byte> baseNonce, ulong chunkIndex, Span<byte> destination)
+    {
+        baseNonce.CopyTo(destination);
+        Span<byte> counterBytes = stackalloc byte[8];
+        BinaryPrimitives.WriteUInt64LittleEndian(counterBytes, chunkIndex);
+        for (int i = 0; i < 8; i++)
+            destination[4 + i] ^= counterBytes[i];
+    }
+
+    private static void BuildChunkAad(ReadOnlySpan<byte> header44, ulong chunkIndex, bool isFinalChunk, Span<byte> aad53)
+    {
+        header44.CopyTo(aad53);
+        BinaryPrimitives.WriteUInt64LittleEndian(aad53[44..52], chunkIndex);
+        aad53[52] = isFinalChunk ? (byte)1 : (byte)0;
+    }
 
     public static async Task<List<FileHashAndVaultResultItem>> ComputeMultiHashesAsync(string filePath, string? expectedHash = null)
     {
@@ -393,50 +416,136 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
         });
     }
 
-    public static async Task<(bool Success, string OutputFilePath, string Message)> EncryptFileAes256GcmAsync(string inputFilePath, string password)
+    public static async Task<(bool Success, string OutputFilePath, string Message)> EncryptFileAes256GcmAsync(
+        string inputFilePath,
+        string password,
+        int chunkSizeBytes = DefaultVaultChunkSizeBytes)
     {
         return await Task.Run(() =>
         {
             if (string.IsNullOrWhiteSpace(inputFilePath) || !File.Exists(inputFilePath))
-                return (false, string.Empty, "Şifrelenecek geçerli bir dosya seçin.");
+            {
+                return (false, string.Empty, LocalizationService.GetText(
+                    "Şifrelenecek geçerli bir dosya seçin.",
+                    "Select a valid file to encrypt."));
+            }
+
             if (string.IsNullOrWhiteSpace(password) || password.Length < 4)
-                return (false, string.Empty, "Lütfen en az 4 karakterli bir şifreleme parolası girin.");
+            {
+                return (false, string.Empty, LocalizationService.GetText(
+                    "Lütfen en az 4 karakterli bir şifreleme parolası girin.",
+                    "Enter an encryption password of at least 4 characters."));
+            }
+
+            int safeChunkSize = Math.Clamp(chunkSizeBytes, 1024, 16 * 1024 * 1024);
+            string outPath = inputFilePath + ".fcvault";
+            string tempOutPath = $"{outPath}.{Guid.NewGuid():N}.tmp";
+
+            byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+            byte[] key = new byte[32];
+            byte[] plainBuf = new byte[safeChunkSize];
+            byte[] cipherBuf = new byte[safeChunkSize];
 
             try
             {
-                byte[] plainBytes = File.ReadAllBytes(inputFilePath);
                 byte[] salt = RandomNumberGenerator.GetBytes(16);
-                byte[] nonce = RandomNumberGenerator.GetBytes(12);
-                byte[] tag = new byte[16];
-                byte[] cipherBytes = new byte[plainBytes.Length];
+                byte[] baseNonce = RandomNumberGenerator.GetBytes(12);
 
-                byte[] key = Rfc2898DeriveBytes.Pbkdf2(
-                    Encoding.UTF8.GetBytes(password),
+                byte[] derivedKey = Rfc2898DeriveBytes.Pbkdf2(
+                    passwordBytes,
                     salt,
-                    iterations: 100_000,
+                    iterations: VaultV2Iterations,
                     HashAlgorithmName.SHA256,
                     outputLength: 32);
+                Buffer.BlockCopy(derivedKey, 0, key, 0, 32);
+                CryptographicOperations.ZeroMemory(derivedKey);
 
-                using (var aes = new AesGcm(key, 16))
+                byte[] header = new byte[VaultV2HeaderLength];
+                VaultMagicHeaderV2.CopyTo(header, 0);
+                BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(8, 4), VaultV2Iterations);
+                BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(12, 4), safeChunkSize);
+                salt.CopyTo(header, 16);
+                baseNonce.CopyTo(header, 32);
+
+                using (var aes = new AesGcm(key, VaultTagLength))
+                using (var inFs = new FileStream(inputFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.SequentialScan))
+                using (var outFs = new FileStream(tempOutPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.WriteThrough))
                 {
-                    aes.Encrypt(nonce, plainBytes, cipherBytes, tag);
+                    outFs.Write(header);
+
+                    Span<byte> chunkLenBytes = stackalloc byte[4];
+                    Span<byte> tag = stackalloc byte[VaultTagLength];
+                    Span<byte> chunkNonce = stackalloc byte[12];
+                    Span<byte> aad = stackalloc byte[53];
+
+                    long totalInputLength = inFs.Length;
+                    ulong chunkIndex = 0;
+
+                    if (totalInputLength == 0)
+                    {
+                        DeriveChunkNonce(baseNonce, chunkIndex, chunkNonce);
+                        BuildChunkAad(header, chunkIndex, isFinalChunk: true, aad);
+                        aes.Encrypt(chunkNonce, ReadOnlySpan<byte>.Empty, Span<byte>.Empty, tag, aad);
+
+                        BinaryPrimitives.WriteInt32LittleEndian(chunkLenBytes, 0);
+                        outFs.Write(chunkLenBytes);
+                        outFs.Write(tag);
+                    }
+                    else
+                    {
+                        long totalRead = 0;
+                        while (totalRead < totalInputLength)
+                        {
+                            int read = inFs.ReadAtLeast(plainBuf, safeChunkSize, throwOnEndOfStream: false);
+                            if (read <= 0)
+                                break;
+
+                            totalRead += read;
+                            bool isFinalChunk = totalRead >= totalInputLength;
+
+                            DeriveChunkNonce(baseNonce, chunkIndex, chunkNonce);
+                            BuildChunkAad(header, chunkIndex, isFinalChunk, aad);
+                            aes.Encrypt(chunkNonce, plainBuf.AsSpan(0, read), cipherBuf.AsSpan(0, read), tag, aad);
+
+                            BinaryPrimitives.WriteInt32LittleEndian(chunkLenBytes, read);
+                            outFs.Write(chunkLenBytes);
+                            outFs.Write(tag);
+                            outFs.Write(cipherBuf.AsSpan(0, read));
+
+                            chunkIndex++;
+                        }
+                    }
+
+                    outFs.Flush(flushToDisk: true);
                 }
 
-                string outPath = inputFilePath + ".fcvault";
-                using (var fs = new FileStream(outPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    fs.Write(VaultMagicHeader);
-                    fs.Write(salt);
-                    fs.Write(nonce);
-                    fs.Write(tag);
-                    fs.Write(cipherBytes);
-                }
+                File.Move(tempOutPath, outPath, overwrite: true);
 
-                return (true, outPath, $"Dosya AES-256-GCM (PBKDF2 100.000 İterasyon) ile şifrelendi: {Path.GetFileName(outPath)}");
+                return (true, outPath, LocalizationService.GetText(
+                    $"Dosya AES-256-GCM v2 (PBKDF2 600.000 İterasyon) ile şifrelendi: {Path.GetFileName(outPath)}",
+                    $"File encrypted with AES-256-GCM v2 (PBKDF2 600,000 iterations): {Path.GetFileName(outPath)}"));
             }
             catch (Exception ex)
             {
-                return (false, string.Empty, $"Şifreleme hatası: {ex.Message}");
+                ErrorLogService.Log("CryptoVault:Encrypt", ex);
+                return (false, string.Empty, LocalizationService.GetText(
+                    $"Şifreleme hatası: {ex.Message}",
+                    $"Encryption error: {ex.Message}"));
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(passwordBytes);
+                CryptographicOperations.ZeroMemory(key);
+                CryptographicOperations.ZeroMemory(plainBuf);
+                try
+                {
+                    if (File.Exists(tempOutPath))
+                        File.Delete(tempOutPath);
+                }
+                catch
+                {
+                    // Ignore cleanup error.
+                }
             }
         });
     }
@@ -446,63 +555,216 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
         return await Task.Run(() =>
         {
             if (string.IsNullOrWhiteSpace(vaultFilePath) || !File.Exists(vaultFilePath))
-                return (false, string.Empty, "Şifresi çözülecek .fcvault dosyasını seçin.");
+            {
+                return (false, string.Empty, LocalizationService.GetText(
+                    "Şifresi çözülecek .fcvault dosyasını seçin.",
+                    "Select a .fcvault file to decrypt."));
+            }
+
             if (string.IsNullOrWhiteSpace(password))
-                return (false, string.Empty, "Lütfen şifre çözme parolasını girin.");
+            {
+                return (false, string.Empty, LocalizationService.GetText(
+                    "Lütfen şifre çözme parolasını girin.",
+                    "Please enter the decryption password."));
+            }
+
+            string outPath = vaultFilePath.EndsWith(".fcvault", StringComparison.OrdinalIgnoreCase)
+                ? vaultFilePath[..^8]
+                : vaultFilePath + ".decrypted";
+
+            if (File.Exists(outPath))
+            {
+                string dir = Path.GetDirectoryName(outPath) ?? string.Empty;
+                string nameNoExt = Path.GetFileNameWithoutExtension(outPath);
+                string ext = Path.GetExtension(outPath);
+                outPath = Path.Combine(dir, $"{nameNoExt}_Restored{ext}");
+            }
+
+            string tempOutPath = $"{outPath}.{Guid.NewGuid():N}.tmp";
+            byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+            byte[] key = new byte[32];
+            byte[]? plainBuf = null;
 
             try
             {
-                byte[] raw = File.ReadAllBytes(vaultFilePath);
-                int headerLen = VaultMagicHeader.Length;
-                if (raw.Length < headerLen + 16 + 12 + 16)
-                    return (false, string.Empty, "Geçersiz veya bozuk .fcvault dosyası.");
-
-                for (int i = 0; i < headerLen; i++)
+                using var inFs = new FileStream(vaultFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.SequentialScan);
+                if (inFs.Length < 8)
                 {
-                    if (raw[i] != VaultMagicHeader[i])
-                        return (false, string.Empty, "Bu dosya geçerli bir FreeCleaner AES-256 (.fcvault) kasası değil.");
+                    return (false, string.Empty, LocalizationService.GetText(
+                        "Geçersiz veya bozuk .fcvault dosyası.",
+                        "Invalid or corrupted .fcvault file."));
                 }
 
-                byte[] salt = raw.AsSpan(headerLen, 16).ToArray();
-                byte[] nonce = raw.AsSpan(headerLen + 16, 12).ToArray();
-                byte[] tag = raw.AsSpan(headerLen + 28, 16).ToArray();
-                byte[] cipherBytes = raw.AsSpan(headerLen + 44).ToArray();
-                byte[] plainBytes = new byte[cipherBytes.Length];
+                byte[] magic = new byte[8];
+                inFs.ReadExactly(magic);
 
-                byte[] key = Rfc2898DeriveBytes.Pbkdf2(
-                    Encoding.UTF8.GetBytes(password),
-                    salt,
-                    iterations: 100_000,
-                    HashAlgorithmName.SHA256,
-                    outputLength: 32);
-
-                using (var aes = new AesGcm(key, 16))
+                if (magic.AsSpan().SequenceEqual(VaultMagicHeaderV2))
                 {
-                    aes.Decrypt(nonce, cipherBytes, tag, plainBytes);
+                    if (inFs.Length < VaultV2HeaderLength + 4 + VaultTagLength)
+                    {
+                        return (false, string.Empty, LocalizationService.GetText(
+                            "Geçersiz veya eksik FCVAULT2 dosyası.",
+                            "Invalid or truncated FCVAULT2 vault file."));
+                    }
+
+                    byte[] header = new byte[VaultV2HeaderLength];
+                    magic.CopyTo(header, 0);
+                    inFs.ReadExactly(header.AsSpan(8));
+
+                    int iterations = BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(8, 4));
+                    int chunkSize = BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(12, 4));
+                    if (iterations is < 10_000 or > 5_000_000 || chunkSize is < 1024 or > (16 * 1024 * 1024))
+                    {
+                        return (false, string.Empty, LocalizationService.GetText(
+                            "Geçersiz FCVAULT2 başlık parametreleri.",
+                            "Invalid FCVAULT2 header parameters."));
+                    }
+
+                    ReadOnlySpan<byte> salt = header.AsSpan(16, 16);
+                    ReadOnlySpan<byte> baseNonce = header.AsSpan(32, 12);
+
+                    byte[] derivedKey = Rfc2898DeriveBytes.Pbkdf2(
+                        passwordBytes,
+                        salt,
+                        iterations,
+                        HashAlgorithmName.SHA256,
+                        outputLength: 32);
+                    Buffer.BlockCopy(derivedKey, 0, key, 0, 32);
+                    CryptographicOperations.ZeroMemory(derivedKey);
+
+                    plainBuf = new byte[chunkSize];
+                    byte[] cipherBuf = new byte[chunkSize];
+                    Span<byte> lenBytes = stackalloc byte[4];
+                    Span<byte> tag = stackalloc byte[VaultTagLength];
+                    Span<byte> chunkNonce = stackalloc byte[12];
+                    Span<byte> aad = stackalloc byte[53];
+
+                    bool sawFinalChunk = false;
+                    ulong chunkIndex = 0;
+
+                    using (var aes = new AesGcm(key, VaultTagLength))
+                    using (var outFs = new FileStream(tempOutPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.WriteThrough))
+                    {
+                        while (inFs.Position < inFs.Length)
+                        {
+                            inFs.ReadExactly(lenBytes);
+                            int plainLen = BinaryPrimitives.ReadInt32LittleEndian(lenBytes);
+                            if (plainLen < 0 || plainLen > chunkSize)
+                                throw new CryptographicException("Invalid chunk length.");
+
+                            inFs.ReadExactly(tag);
+                            if (plainLen > 0)
+                                inFs.ReadExactly(cipherBuf.AsSpan(0, plainLen));
+
+                            bool isFinalChunk = inFs.Position >= inFs.Length;
+                            DeriveChunkNonce(baseNonce, chunkIndex, chunkNonce);
+                            BuildChunkAad(header, chunkIndex, isFinalChunk, aad);
+
+                            aes.Decrypt(
+                                chunkNonce,
+                                cipherBuf.AsSpan(0, plainLen),
+                                tag,
+                                plainBuf.AsSpan(0, plainLen),
+                                aad);
+
+                            if (plainLen > 0)
+                                outFs.Write(plainBuf.AsSpan(0, plainLen));
+
+                            sawFinalChunk = isFinalChunk;
+                            chunkIndex++;
+                        }
+
+                        outFs.Flush(flushToDisk: true);
+                    }
+
+                    if (!sawFinalChunk || inFs.Position != inFs.Length)
+                        throw new CryptographicException("Incomplete encrypted vault stream.");
+                }
+                else if (magic.AsSpan().SequenceEqual(VaultMagicHeaderV1))
+                {
+                    if (inFs.Length < VaultMagicHeaderV1.Length + 16 + 12 + VaultTagLength)
+                    {
+                        return (false, string.Empty, LocalizationService.GetText(
+                            "Geçersiz veya bozuk .fcvault dosyası.",
+                            "Invalid or corrupted .fcvault file."));
+                    }
+
+                    inFs.Position = VaultMagicHeaderV1.Length;
+                    byte[] salt = new byte[16];
+                    byte[] nonce = new byte[12];
+                    byte[] tag = new byte[VaultTagLength];
+                    inFs.ReadExactly(salt);
+                    inFs.ReadExactly(nonce);
+                    inFs.ReadExactly(tag);
+
+                    int cipherLen = checked((int)(inFs.Length - inFs.Position));
+                    byte[] cipherBytes = new byte[cipherLen];
+                    if (cipherLen > 0)
+                        inFs.ReadExactly(cipherBytes);
+
+                    plainBuf = new byte[cipherLen];
+                    byte[] derivedKey = Rfc2898DeriveBytes.Pbkdf2(
+                        passwordBytes,
+                        salt,
+                        iterations: VaultV1Iterations,
+                        HashAlgorithmName.SHA256,
+                        outputLength: 32);
+                    Buffer.BlockCopy(derivedKey, 0, key, 0, 32);
+                    CryptographicOperations.ZeroMemory(derivedKey);
+
+                    using (var aes = new AesGcm(key, VaultTagLength))
+                    {
+                        aes.Decrypt(nonce, cipherBytes, tag, plainBuf);
+                    }
+
+                    using (var outFs = new FileStream(tempOutPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.WriteThrough))
+                    {
+                        if (cipherLen > 0)
+                            outFs.Write(plainBuf, 0, cipherLen);
+                        outFs.Flush(flushToDisk: true);
+                    }
+                }
+                else
+                {
+                    return (false, string.Empty, LocalizationService.GetText(
+                        "Bu dosya geçerli bir FreeCleaner AES-256 (.fcvault) kasası değil.",
+                        "This file is not a valid FreeCleaner AES-256 (.fcvault) vault."));
                 }
 
-                string outPath = vaultFilePath.EndsWith(".fcvault", StringComparison.OrdinalIgnoreCase)
-                    ? vaultFilePath[..^8]
-                    : vaultFilePath + ".decrypted";
+                File.Move(tempOutPath, outPath, overwrite: true);
 
-                if (File.Exists(outPath))
-                {
-                    string dir = Path.GetDirectoryName(outPath) ?? string.Empty;
-                    string nameNoExt = Path.GetFileNameWithoutExtension(outPath);
-                    string ext = Path.GetExtension(outPath);
-                    outPath = Path.Combine(dir, $"{nameNoExt}_Restored{ext}");
-                }
-
-                File.WriteAllBytes(outPath, plainBytes);
-                return (true, outPath, $"Şifre başarıyla çözüldü ve dosya kurtarıldı: {Path.GetFileName(outPath)}");
+                return (true, outPath, LocalizationService.GetText(
+                    $"Şifre başarıyla çözüldü ve dosya kurtarıldı: {Path.GetFileName(outPath)}",
+                    $"Decrypted and restored successfully: {Path.GetFileName(outPath)}"));
             }
-            catch (CryptographicException)
+            catch (Exception ex) when (ex is CryptographicException or EndOfStreamException)
             {
-                return (false, string.Empty, "Hatalı parola veya dosya bütünlüğü bozulmuş! (AES-GCM doğrulaması başarısız).");
+                return (false, string.Empty, LocalizationService.GetText(
+                    "Hatalı parola veya dosya bütünlüğü bozulmuş! (AES-GCM doğrulaması başarısız).",
+                    "Wrong password or corrupted vault integrity! (AES-GCM authentication failed)."));
             }
             catch (Exception ex)
             {
-                return (false, string.Empty, $"Şifre çözme hatası: {ex.Message}");
+                ErrorLogService.Log("CryptoVault:Decrypt", ex);
+                return (false, string.Empty, LocalizationService.GetText(
+                    $"Şifre çözme hatası: {ex.Message}",
+                    $"Decryption error: {ex.Message}"));
+            }
+            finally
+            {
+                CryptographicOperations.ZeroMemory(passwordBytes);
+                CryptographicOperations.ZeroMemory(key);
+                if (plainBuf is not null)
+                    CryptographicOperations.ZeroMemory(plainBuf);
+                try
+                {
+                    if (File.Exists(tempOutPath))
+                        File.Delete(tempOutPath);
+                }
+                catch
+                {
+                    // Ignore cleanup error.
+                }
             }
         });
     }
@@ -672,7 +934,12 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
             }
 
             await Task.Delay(400).ConfigureAwait(false);
-            if (Process.GetProcessesByName("explorer").Length == 0)
+            Process[] remainingExplorers = Process.GetProcessesByName("explorer");
+            bool noneRunning = remainingExplorers.Length == 0;
+            foreach (Process expProc in remainingExplorers)
+                expProc.Dispose();
+
+            if (noneRunning)
             {
                 Process.Start(new ProcessStartInfo
                 {

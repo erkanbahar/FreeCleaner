@@ -7,14 +7,15 @@ namespace FreeCleaner.Services;
 /// <summary>
 /// Applies native Windows 11 DWM rounded corner and dark/light frame attributes cleanly.
 /// </summary>
-public static class WindowsShellVisualService
+public static partial class WindowsShellVisualService
 {
     private const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
     private const int DWMWA_WINDOW_CORNER_PREFERENCE = 33;
     private const int DWMWCP_ROUND = 2;
 
-    [DllImport("dwmapi.dll", PreserveSig = true)]
-    private static extern int DwmSetWindowAttribute(
+    [LibraryImport("dwmapi.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial int DwmSetWindowAttribute(
         IntPtr hwnd,
         int dwAttribute,
         ref int pvAttribute,

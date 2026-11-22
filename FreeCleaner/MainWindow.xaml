@@ -164,7 +164,7 @@
                 <!-- ==================== LEFT SIDEBAR ==================== -->
                 <Border Grid.Column="0"
                         Background="{DynamicResource SidebarBgGradientBrush}"
-                        BorderBrush="#1E2B45"
+                        BorderBrush="{DynamicResource BorderSubtleBrush}"
                         BorderThickness="0,0,1,0"
                         Padding="14,12,14,14">
                     <Grid>

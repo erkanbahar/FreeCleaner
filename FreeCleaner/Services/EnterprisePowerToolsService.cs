@@ -7,7 +7,7 @@ using FreeCleaner.Models;
 
 namespace FreeCleaner.Services;
 
-public static class EnterprisePowerToolsService
+public static partial class EnterprisePowerToolsService
 {
     // ==================== 1. WIN32 RESTART MANAGER (rstrtmgr.dll) FILE UNLOCKER ====================
 
@@ -44,13 +44,18 @@ public static class EnterprisePowerToolsService
         public bool bRestartable;
     }
 
-    [DllImport("rstrtmgr.dll", CharSet = CharSet.Unicode)]
-    private static extern int RmStartSession(out uint pSessionHandle, int dwSessionFlags, string strSessionKey);
+    [LibraryImport("rstrtmgr.dll", StringMarshalling = StringMarshalling.Utf16)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial int RmStartSession(out uint pSessionHandle, int dwSessionFlags, string strSessionKey);
 
-    [DllImport("rstrtmgr.dll")]
-    private static extern int RmEndSession(uint pSessionHandle);
+    [LibraryImport("rstrtmgr.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial int RmEndSession(uint pSessionHandle);
 
+    // String[] and ByValTStr fixed-buffer structs retain DllImport pinned to System32.
+#pragma warning disable SYSLIB1054
     [DllImport("rstrtmgr.dll", CharSet = CharSet.Unicode)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern int RmRegisterResources(
         uint pSessionHandle,
         uint nFiles,
@@ -61,12 +66,14 @@ public static class EnterprisePowerToolsService
         string[]? rgsServiceNames);
 
     [DllImport("rstrtmgr.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern int RmGetList(
         uint dwSessionHandle,
         out uint pnProcInfoNeeded,
         ref uint pnProcInfo,
         [In, Out] RM_PROCESS_INFO[]? rgAffectedApps,
         ref uint lpdwRebootReasons);
+#pragma warning restore SYSLIB1054
 
     public static async Task<List<LockingProcessItem>> FindLockingProcessesAsync(string fileOrFolderPath)
     {

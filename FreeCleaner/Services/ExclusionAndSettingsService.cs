@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using System.Text.Json;
 
 namespace FreeCleaner.Services;
@@ -55,18 +56,17 @@ public static class ExclusionAndSettingsService
     {
         try
         {
-            if (File.Exists(ConfigFilePath))
+            CleanerConfigData? data = AtomicFileStorageService.ReadJsonWithBackupFallback<CleanerConfigData>(
+                ConfigFilePath,
+                out string json,
+                logArea: "Ayar yükleme");
+            if (data is not null)
             {
-                string json = File.ReadAllText(ConfigFilePath);
-                var data = JsonSerializer.Deserialize<CleanerConfigData>(json);
-                if (data is not null)
-                {
-                    if (!json.Contains("\"HasCompletedOnboarding\"", StringComparison.Ordinal))
-                        data.HasCompletedOnboarding = true;
+                if (!json.Contains("\"HasCompletedOnboarding\"", StringComparison.Ordinal))
+                    data.HasCompletedOnboarding = true;
 
-                    data.CustomProfiles ??= [];
-                    return data;
-                }
+                data.CustomProfiles ??= [];
+                return data;
             }
         }
         catch (Exception ex)
@@ -80,9 +80,8 @@ public static class ExclusionAndSettingsService
     {
         try
         {
-            Directory.CreateDirectory(ConfigFolder);
             string json = JsonSerializer.Serialize(config, IndentedJsonOptions);
-            File.WriteAllText(ConfigFilePath, json);
+            AtomicFileStorageService.WriteAllTextAtomic(ConfigFilePath, json, Encoding.UTF8, createBackup: true);
         }
         catch (Exception ex)
         {

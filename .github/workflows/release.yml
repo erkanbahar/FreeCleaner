@@ -46,17 +46,32 @@ jobs:
             -p:TreatWarningsAsErrors=true `
             --output release_out
 
+      - name: Publish Single-File Portable Executable (win-arm64)
+        run: |
+          dotnet publish FreeCleaner/FreeCleaner.csproj `
+            --configuration Release `
+            --runtime win-arm64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -p:TreatWarningsAsErrors=true `
+            --output release_arm64
+
       - name: Package Portable Archives & Windows Setup Installer
         shell: pwsh
         run: |
           $tag = $env:GITHUB_REF_NAME
-          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v4.7.0" }
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v4.8.0" }
           $ver = $tag.TrimStart('v', 'V')
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           New-Item -ItemType Directory -Force -Path release_usb | Out-Null
 
           $zipPath = "dist/FreeCleaner-Portable-win-x64-$tag.zip"
           Compress-Archive -Path "release_out/FreeCleaner.exe" -DestinationPath $zipPath -Force
+
+          $arm64ZipPath = "dist/FreeCleaner-Portable-win-arm64-$tag.zip"
+          Compress-Archive -Path "release_arm64/FreeCleaner.exe" -DestinationPath $arm64ZipPath -Force
 
           Copy-Item -Path "release_out/FreeCleaner.exe" -Destination "release_usb/FreeCleaner.exe" -Force
           "FreeCleaner Pro Portable Mode enabled" | Set-Content -Path "release_usb/portable.flag" -Encoding UTF8
@@ -78,10 +93,12 @@ jobs:
 
           $exeHash = (Get-FileHash -Path "release_out/FreeCleaner.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
           $zipHash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          $arm64ZipHash = (Get-FileHash -Path $arm64ZipPath -Algorithm SHA256).Hash.ToLowerInvariant()
           $usbZipHash = (Get-FileHash -Path $usbZipPath -Algorithm SHA256).Hash.ToLowerInvariant()
           $zipName = [System.IO.Path]::GetFileName($zipPath)
+          $arm64ZipName = [System.IO.Path]::GetFileName($arm64ZipPath)
           $usbZipName = [System.IO.Path]::GetFileName($usbZipPath)
-          $sums = @("$exeHash  FreeCleaner.exe", "$zipHash  $zipName", "$usbZipHash  $usbZipName")
+          $sums = @("$exeHash  FreeCleaner.exe", "$zipHash  $zipName", "$arm64ZipHash  $arm64ZipName", "$usbZipHash  $usbZipName")
           if (Test-Path $setupOut) {
             $setupHash = (Get-FileHash -Path $setupOut -Algorithm SHA256).Hash.ToLowerInvariant()
             $setupName = [System.IO.Path]::GetFileName($setupOut)
@@ -95,13 +112,13 @@ jobs:
           foreach ($manifest in Get-ChildItem "installer/winget/*.yaml") {
             $content = (Get-Content -Path $manifest.FullName -Raw -Encoding UTF8) `
               -replace 'REPLACE_WITH_RELEASE_SHA256', $exeHashUpper `
-              -replace '4\.7\.0', $ver `
-              -replace 'v4\.7\.0', $tag
+              -replace '4\.8\.0', $ver `
+              -replace 'v4\.8\.0', $tag
             Set-Content -Path (Join-Path $wingetStage $manifest.Name) -Value $content -Encoding UTF8 -NoNewline
           }
           $wingetZipPath = "dist/FreeCleaner-Winget-Manifests-$tag.zip"
           Compress-Archive -Path "$wingetStage/*.yaml" -DestinationPath $wingetZipPath -Force
-          Write-Host "Packaged portable archives, setup installer, Winget manifests & SHA256SUMS"
+          Write-Host "Packaged portable archives (win-x64 & win-arm64), setup installer, Winget manifests & SHA256SUMS"
 
       - name: Attest Build Provenance (SLSA)
         uses: actions/attest-build-provenance@v2
@@ -109,6 +126,7 @@ jobs:
           subject-path: |
             release_out/FreeCleaner.exe
             dist/FreeCleaner-Portable-win-x64-*.zip
+            dist/FreeCleaner-Portable-win-arm64-*.zip
             dist/FreeCleaner-Portable-USB-win-x64-*.zip
             dist/FreeCleaner-Setup-win-x64-*.exe
             dist/SHA256SUMS.txt
@@ -119,6 +137,7 @@ jobs:
           generate_release_notes: true
           files: |
             dist/FreeCleaner-Portable-win-x64-*.zip
+            dist/FreeCleaner-Portable-win-arm64-*.zip
             dist/FreeCleaner-Portable-USB-win-x64-*.zip
             dist/FreeCleaner-Setup-win-x64-*.exe
             dist/FreeCleaner-Winget-Manifests-*.zip

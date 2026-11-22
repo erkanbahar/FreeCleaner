@@ -7,12 +7,13 @@ using FreeCleaner.Models;
 
 namespace FreeCleaner.Services;
 
-public static class SystemBoosterAndReportService
+public static partial class SystemBoosterAndReportService
 {
     private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
 
-    [DllImport("psapi.dll")]
-    private static extern int EmptyWorkingSet(IntPtr hwProc);
+    [LibraryImport("psapi.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial int EmptyWorkingSet(IntPtr hwProc);
 
     public static List<ProcessMemoryItem> GetTopMemoryProcesses(int count = 15)
     {

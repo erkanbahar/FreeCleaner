@@ -146,7 +146,7 @@
                                                  Maximum="100"
                                                  Height="6"
                                                  Margin="0,6,0,2"
-                                                 Background="#222D40"
+                                                 Background="{DynamicResource BgPrimaryBrush}"
                                                  Foreground="{DynamicResource AccentBlueBrush}"
                                                  BorderThickness="0"/>
                                     <TextBlock Text="{Binding FullPath}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis"/>

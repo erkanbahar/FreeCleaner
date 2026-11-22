@@ -185,7 +185,7 @@ public static class FlagshipTelemetryAndThemeService
 /// <summary>
 /// Stateful real-time delta sampler for system-wide CPU % (Win32 GetSystemTimes), RAM %, and Network KB/s.
 /// </summary>
-public sealed class LiveSystemTelemetrySampler
+public sealed partial class LiveSystemTelemetrySampler
 {
     [StructLayout(LayoutKind.Sequential)]
     private struct FILETIME
@@ -196,9 +196,10 @@ public sealed class LiveSystemTelemetrySampler
         public ulong ToUInt64() => ((ulong)dwHighDateTime << 32) | dwLowDateTime;
     }
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetSystemTimes(out FILETIME lpIdleTime, out FILETIME lpKernelTime, out FILETIME lpUserTime);
+    private static partial bool GetSystemTimes(out FILETIME lpIdleTime, out FILETIME lpKernelTime, out FILETIME lpUserTime);
 
     private ulong _prevIdle;
     private ulong _prevKernel;

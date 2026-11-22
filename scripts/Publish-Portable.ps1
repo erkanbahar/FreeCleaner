@@ -1,4 +1,6 @@
 param(
+    [ValidateSet('win-x64', 'win-arm64')]
+    [string]$Runtime = 'win-x64',
     [switch]$IncludePortableFlag,
     [switch]$ReadyToRun,
     [switch]$GenerateWingetManifests
@@ -7,12 +9,13 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $projPath = Join-Path $repoRoot 'FreeCleaner\FreeCleaner.csproj'
-$outDir = Join-Path $repoRoot 'artifacts\portable'
+$outDirName = if ($Runtime -eq 'win-arm64') { 'portable-arm64' } else { 'portable' }
+$outDir = Join-Path $repoRoot (Join-Path 'artifacts' $outDirName)
 
 $publishArgs = @(
     'publish', $projPath,
     '-c', 'Release',
-    '-r', 'win-x64',
+    '-r', $Runtime,
     '--self-contained', 'true',
     '-p:PublishSingleFile=true',
     '-p:IncludeNativeLibrariesForSelfExtract=true',
@@ -25,7 +28,7 @@ if ($ReadyToRun) {
     $publishArgs += '-p:PublishReadyToRun=true'
 }
 
-Write-Host "Publishing FreeCleaner Pro (Single-File Portable win-x64 .NET 10, ReadyToRun=$ReadyToRun) -> $outDir" -ForegroundColor Cyan
+Write-Host "Publishing FreeCleaner Pro (Single-File Portable $Runtime .NET 10, ReadyToRun=$ReadyToRun) -> $outDir" -ForegroundColor Cyan
 & dotnet @publishArgs
 if ($LASTEXITCODE -ne 0) {
     throw "dotnet publish failed with exit code $LASTEXITCODE"
@@ -47,7 +50,7 @@ if (Test-Path $exePath) {
 if ($GenerateWingetManifests) {
     [xml]$csprojXml = Get-Content -Path $projPath -Encoding UTF8
     $ver = $csprojXml.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
-    if ([string]::IsNullOrWhiteSpace($ver)) { $ver = '4.7.0' }
+    if ([string]::IsNullOrWhiteSpace($ver)) { $ver = '4.8.0' }
     $tag = "v$ver"
     $wingetSourceDir = Join-Path $repoRoot 'installer\winget'
     $wingetOutDir = Join-Path $outDir 'winget'
@@ -57,8 +60,8 @@ if ($GenerateWingetManifests) {
     foreach ($manifest in Get-ChildItem -Path $wingetSourceDir -Filter '*.yaml') {
         $content = (Get-Content -Path $manifest.FullName -Raw -Encoding UTF8) `
             -replace 'REPLACE_WITH_RELEASE_SHA256', $shaUpper `
-            -replace '4\.7\.0', $ver `
-            -replace 'v4\.7\.0', $tag
+            -replace '4\.8\.0', $ver `
+            -replace 'v4\.8\.0', $tag
         Set-Content -Path (Join-Path $wingetOutDir $manifest.Name) -Value $content -Encoding UTF8 -NoNewline
     }
     Write-Host "Generated Winget manifests ($ver) -> $wingetOutDir" -ForegroundColor Yellow

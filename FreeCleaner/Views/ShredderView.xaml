@@ -123,9 +123,9 @@
                     </StackPanel>
                 </Border>
 
-                <Border Background="#1D1622" BorderBrush="#4C1D24" BorderThickness="1" CornerRadius="10" Padding="14">
+                <Border Background="{DynamicResource BgCardBrush}" BorderBrush="{DynamicResource DangerRedBrush}" BorderThickness="1" CornerRadius="10" Padding="14">
                     <StackPanel>
-                        <TextBlock Text="{DynamicResource Loc_ShredDodTitle}" FontWeight="SemiBold" Foreground="#F87171" FontSize="12.5"/>
+                        <TextBlock Text="{DynamicResource Loc_ShredDodTitle}" FontWeight="SemiBold" Foreground="{DynamicResource DangerRedBrush}" FontSize="12.5"/>
                         <TextBlock Text="{DynamicResource Loc_ShredDodDesc}"
                                    FontSize="11"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
