@@ -24,7 +24,11 @@ public partial class MainViewModel
                 ThemeManagerService.ApplyTheme(_selectedTheme);
                 OnPropertyChanged();
                 SaveCurrentSettings();
-                StatusMessage = $"Tema değiştirildi: {_selectedTheme}";
+                StatusMessage = LocalizationService.GetText(
+                    $"Tema değiştirildi: {_selectedTheme}",
+                    $"Theme switched to: {_selectedTheme}",
+                    _selectedLanguage);
+                ShowToast("FreeCleaner Pro", StatusMessage, ToastSeverity.Info, durationSeconds: 4);
                 AddLog($"[TEMA] Uygulama görünümü '{_selectedTheme}' olarak güncellendi.");
             }
         }
@@ -307,7 +311,11 @@ public partial class MainViewModel
         PopulateModuleCatalog();
         SaveCurrentSettings();
 
-        StatusMessage = $"⭐ Özel profil kaydedildi: '{name}' ({selectedIds.Count} kural).";
+        StatusMessage = LocalizationService.GetText(
+            $"⭐ Özel profil kaydedildi: '{name}' ({selectedIds.Count} kural).",
+            $"⭐ Saved custom profile '{name}' ({selectedIds.Count} rules).",
+            _selectedLanguage);
+        ShowToast("FreeCleaner Pro", StatusMessage, ToastSeverity.Success);
         AddLog($"[ÖZEL PROFİL] '{name}' ({selectedIds.Count} kural) kaydedildi.");
     }
 

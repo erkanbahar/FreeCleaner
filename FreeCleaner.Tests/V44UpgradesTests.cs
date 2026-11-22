@@ -522,10 +522,7 @@ public class V44UpgradesTests
             SqliteConnection.ClearAllPools();
             try { Directory.Delete(tempRoot, recursive: true); } catch { }
 
-            string backupDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "FreeCleaner",
-                "SQLiteBackups");
+            string backupDir = AppStoragePathsService.GetSqliteBackupsDirectory();
             if (Directory.Exists(backupDir))
             {
                 foreach (string bak in Directory.EnumerateFiles(backupDir, $"{dbName}_*.bak"))

@@ -533,10 +533,7 @@ public static class NinthGenWingetAndNetworkSuiteService
 
     private static List<(string Source, string Backup)> BackupSqliteDatabase(string databasePath)
     {
-        string backupDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "FreeCleaner",
-            "SQLiteBackups");
+        string backupDirectory = AppStoragePathsService.GetSqliteBackupsDirectory();
         Directory.CreateDirectory(backupDirectory);
         string backupPrefix = Path.Combine(
             backupDirectory,

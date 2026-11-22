@@ -19,28 +19,117 @@ public enum RiskLevel
 
 public class CleanerRule : INotifyPropertyChanged
 {
+    private string _name = string.Empty;
+    private string _category = string.Empty;
+    private string _description = string.Empty;
+    private string? _warningMessage;
+    private string? _languageCodeOverride;
     private bool _isSelected = true;
     private long _detectedSizeBytes;
     private int _detectedFileCount;
     private string _statusText = "Hazır";
 
     public required string Id { get; init; }
-    public required string Name { get; init; }
-    public required string Category { get; init; }
-    public required string Description { get; init; }
+
+    public required string Name
+    {
+        get => _name;
+        set
+        {
+            if (_name != value)
+            {
+                _name = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public required string Category
+    {
+        get => _category;
+        set
+        {
+            if (_category != value)
+            {
+                _category = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public required string Description
+    {
+        get => _description;
+        set
+        {
+            if (_description != value)
+            {
+                _description = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public required string IconGlyph { get; init; }
     public required RuleGroup Group { get; init; }
     public RiskLevel RiskLevel { get => Risk; init => Risk = value; }
     public bool IsRecycleBin { get; init; }
     public bool RequiresWarning { get; init; }
-    public string? WarningMessage { get; init; }
-    public RiskLevel Risk { get; init; } = RiskLevel.Medium;
-    public string RiskLabel => Risk switch
+
+    public string? WarningMessage
     {
-        RiskLevel.Low => "Düşük",
-        RiskLevel.High => "Yüksek",
-        _ => "Orta"
-    };
+        get => _warningMessage;
+        set
+        {
+            if (_warningMessage != value)
+            {
+                _warningMessage = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public RiskLevel Risk { get; init; } = RiskLevel.Medium;
+
+    public string RiskLabel
+    {
+        get
+        {
+            bool isEn = Services.LocalizationService.NormalizeLanguageCode(
+                _languageCodeOverride ?? Services.LocalizationService.CurrentLanguage) == "en-US";
+            return Risk switch
+            {
+                RiskLevel.Low => isEn ? "Low" : "Düşük",
+                RiskLevel.High => isEn ? "High" : "Yüksek",
+                _ => isEn ? "Medium" : "Orta"
+            };
+        }
+    }
+
+    public void ApplyLocalizedMetadata(
+        string name,
+        string category,
+        string description,
+        string? warningMessage,
+        string languageCode)
+    {
+        Name = name;
+        Category = category;
+        Description = description;
+        WarningMessage = warningMessage;
+        _languageCodeOverride = Services.LocalizationService.NormalizeLanguageCode(languageCode);
+
+        bool isEn = _languageCodeOverride == "en-US";
+        StatusText = StatusText switch
+        {
+            "Hazır" or "Ready" => isEn ? "Ready" : "Hazır",
+            "Bekliyor..." or "Pending..." => isEn ? "Pending..." : "Bekliyor...",
+            "Atlandı" or "Skipped" => isEn ? "Skipped" : "Atlandı",
+            _ => StatusText
+        };
+
+        OnPropertyChanged(nameof(RiskLabel));
+    }
 
     /// <summary>
     /// Directories to scan along with optional search patterns (default "*").

@@ -6,6 +6,15 @@
 
 ## English
 
+### [4.5.0] - 2026-11-22
+#### Added & Improved
+- **Runtime Bilingual Cleaner Rules (`CleanerRule`) & Localized Status Copy**: Extended `CleanerRule` with live change notifications and `ApplyLocalizedMetadata(...)` mapped across all 20 default `CleanerEngine` rules in `LocalizationService.cs`, dynamically translating rule titles, categories, descriptions, warnings, `StatusText`, and `RiskLabel` (`Low/Medium/High` ↔ `Düşük/Orta/Yüksek`) along with core ViewModel status messages without requiring an app restart.
+- **Portable-Aware Unified Backup & Retention Center**: Routed `RegistryCleanerService`, `PrivacyAndNetworkShieldService` (`HostsBackups`), and `NinthGenWingetAndNetworkSuiteService` (`SQLiteBackups`) through `AppStoragePathsService.GetDataDirectory()` so USB `portable.flag` deployments keep all backups locally; enhanced `BackupManagerService` to inventory all 3 backup types (`Registry`, `Hosts` including legacy backups, and `SQLite`), support manual bulk delete (`DeleteBackups`), and prune expired/excess backups (`PruneOldBackups`) directly from `RegistryView.xaml`.
+- **Theme-Adaptive In-App Toast Notifications & Daily Silent Update Check**: Added `ToastNotificationService` and a bottom-right floating `ToastOverlay` in `MainWindow.xaml` for non-blocking completion feedback and folder/update deep links; added configurable daily silent startup update checks (`AutoCheckUpdatesOnStartup`) wired to `SettingsView.xaml` and `CleanerConfigData`.
+- **Windows System Theme Auto-Sync (`SystemAuto`)**: Added `SystemAuto` to `ThemeManagerService` (reading `AppsUseLightTheme` via `HKCU` and resolving cleanly to `FluentLight` or `ObsidianNeon` across brushes and DWM window frames) with live `SystemEvents.UserPreferenceChanged` tracking in `MainWindow.xaml.cs`.
+- **Open-Source Governance & Automated Winget Manifest Pipeline**: Added `LICENSE` (MIT), `SECURITY.md`, `CONTRIBUTING.md`, `.github/dependabot.yml`, and `.github/ISSUE_TEMPLATE/` forms (`bug_report.yml`, `feature_request.yml`, `config.yml`), and automated `FreeCleaner-Winget-Manifests-$tag.zip` generation in `.github/workflows/release.yml` with real `SHA256` injection.
+- **Cohesive `MainViewModel` Split & Expanded Test Suite (`71` Tests | `30.72%` Line / `21.92%` Branch Coverage)**: Extracted `MainViewModel.CleanerAndReports.cs` and `MainViewModel.NotificationsAndUpdates.cs` from `MainViewModel.cs`, exposed pure testable Hosts parsing helpers (`ParseHostsLines`, `ApplyHostsUpdateLines`, `RemoveHostsMatchingLines`), and added 7 new tests in `V45UpgradesTests.cs` (`71` passing tests under `-p:TreatWarningsAsErrors=true`, raising Cobertura coverage from `29.62%` / `20.91%` to `30.72%` line / `21.92%` branch coverage).
+
 ### [4.4.0] - 2026-11-22
 #### Added & Improved
 - **100% Bilingual 57/57 Modular Views & Dynamic System Tray**: Localized all remaining 35 Lazy Views via `LocalizationService.cs` (**57 / 57 Views** verified with full TR/EN key parity and zero hardcoded Turkish XAML attributes), and updated `SystemTrayService` (`RefreshLanguage`, `FormatTrayTooltip`, minimize-to-tray balloon) to switch between Turkish (`Boş`) and English (`Free`) dynamically without restarting.
@@ -52,6 +61,15 @@
 ---
 
 ## Türkçe
+
+### [4.5.0] - 2026-11-22
+#### Eklenenler ve İyileştirmeler
+- **Çalışma Zamanında Tam Çift Dilli Temizlik Kuralları (`CleanerRule`) & Durum Metinleri**: `CleanerRule` modeli canlı özellik bildirimi ve `ApplyLocalizedMetadata(...)` desteği kazandı; `LocalizationService.cs` üzerinden tüm 20 varsayılan `CleanerEngine` kuralının adı, kategorisi, açıklaması, uyarı metni, `StatusText` ve `RiskLabel` etiketi (`Düşük/Orta/Yüksek` ↔ `Low/Medium/High`) ile çekirdek ViewModel durum mesajları anında çevrilir.
+- **Taşınabilir Mod Uyumlu Birleşik Yedekleme & Eski Yedek Budama Merkezi**: `RegistryCleanerService`, `PrivacyAndNetworkShieldService` (`HostsBackups`) ve `NinthGenWingetAndNetworkSuiteService` (`SQLiteBackups`) yedek yolları `AppStoragePathsService.GetDataDirectory()` üzerinden geçirilerek USB `portable.flag` modunda yerel `data\` klasörüne yazması sağlandı; `BackupManagerService` tüm 3 yedek türünü (`Registry`, `Hosts`, `SQLite`) tek listede toplar ve `RegistryView.xaml` içinden seçili yedekleri silme (`DeleteBackups`) / eski yedekleri budama (`PruneOldBackups`) imkânı sunar.
+- **Tema Uyumlu Uygulama İçi Toast Bildirimleri & Günlük Sessiz Başlangıç Güncelleme Denetimi**: `ToastNotificationService` ve `MainWindow.xaml` sağ alt köşesinde tema uyumlu yüzen `ToastOverlay` bileşeni eklendi; `AutoCheckUpdatesOnStartup` seçeneği ile açılışta günde bir kez arka planda yeni sürüm kontrolü yapılıp güncelleme varsa Toast aksiyonuyla sunulur.
+- **Windows Sistem Temasıyla Canlı Senkronizasyon (`SystemAuto`)**: `ThemeManagerService` içine Windows'un `AppsUseLightTheme` ayarını okuyarak `FluentLight` / `ObsidianNeon` arasında otomatik geçiş yapan `SystemAuto` teması ve `SystemEvents.UserPreferenceChanged` dinleyicisi (`MainWindow.xaml.cs` + DWM çerçeve uyumu) eklendi.
+- **Açık Kaynak Depo Dosyaları & Otomatik Winget Release Hattı**: `LICENSE` (MIT), `SECURITY.md`, `CONTRIBUTING.md`, `.github/dependabot.yml` ve `.github/ISSUE_TEMPLATE/` formları oluşturuldu; `.github/workflows/release.yml` ise gerçek `SHA256` hash değerini enjekte ederek `FreeCleaner-Winget-Manifests-$tag.zip` paketini otomatik üretecek şekilde genişletildi.
+- **`MainViewModel` Parçalama & Genişletilmiş Test Kapsamı (`71` Test | `%30.72` Satır / `%21.92` Dal Kapsamı)**: `MainViewModel.CleanerAndReports.cs` ve `MainViewModel.NotificationsAndUpdates.cs` dosyaları ayrıştırıldı; saf test edilebilir `ParseHostsLines`, `ApplyHostsUpdateLines`, `RemoveHostsMatchingLines` yardımcıları ve `V45UpgradesTests.cs` içindeki 7 yeni test ile suite `64`'ten `71` başarılı teste ve Cobertura kapsamı `%29.62` / `%20.91` seviyesinden `%30.72` satır / `%21.92` dal kapsamına yükseldi.
 
 ### [4.4.0] - 2026-11-22
 #### Eklenenler ve İyileştirmeler

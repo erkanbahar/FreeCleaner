@@ -38,6 +38,8 @@ public class CleanerConfigData
     public bool WindowMaximized { get; set; }
     public bool HasCompletedOnboarding { get; set; }
     public List<CustomCleaningProfile> CustomProfiles { get; set; } = [];
+    public bool AutoCheckUpdatesOnStartup { get; set; } = true;
+    public string LastUpdateCheckDate { get; set; } = string.Empty;
 }
 
 public static class ExclusionAndSettingsService

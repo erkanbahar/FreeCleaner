@@ -151,7 +151,10 @@ public partial class MainViewModel
         BackupFiles.Clear();
         foreach (var backup in BackupManagerService.ListBackups())
             BackupFiles.Add(backup);
-        StatusMessage = $"{BackupFiles.Count} yedek dosyası listelendi.";
+        StatusMessage = LocalizationService.GetText(
+            $"{BackupFiles.Count} yedek dosyası listelendi.",
+            $"Listed {BackupFiles.Count} backup files.",
+            _selectedLanguage);
     }
 
     private void RestoreSelectedBackup()

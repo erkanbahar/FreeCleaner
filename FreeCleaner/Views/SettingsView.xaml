@@ -111,12 +111,17 @@
                                        Foreground="{DynamicResource TextSecondaryBrush}"
                                        TextWrapping="Wrap"
                                        Margin="0,4,0,10"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                                 <TextBlock Text="{DynamicResource Loc_SettingsThemeLabel}" Width="95" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                 <ComboBox ItemsSource="{Binding AvailableThemes}"
                                           SelectedItem="{Binding SelectedTheme}"
                                           Width="210"/>
                             </StackPanel>
+                            <TextBlock Text="{DynamicResource Loc_SettingsThemeSystemAutoHint}"
+                                       FontSize="10.5"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       TextWrapping="Wrap"
+                                       Margin="95,0,0,10"/>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <TextBlock Text="{DynamicResource Loc_SettingsLangLabel}" Width="95" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                                 <ComboBox ItemsSource="{Binding AvailableLanguages}"
@@ -152,6 +157,12 @@
                                        Foreground="{DynamicResource AccentEmeraldBrush}"
                                        TextWrapping="Wrap"
                                        Margin="0,0,0,10"/>
+                            <CheckBox IsChecked="{Binding AutoCheckUpdatesOnStartup}"
+                                      Foreground="{DynamicResource TextPrimaryBrush}"
+                                      FontWeight="SemiBold"
+                                      FontSize="12"
+                                      Content="{DynamicResource Loc_SettingsAutoUpdateCheck}"
+                                      Margin="0,0,0,10"/>
                             <WrapPanel Orientation="Horizontal">
                                 <Button Style="{StaticResource PrimaryButtonStyle}"
                                         Content="{DynamicResource Loc_SettingsCheckUpdateBtn}"

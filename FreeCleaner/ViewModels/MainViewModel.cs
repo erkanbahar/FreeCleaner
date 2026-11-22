@@ -61,6 +61,11 @@ public partial class MainViewModel : INotifyPropertyChanged
     private bool _hasCompletedOnboarding = true;
     private string _newCustomProfileName = string.Empty;
     private CustomCleaningProfile? _selectedCustomProfile;
+    private bool _autoCheckUpdatesOnStartup = true;
+    private string _lastUpdateCheckDate = string.Empty;
+    private readonly DispatcherTimer _toastDismissTimer;
+    private ToastNotificationItem? _activeToast;
+    private bool _hasPendingUpdate;
 
     private string _activeSection = "Dashboard";
     private string _selectedTheme = "ObsidianNeon";
@@ -547,6 +552,12 @@ public partial class MainViewModel : INotifyPropertyChanged
     public ICommand CompleteOnboardingCommand { get; }
     public ICommand OpenOnboardingCommand { get; }
 
+    // 18th Gen Toast Notifications & Unified Backup Management Commands
+    public ICommand DismissToastCommand { get; }
+    public ICommand ExecuteToastActionCommand { get; }
+    public ICommand DeleteSelectedBackupsCommand { get; }
+    public ICommand PruneOldBackupsCommand { get; }
+
     public bool IsAdmin => UltimateSystemSuiteService.IsRunningAsAdministrator();
     public bool IsNotAdmin => !IsAdmin;
     public string AdminStatusBadge => LocalizationService.NormalizeLanguageCode(_selectedLanguage) == "en-US"
@@ -587,6 +598,8 @@ public partial class MainViewModel : INotifyPropertyChanged
         _windowHeight = savedConfig.WindowHeight;
         _windowMaximized = savedConfig.WindowMaximized;
         _hasCompletedOnboarding = savedConfig.HasCompletedOnboarding;
+        _autoCheckUpdatesOnStartup = savedConfig.AutoCheckUpdatesOnStartup;
+        _lastUpdateCheckDate = savedConfig.LastUpdateCheckDate ?? string.Empty;
         foreach (CustomCleaningProfile cp in savedConfig.CustomProfiles ?? [])
         {
             if (!string.IsNullOrWhiteSpace(cp.Name))
@@ -611,6 +624,7 @@ public partial class MainViewModel : INotifyPropertyChanged
             rule.PropertyChanged += OnRulePropertyChanged;
             AllRules.Add(rule);
         }
+        LocalizationService.ApplyRuleLocalization(AllRules, _selectedLanguage);
 
         FilteredRulesView = CollectionViewSource.GetDefaultView(AllRules);
         FilteredRulesView.Filter = FilterRulePredicate;
@@ -658,6 +672,8 @@ public partial class MainViewModel : INotifyPropertyChanged
         RestoreRegistryBackupCommand = new RelayCommand(_ => RestoreLatestRegistryBackup(), _ => !IsBusy && RegistryCleanerService.GetLatestBackupFile() is not null);
         RefreshBackupsCommand = new RelayCommand(_ => LoadBackups(), _ => !IsBusy);
         RestoreSelectedBackupCommand = new RelayCommand(_ => RestoreSelectedBackup(), _ => !IsBusy && BackupFiles.Any(x => x.IsSelected));
+        DeleteSelectedBackupsCommand = new RelayCommand(_ => DeleteSelectedBackups(), _ => !IsBusy && BackupFiles.Any(x => x.IsSelected));
+        PruneOldBackupsCommand = new RelayCommand(_ => PruneOldBackups(), _ => !IsBusy);
         FixRegistryCommand = new RelayCommand(_ => RunRegistryFix(), _ => !IsBusy && RegistryIssues.Any(x => x.IsSelected));
 
         // Disk Analyzer Commands
@@ -1103,6 +1119,15 @@ public partial class MainViewModel : INotifyPropertyChanged
             SaveCurrentSettings();
         });
         OpenOnboardingCommand = new RelayCommand(_ => HasCompletedOnboarding = false);
+
+        DismissToastCommand = new RelayCommand(_ => DismissToast());
+        ExecuteToastActionCommand = new RelayCommand(_ => ExecuteToastAction());
+
+        _toastDismissTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(6)
+        };
+        _toastDismissTimer.Tick += (_, _) => DismissToast();
 
         _liveTelemetryTimer = new DispatcherTimer
         {
@@ -1805,496 +1830,6 @@ public partial class MainViewModel : INotifyPropertyChanged
         SystemMetrics = SystemInfoService.GetMetrics();
         RefreshStorageForecast();
     }
-
-    private async Task RunAnalyzeAsync()
-    {
-        if (!AllRules.Any(r => r.IsSelected))
-        {
-            MessageBox.Show(
-                "Lütfen analiz etmek için sol panelden en az bir temizlik kategorisi seçin.",
-                "Kategori Seçilmedi",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
-
-        IsBusy = true;
-        HasAnalyzed = false;
-        ProgressPercent = 0;
-
-        foreach (var oldItem in DiscoveredFiles)
-            oldItem.PropertyChanged -= OnFileItemPropertyChanged;
-        DiscoveredFiles.Clear();
-
-        TotalDetectedBytes = 0;
-        TotalDetectedFiles = 0;
-
-        var runningBrowsers = SystemInfoService.GetRunningBrowsers();
-        if (runningBrowsers.Count > 0 && AllRules.Any(r => r.Group == RuleGroup.Browsers && r.IsSelected))
-        {
-            AddLog($"[BİLGİ] Açık tarayıcılar algılandı ({string.Join(", ", runningBrowsers)}). Bazı önbellek dosyaları kilitli olabilir.");
-        }
-
-        StatusMessage = "Sistem analiz ediliyor (Simülasyon Modu)...";
-        AddLog("Analiz başlatıldı (Hiçbir dosya silinmiyor, Beyaz Liste korunuyor)...");
-
-        _cts = new CancellationTokenSource();
-        var progress = new Progress<(int Percent, string CurrentRuleName, long TotalFoundBytes, int TotalFoundCount)>(report =>
-        {
-            ProgressPercent = report.Percent;
-            CurrentOperationDetail = $"Taranıyor: {report.CurrentRuleName}";
-            TotalDetectedBytes = report.TotalFoundBytes;
-            TotalDetectedFiles = report.TotalFoundCount;
-        });
-
-        try
-        {
-            var results = await _engine.AnalyzeAsync(AllRules, ExcludedPaths.ToList(), progress, _cts.Token);
-
-            foreach (var item in results)
-            {
-                item.PropertyChanged += OnFileItemPropertyChanged;
-                DiscoveredFiles.Add(item);
-            }
-
-            RecalculateSelectedTotals();
-            HasAnalyzed = true;
-            ProgressPercent = 100;
-
-            StatusMessage = $"Analiz tamamlandı: {TotalDetectedFiles:N0} öğede toplam {TotalDetectedFormatted} gereksiz veri bulundu.";
-            CurrentOperationDetail = "Sonuçları inceleyebilir ve 'Temizliği Başlat' ile silebilirsiniz.";
-            AddLog($"Analiz tamamlandı: {TotalDetectedFiles:N0} dosya ({TotalDetectedFormatted}) tespit edildi.");
-        }
-        catch (OperationCanceledException)
-        {
-            StatusMessage = "Analiz kullanıcı tarafından iptal edildi.";
-            CurrentOperationDetail = "İptal edildi.";
-            AddLog("Analiz işlemi iptal edildi.");
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Analiz sırasında hata: {ex.Message}";
-            AddLog($"[HATA] {ex.Message}");
-        }
-        finally
-        {
-            IsBusy = false;
-            RefreshSystemMetrics();
-        }
-    }
-
-    private async Task RunCleanAsync()
-    {
-        int selectedCount = TotalSelectedFilesCount;
-        string selectedSize = TotalSelectedSizeFormatted;
-
-        if (selectedCount == 0)
-            return;
-
-        var selectedHighRiskRules = AllRules
-            .Where(rule => rule.RiskLevel == RiskLevel.High &&
-                           DiscoveredFiles.Any(file => file.IsSelected && file.RuleId == rule.Id))
-            .ToList();
-
-        if (selectedHighRiskRules.Count > 0)
-        {
-            string highRiskNames = string.Join(", ", selectedHighRiskRules.Select(rule => rule.Name));
-            var highRiskConfirmation = MessageBox.Show(
-                $"Yüksek riskli temizlik seçenekleri seçildi:\n\n{highRiskNames}\n\n" +
-                "Bu işlemler oturum verilerini, geçmişleri veya geri alınması zor sistem verilerini etkileyebilir. " +
-                "Seçili öğeleri temizlemek istediğinizi açıkça onaylıyor musunuz?",
-                "Yüksek Riskli Temizlik Onayı",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
-
-            if (highRiskConfirmation != MessageBoxResult.Yes)
-            {
-                AddLog("Yüksek riskli temizlik kullanıcı tarafından onaylanmadı.");
-                return;
-            }
-        }
-
-        string modeDescription = UseRecycleBinSafety
-            ? "Seçili dosyalar Geri Dönüşüm Kutusu'na taşınacaktır."
-            : "Seçili dosyalar kalıcı olarak silinecektir (açık/kullanımda olan sistem dosyaları güvenle atlanır).";
-
-        var confirm = MessageBox.Show(
-            $"Toplam {selectedCount:N0} adet gereksiz öğe ({selectedSize}) temizlenecek.\n\n" +
-            $"Mod: {modeDescription}\n\n" +
-            "Temizleme işlemini onaylıyor musunuz?",
-            "FreeCleaner - Temizleme Onayı",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-
-        if (confirm != MessageBoxResult.Yes)
-        {
-            AddLog("Temizleme işlemi kullanıcı tarafından vazgeçildi.");
-            return;
-        }
-
-        if (DiscoveredFiles.Any(x => x.IsSelected && x.IsRecycleBinItem))
-        {
-            var recycleBinConfirm = MessageBox.Show(
-                "Bu işlem Geri Dönüşüm Kutusu'nu tamamen boşaltacaktır ve geri alınamaz.\n\n" +
-                "Devam etmek istediğinizden emin misiniz?",
-                "Geri Dönüşüm Kutusu - Son Onay",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning);
-
-            if (recycleBinConfirm != MessageBoxResult.Yes)
-            {
-                AddLog("Geri Dönüşüm Kutusu boşaltma işlemi kullanıcı tarafından vazgeçildi.");
-                return;
-            }
-        }
-
-        var activeRulesForLockCheck = AllRules
-            .Where(rule => DiscoveredFiles.Any(file => file.IsSelected && file.RuleId == rule.Id))
-            .ToList();
-        var lockSpecs = ProcessLockGuardService.ResolveTargetProcessSpecsForCleanerRules(activeRulesForLockCheck);
-        var lockConflicts = ProcessLockGuardService.DetectRunningConflicts(lockSpecs);
-        if (lockConflicts.Count > 0)
-        {
-            string lockList = string.Join("\n", lockConflicts.Select(g => $"• {g.FriendlyName} ({g.RunningInstanceCount} işlem)"));
-            var lockPrompt = MessageBox.Show(
-                $"Temizlenecek önbellekleri şu anda kullanan açık uygulamalar tespit edildi:\n\n{lockList}\n\n" +
-                "• Evet: Bu uygulamaları güvenle kapatıp tüm kilitli dosyaları temizle\n" +
-                "• Hayır: Uygulamaları kapatmadan devam et (kilitli dosyalar atlanır)\n" +
-                "• İptal: Temizliği durdur",
-                "Akıllı Süreç Koruması (Process Lock Guard)",
-                MessageBoxButton.YesNoCancel,
-                MessageBoxImage.Warning);
-
-            if (lockPrompt == MessageBoxResult.Cancel)
-            {
-                AddLog("Temizlik kilitli süreç uyarısı üzerine kullanıcı tarafından iptal edildi.");
-                return;
-            }
-
-            if (lockPrompt == MessageBoxResult.Yes)
-            {
-                StatusMessage = "Kilitli tarayıcı / uygulamalar güvenle kapatılıyor...";
-                var (closedCount, notes) = await ProcessLockGuardService.TryCloseProcessGroupsAsync(lockConflicts);
-                AddLog($"[SÜREÇ KORUMASI] {closedCount} çalışan süreç kapatıldı.");
-                foreach (string note in notes)
-                    AddLog($"[SÜREÇ KORUMASI] {note}");
-            }
-        }
-
-        IsBusy = true;
-        ProgressPercent = 0;
-        LastFreedBytes = 0;
-        LastDeletedFiles = 0;
-        StatusMessage = "Temizlik işlemi yürütülüyor...";
-        AddLog($"Temizlik başlatıldı ({selectedCount:N0} öğe, {selectedSize})...");
-
-        _cts = new CancellationTokenSource();
-        var progress = new Progress<(int Percent, string CurrentFile, long FreedBytes, int DeletedCount)>(report =>
-        {
-            ProgressPercent = report.Percent;
-            CurrentOperationDetail = $"Temizleniyor: {report.CurrentFile}";
-            LastFreedBytes = report.FreedBytes;
-            LastDeletedFiles = report.DeletedCount;
-        });
-
-        try
-        {
-            var summary = await _engine.CleanAsync(
-                DiscoveredFiles,
-                AllRules,
-                UseRecycleBinSafety,
-                progress,
-                _cts.Token);
-
-            LastFreedBytes = summary.FreedBytes;
-            LastDeletedFiles = summary.DeletedFilesCount;
-            RecordCleanupHistory("Akıllı Temizlik", summary.FreedBytes, summary.DeletedFilesCount);
-
-            var remaining = DiscoveredFiles
-                .Where(x => x.Status is not ("Silindi" or "Boşaltıldı" or "Zaten Silinmiş" or "Geri Dönüşüm'e Taşındı"))
-                .ToList();
-
-            DiscoveredFiles.Clear();
-            foreach (var rem in remaining)
-                DiscoveredFiles.Add(rem);
-
-            RecalculateSelectedTotals();
-            ProgressPercent = 100;
-
-            StatusMessage = $"Temizlik tamamlandı! {summary.DeletedFilesCount:N0} dosya silindi, {CleanerRule.FormatBytes(summary.FreedBytes)} alan açıldı.";
-            CurrentOperationDetail = summary.SkippedFilesCount > 0
-                ? $"Süre: {summary.Elapsed.TotalSeconds:F1} sn • {summary.SkippedFilesCount:N0} kilitli/kullanımda olan dosya güvenle atlandı."
-                : $"Süre: {summary.Elapsed.TotalSeconds:F1} sn • Tüm seçili öğeler başarıyla temizlendi.";
-
-            AddLog($"[TAMAMLANDI] {CleanerRule.FormatBytes(summary.FreedBytes)} boş alan kazanıldı ({summary.DeletedFilesCount:N0} silindi, {summary.SkippedFilesCount:N0} kilitli dosya atlandı).");
-            foreach (var detail in summary.Logs.Where(log => log.StartsWith("[ATLANDI]", StringComparison.Ordinal)).Take(20))
-                AddLog(detail);
-        }
-        catch (OperationCanceledException)
-        {
-            StatusMessage = "Temizleme işlemi durduruldu.";
-            AddLog("Temizleme işlemi kullanıcı tarafından durduruldu.");
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Temizleme hatası: {ex.Message}";
-            AddLog($"[HATA] {ex.Message}");
-        }
-        finally
-        {
-            IsBusy = false;
-            RefreshSystemMetrics();
-        }
-    }
-
-    // ==================== 6. SYSTEM BOOSTER (RAM & DNS) & REPORTS ====================
-
-    private void LoadTopMemoryProcesses()
-    {
-        TopMemoryProcesses.Clear();
-        foreach (var proc in SystemBoosterAndReportService.GetTopMemoryProcesses(15))
-        {
-            TopMemoryProcesses.Add(proc);
-        }
-    }
-
-    private async Task RunOptimizeRamAsync()
-    {
-        IsBusy = true;
-        StatusMessage = "Arka plan işlemlerinin kullanılmayan bellek (Working Set) blokları serbest bırakılıyor...";
-        try
-        {
-            var (freedBytes, count) = await SystemBoosterAndReportService.OptimizeRamWorkingSetAsync();
-            RefreshSystemMetrics();
-            LoadTopMemoryProcesses();
-
-            string freedText = CleanerRule.FormatBytes(freedBytes);
-            StatusMessage = $"RAM Optimizasyonu Tamamlandı: {count} süreç optimize edildi, {freedText} bellek serbest bırakıldı.";
-            AddLog($"[RAM HIZLANDIRICI] {count} işlem optimize edildi, {freedText} RAM boşaltıldı.");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task RunFlushDnsAsync()
-    {
-        IsBusy = true;
-        try
-        {
-            var (ok, msg) = await SystemBoosterAndReportService.FlushDnsCacheAsync();
-            StatusMessage = $"DNS Önbelleği Temizlendi: {msg}";
-            AddLog($"[AĞ OPTİMİZASYONU] ipconfig /flushdns -> {msg}");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private async Task RunResetNetCacheAsync()
-    {
-        IsBusy = true;
-        try
-        {
-            var (_, msg) = await SystemBoosterAndReportService.ShowArpAndNetStatsAsync();
-            StatusMessage = $"Ağ Hedef Önbelleği Sıfırlandı: {msg}";
-            AddLog($"[AĞ OPTİMİZASYONU] {msg}");
-        }
-        finally
-        {
-            IsBusy = false;
-        }
-    }
-
-    private void ExportHtmlAndJsonReports()
-    {
-        try
-        {
-            long lifetimeFreed = CleanupHistoryService.GetTotalLifetimeFreedBytes(CleanupHistoryService.LoadHistory());
-            var (htmlPath, jsonPath) = SystemBoosterAndReportService.ExportDiagnosticReports(
-                SystemMetrics,
-                AllRules,
-                LastFreedBytes,
-                LastDeletedFiles,
-                ActivityLogs,
-                HealthScore,
-                HealthGradeBadge,
-                lifetimeFreed,
-                RecentCleanupBars.ToList());
-
-            StatusMessage = $"HTML ve JSON raporları Masaüstü\\FreeCleaner_Raporlar klasörüne kaydedildi.";
-            AddLog($"[RAPOR] HTML Raporu: {htmlPath}");
-            AddLog($"[RAPOR] JSON Raporu: {jsonPath}");
-
-            var openRes = MessageBox.Show(
-                $"Raporlar başarıyla oluşturuldu:\n\n• HTML: {htmlPath}\n• JSON: {jsonPath}\n\nHTML raporunu şimdi tarayıcıda açmak ister misiniz?",
-                "Rapor Dışa Aktarıldı",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Information);
-
-            if (openRes == MessageBoxResult.Yes)
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = htmlPath,
-                    UseShellExecute = true
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Rapor oluşturulamadı: {ex.Message}", "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
-    // ==================== 7. EXCLUSIONS & AUTO MONITOR ====================
-
-    private void AddNewExclusion()
-    {
-        string trimmed = NewExclusionInput.Trim();
-        if (string.IsNullOrWhiteSpace(trimmed)) return;
-
-        if (!ExcludedPaths.Contains(trimmed, StringComparer.OrdinalIgnoreCase))
-        {
-            ExcludedPaths.Add(trimmed);
-            NewExclusionInput = string.Empty;
-            SaveCurrentSettings();
-            AddLog($"[BEYAZ LİSTE] Yeni istisna eklendi: {trimmed}");
-        }
-    }
-
-    private void BrowseAndAddExclusionFolder()
-    {
-        var dlg = new Microsoft.Win32.OpenFolderDialog
-        {
-            Title = "Beyaz Listeye (Koruma Altına) Eklenecek Klasörü Seçin"
-        };
-        if (dlg.ShowDialog() == true && !string.IsNullOrWhiteSpace(dlg.FolderName))
-        {
-            if (!ExcludedPaths.Contains(dlg.FolderName, StringComparer.OrdinalIgnoreCase))
-            {
-                ExcludedPaths.Add(dlg.FolderName);
-                SaveCurrentSettings();
-                AddLog($"[BEYAZ LİSTE] Klasör korumaya alındı: {dlg.FolderName}");
-            }
-        }
-    }
-
-    private void SaveCurrentSettings()
-    {
-        ExclusionAndSettingsService.Save(BuildCurrentConfigSnapshot());
-    }
-
-    private async Task CheckAutoMonitorThresholdAsync()
-    {
-        if (IsBusy || !AutoMonitorEnabled) return;
-        try
-        {
-            var results = await _engine.AnalyzeAsync(AllRules, ExcludedPaths.ToList());
-            long totalBytes = results.Sum(x => x.SizeBytes);
-            long thresholdBytes = AutoMonitorThresholdMb * 1024L * 1024L;
-            if (totalBytes >= thresholdBytes)
-            {
-                string msg = $"Sistemde {CleanerRule.FormatBytes(totalBytes)} gereksiz dosya birikti!";
-                StatusMessage = $"[OTOMATİK İZLEME] {msg}";
-                AddLog($"[OTOMATİK UYARI] Eşik ({AutoMonitorThresholdMb} MB) aşıldı: {CleanerRule.FormatBytes(totalBytes)} çöp tespit edildi.");
-                TrayNotificationRequested?.Invoke("FreeCleaner Pro — Çöp Dosya Uyarısı", msg, true);
-            }
-        }
-        catch (Exception ex)
-        {
-            ErrorLogService.Log("Otomatik izleme", ex);
-        }
-    }
-
-    public async Task RunScheduledMaintenanceAsync(bool closeWhenFinished = false)
-    {
-            var safeRules = AllRules
-                .Where(rule => rule.IsSelected && rule.Risk == RiskLevel.Low)
-                .ToList();
-            if (safeRules.Count == 0)
-            {
-                if (closeWhenFinished)
-                    Application.Current.Shutdown();
-                return;
-            }
-
-            _lastScheduledMaintenanceUtc = DateTime.UtcNow;
-            try
-            {
-                StatusMessage = "Zamanlanmış güvenli bakım için düşük riskli öğeler taranıyor...";
-                var results = await _engine.AnalyzeAsync(safeRules, ExcludedPaths.ToList());
-                if (results.Count == 0)
-                {
-                    AddLog("[ZAMANLI BAKIM] Düşük riskli temizlenecek öğe bulunamadı.");
-                    return;
-                }
-
-                var confirm = MessageBox.Show(
-                    $"Zamanlanmış güvenli bakımda {results.Count:N0} düşük riskli öğe " +
-                    $"({CleanerRule.FormatBytes(results.Sum(item => item.SizeBytes))}) bulundu.\n\n" +
-                    "Öğeler Geri Dönüşüm Kutusu'na taşınacak. Devam edilsin mi?",
-                    "Zamanlanmış Güvenli Bakım",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
-
-                if (confirm != MessageBoxResult.Yes)
-                {
-                    AddLog("[ZAMANLI BAKIM] Kullanıcı temizliği onaylamadı.");
-                    return;
-                }
-
-                var summary = await _engine.CleanAsync(results, safeRules, moveToRecycleBinInsteadOfPermanentDelete: true);
-                AddLog($"[ZAMANLI BAKIM] {summary.DeletedFilesCount:N0} öğe Geri Dönüşüm Kutusu'na taşındı, " +
-                       $"{CleanerRule.FormatBytes(summary.FreedBytes)} alan işlendi.");
-            }
-            catch (OperationCanceledException)
-            {
-                AddLog("[ZAMANLI BAKIM] İşlem iptal edildi.");
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Zamanlanmış bakım hatası: {ex.Message}";
-                AddLog($"[ZAMANLI BAKIM][HATA] {ex.Message}");
-            }
-            finally
-            {
-                if (closeWhenFinished)
-                    Application.Current.Shutdown();
-            }
-        }
-
-    private async Task CheckScheduledMaintenanceAsync()
-    {
-        if (IsBusy || !ScheduledMaintenanceEnabled)
-            return;
-
-        if (DateTime.UtcNow - _lastScheduledMaintenanceUtc < TimeSpan.FromHours(ScheduledMaintenanceIntervalHours))
-            return;
-
-        await RunScheduledMaintenanceAsync();
-    }
-
-    private void InstallScheduledMaintenance()
-    {
-        var result = ScheduledMaintenanceService.Install(ScheduledMaintenanceIntervalHours);
-        StatusMessage = result.Message;
-        AddLog($"[ZAMANLI BAKIM] {result.Message}");
-        if (!result.Success)
-            MessageBox.Show(result.Message, "Zamanlanmış Bakım", MessageBoxButton.OK, MessageBoxImage.Warning);
-    }
-
-    private void RemoveScheduledMaintenance()
-    {
-        var result = ScheduledMaintenanceService.Remove();
-        StatusMessage = result.Message;
-        AddLog($"[ZAMANLI BAKIM] {result.Message}");
-        if (!result.Success)
-            MessageBox.Show(result.Message, "Zamanlanmış Bakım", MessageBoxButton.OK, MessageBoxImage.Warning);
-        }
-
 
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)

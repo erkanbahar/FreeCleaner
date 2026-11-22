@@ -136,6 +136,10 @@ public partial class MainWindow : Window
         if (_trayService is not null)
             return;
 
+        Microsoft.Win32.SystemEvents.UserPreferenceChanged += SystemEvents_UserPreferenceChanged;
+
+        bool launchedMinimized = _startMinimizedToTray;
+
         _trayService = new SystemTrayService(
             showWindowAction: RestoreWindowFromTray,
             optimizeRamAction: () =>
@@ -203,7 +207,26 @@ public partial class MainWindow : Window
                 _restoreMaximizedOnLoad = false;
                 WindowState = WindowState.Maximized;
             }
+
+            if (!launchedMinimized)
+                _ = viewModel.RunSilentStartupUpdateCheckAsync();
         }
+    }
+
+    private void SystemEvents_UserPreferenceChanged(object sender, Microsoft.Win32.UserPreferenceChangedEventArgs e)
+    {
+        if (e.Category != Microsoft.Win32.UserPreferenceCategory.General)
+            return;
+
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (DataContext is MainViewModel vm &&
+                vm.SelectedTheme.Equals(ThemeManagerService.SystemAutoThemeKey, StringComparison.OrdinalIgnoreCase))
+            {
+                ThemeManagerService.ApplyTheme(vm.SelectedTheme);
+                ApplyDwmThemePolish();
+            }
+        });
     }
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
@@ -225,6 +248,7 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
+        Microsoft.Win32.SystemEvents.UserPreferenceChanged -= SystemEvents_UserPreferenceChanged;
         _trayService?.Dispose();
         _trayService = null;
     }

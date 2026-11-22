@@ -1,0 +1,38 @@
+name: Bug Report / Hata Bildirimi
+description: Report a crash, unexpected behavior, or localization issue in FreeCleaner Pro
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thank you for reporting an issue in FreeCleaner Pro. Please avoid pasting private tokens, API keys, or personal paths without reviewing redacted logs first.
+  - type: input
+    id: version
+    attributes:
+      label: FreeCleaner Version
+      placeholder: e.g. v4.5.0 (Portable / Setup / USB)
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Windows Version
+      placeholder: e.g. Windows 11 24H2 (x64)
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: |
+        1. Open module ...
+        2. Click ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized Crash / Error Log (Optional)
+      description: You can export a redacted Support Bundle (.zip) from Settings or copy from crashes/crash-*.log.
+      render: text

@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability (Private Disclosure)
+    url: https://github.com/erkanbahar/FreeCleaner/security/advisories/new
+    about: Report security vulnerabilities privately instead of opening a public issue.

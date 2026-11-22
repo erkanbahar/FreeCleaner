@@ -33,7 +33,8 @@ public static class WindowsShellVisualService
             int cornerPref = DWMWCP_ROUND;
             _ = DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref cornerPref, sizeof(int));
 
-            int useDarkMode = !string.Equals(themeName, "FluentLight", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+            string effectiveTheme = ThemeManagerService.ResolveEffectiveThemeKey(themeName);
+            int useDarkMode = !string.Equals(effectiveTheme, "FluentLight", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
             _ = DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref useDarkMode, sizeof(int));
         }
         catch

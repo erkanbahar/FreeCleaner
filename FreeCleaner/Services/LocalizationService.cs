@@ -1,4 +1,5 @@
 using System.Windows;
+using FreeCleaner.Models;
 
 namespace FreeCleaner.Services;
 
@@ -817,7 +818,14 @@ public static class LocalizationService
         ["Loc_M_DefQuickScanBtn"] = "🛡️ Hızlı Tarama Başlat (QuickScan)",
         ["Loc_M_PrioNormBtn"] = "🟢 Normal",
         ["Loc_M_NetAdpDnsArpBtn"] = "🧹 DNS & ARP Önbelleğini Sıfırla (arp -d *)",
-        ["Loc_M_ClipClearBtn"] = "🧹 Panoyu Tamamen Sıfırla"
+        ["Loc_M_ClipClearBtn"] = "🧹 Panoyu Tamamen Sıfırla",
+        ["Loc_SettingsAutoUpdateCheck"] = "Açılışta günlük sessiz güncelleme kontrolü yap",
+        ["Loc_SettingsThemeSystemAutoHint"] = "SystemAuto seçildiğinde Windows Açık/Koyu tema değişikliği canlı izlenir.",
+        ["Loc_RegistryDeleteSelBackupsBtn"] = "🗑️ Seçili Yedekleri Sil",
+        ["Loc_RegistryPruneBackupsBtn"] = "🧹 Eski Yedekleri Budama",
+        ["Loc_ToastDismissTip"] = "Bildirimi Kapat",
+        ["Loc_ToastOpenUpdatesBtn"] = "Güncellemeyi Gör",
+        ["Loc_ToastOpenFolderBtn"] = "Klasörü Aç"
     };
 
     private static readonly Dictionary<string, string> EnStrings = new(StringComparer.Ordinal)
@@ -1620,7 +1628,14 @@ public static class LocalizationService
         ["Loc_M_DefQuickScanBtn"] = "🛡️ Start Defender QuickScan",
         ["Loc_M_PrioNormBtn"] = "🟢 Normal",
         ["Loc_M_NetAdpDnsArpBtn"] = "🧹 Flush DNS & ARP Cache (arp -d *)",
-        ["Loc_M_ClipClearBtn"] = "🧹 Clear Clipboard"
+        ["Loc_M_ClipClearBtn"] = "🧹 Clear Clipboard",
+        ["Loc_SettingsAutoUpdateCheck"] = "Silently check for updates daily on startup",
+        ["Loc_SettingsThemeSystemAutoHint"] = "SystemAuto automatically follows Windows Light/Dark mode in real time.",
+        ["Loc_RegistryDeleteSelBackupsBtn"] = "🗑️ Delete Selected Backups",
+        ["Loc_RegistryPruneBackupsBtn"] = "🧹 Prune Old Backups",
+        ["Loc_ToastDismissTip"] = "Dismiss Notification",
+        ["Loc_ToastOpenUpdatesBtn"] = "View Update",
+        ["Loc_ToastOpenFolderBtn"] = "Open Folder"
     };
 
     public static IReadOnlyCollection<string> GetAllKeys(string? langCode)
@@ -1641,6 +1656,232 @@ public static class LocalizationService
         if (dict.TryGetValue(key, out string? value))
             return value;
         return TrStrings.TryGetValue(key, out string? fallback) ? fallback : key;
+    }
+
+    public static string GetText(string turkish, string english, string? langOverride = null)
+        => IsEnglish(langOverride ?? CurrentLanguage) ? english : turkish;
+
+    private sealed record LocalizedRuleCopy(
+        string TrName,
+        string TrCategory,
+        string TrDescription,
+        string? TrWarning,
+        string EnName,
+        string EnCategory,
+        string EnDescription,
+        string? EnWarning);
+
+    private static readonly Dictionary<string, LocalizedRuleCopy> RuleTranslations = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["sys_user_temp"] = new(
+            "Kullanıcı Geçici Dosyaları (User Temp)",
+            "Sistem Temizleyici",
+            "Uygulamaların oluşturduğu geçici çalışma dosyaları (%TEMP%)",
+            null,
+            "User Temporary Files (%TEMP%)",
+            "System Cleaner",
+            "Temporary working files created by user applications (%TEMP%)",
+            null),
+        ["sys_win_temp"] = new(
+            "Windows Geçici Dosyaları (Windows Temp)",
+            "Sistem Temizleyici",
+            "Windows işletim sistemi geçici klasörü (C:\\Windows\\Temp)",
+            null,
+            "Windows Temporary Files (Windows Temp)",
+            "System Cleaner",
+            "Windows operating system temporary directory (C:\\Windows\\Temp)",
+            null),
+        ["sys_recycle_bin"] = new(
+            "Geri Dönüşüm Kutusu (Recycle Bin)",
+            "Sistem Temizleyici",
+            "Silinmiş ancak diskte hâlâ yer kaplayan Geri Dönüşüm Kutusu öğeleri",
+            null,
+            "Windows Recycle Bin",
+            "System Cleaner",
+            "Deleted files still occupying space in the Recycle Bin",
+            null),
+        ["sys_thumb_cache"] = new(
+            "Küçük Resim Önbelleği (Thumbnail Cache)",
+            "Windows Gezgini",
+            "Windows Gezgini küçük resim önbellek veritabanları (thumbcache_*.db)",
+            null,
+            "Thumbnail Cache Databases",
+            "Windows Explorer",
+            "Windows Explorer thumbnail cache databases (thumbcache_*.db)",
+            null),
+        ["sys_crash_dumps"] = new(
+            "Hata Dökümleri ve Raporları (Crash Dumps & WER)",
+            "Sistem Tanılama",
+            "Uygulama çökme dökümleri (CrashDumps) ve Windows Hata Raporlama (WER) kayıtları",
+            null,
+            "Crash Dumps & Error Reports (WER)",
+            "System Diagnostics",
+            "Application crash dumps (CrashDumps) and Windows Error Reporting (WER) archives",
+            null),
+        ["sys_win_logs"] = new(
+            "Windows Güncelleme & Sistem Logları",
+            "Sistem Bakımı",
+            "Windows Update indirme önbelleği ve CBS/DISM günlük dosyaları",
+            null,
+            "Windows Update Cache & System Logs",
+            "System Maintenance",
+            "Windows Update SoftwareDistribution download cache and CBS/DISM log files",
+            null),
+        ["sys_recent_docs"] = new(
+            "Son Kullanılan Belgeler Kısayolları",
+            "Windows Gezgini",
+            "Hızlı erişim ve son açılan dosya kısayol geçmişi (*.lnk)",
+            "Son kullanılan belge kısayolları silinecek; bu işlem Windows geçmiş görünümünü etkiler.",
+            "Recent Documents Shortcuts (*.lnk)",
+            "Windows Explorer",
+            "Quick Access and recently opened file shortcut history (*.lnk)",
+            "Recent document shortcuts will be removed; this resets recent history links."),
+        ["sys_prefetch"] = new(
+            "Windows Prefetch Verileri",
+            "Sistem İleri Düzey",
+            "Windows uygulama ön yükleme önbelleği (Yönetici izni gerektirir)",
+            null,
+            "Windows Prefetch Cache",
+            "Advanced System",
+            "Windows application pre-loading trace cache (Requires Administrator)",
+            null),
+        ["brw_chrome_cache"] = new(
+            "Google Chrome - Önbellek & Code Cache",
+            "Google Chrome",
+            "Chrome web sayfası önbelleği, GPUCache ve JavaScript Code Cache dosyaları",
+            null,
+            "Google Chrome - Web & Code Cache",
+            "Google Chrome",
+            "Chrome web cache, GPUCache, Service Worker, and JavaScript Code Cache files",
+            null),
+        ["brw_chrome_cookies"] = new(
+            "Google Chrome - Çerezler (Cookies)",
+            "Google Chrome",
+            "Sitelerdeki oturumlarınızı kapatabilir (İsteğe bağlı)",
+            "Chrome çerezlerini silmek açık web sitesi oturumlarınızdan çıkış yapılmasına neden olur.",
+            "Google Chrome - Cookies (Sessions)",
+            "Google Chrome",
+            "Site session cookies — clearing signs you out of websites (Optional)",
+            "Clearing Chrome cookies will sign you out of active website sessions."),
+        ["brw_edge_cache"] = new(
+            "Microsoft Edge - Önbellek & Code Cache",
+            "Microsoft Edge",
+            "Edge tarayıcı önbelleği, GPUCache ve Service Worker önbellekleri",
+            null,
+            "Microsoft Edge - Web & Code Cache",
+            "Microsoft Edge",
+            "Edge browser cache, GPUCache, and Service Worker caches",
+            null),
+        ["brw_edge_cookies"] = new(
+            "Microsoft Edge - Çerezler (Cookies)",
+            "Microsoft Edge",
+            "Edge web oturumu çerez veritabanları (İsteğe bağlı)",
+            "Edge çerezlerini silmek açık web sitesi oturumlarınızdan çıkış yapılmasına neden olur.",
+            "Microsoft Edge - Cookies (Sessions)",
+            "Microsoft Edge",
+            "Edge website session cookie databases (Optional)",
+            "Clearing Edge cookies will sign you out of active website sessions."),
+        ["brw_brave_cache"] = new(
+            "Brave Browser - Önbellek & Code Cache",
+            "Brave / Opera / Vivaldi",
+            "Brave, Opera ve Vivaldi Chromium tabanlı tarayıcı önbellekleri",
+            null,
+            "Brave / Opera / Vivaldi - Web Cache",
+            "Brave / Opera / Vivaldi",
+            "Chromium-based caches for Brave, Opera, and Vivaldi browsers",
+            null),
+        ["brw_firefox_cache"] = new(
+            "Mozilla Firefox - Tarayıcı Önbelleği",
+            "Mozilla Firefox",
+            "Firefox profillerindeki cache2 ve startupCache geçici verileri",
+            null,
+            "Mozilla Firefox - Browser Cache",
+            "Mozilla Firefox",
+            "Temporary cache2, startupCache, and jumpListCache across Firefox profiles",
+            null),
+        ["brw_ondevice_ai_models"] = new(
+            "Tarayıcı Yerel AI Modelleri (Chrome Gemini Nano / Edge Phi)",
+            "Tarayıcı AI Modelleri",
+            "Chrome, Edge, Brave, Vivaldi ve Opera'nın arka planda indirdiği 2–4 GB cihaz içi AI modelleri (OptGuideOnDeviceModel / weights.bin)",
+            null,
+            "Browser On-Device AI Models (Gemini Nano / Edge Phi)",
+            "Browser AI Models",
+            "2–4 GB background-downloaded browser AI weights (OptGuideOnDeviceModel / weights.bin) for Chrome, Edge, Brave, Vivaldi, and Opera",
+            null),
+        ["app_vscode_cache"] = new(
+            "VS Code & Cursor Önbellekleri",
+            "Geliştirici Araçları",
+            "VS Code ve Cursor IDE CachedData, GPUCache ve log dosyaları",
+            null,
+            "VS Code & Cursor IDE Caches",
+            "Developer Tools",
+            "VS Code and Cursor IDE CachedData, GPUCache, and log directories",
+            null),
+        ["app_comm_cache"] = new(
+            "Discord, Slack & Microsoft Teams Önbelleği",
+            "Uygulama Önbellekleri",
+            "İletişim uygulamalarının medya, GPU ve web önbellekleri",
+            null,
+            "Discord, Slack & Microsoft Teams Caches",
+            "Application Caches",
+            "Media, GPU, and web caches for communication apps",
+            null),
+        ["app_dotnet_npm_cache"] = new(
+            "NuGet & NPM HTTP Geçici Önbelleği",
+            "Geliştirici Araçları",
+            "NuGet v3-cache ve npm _cacache indirilen paket önbellekleri",
+            null,
+            "NuGet & NPM HTTP Download Caches",
+            "Developer Tools",
+            "NuGet v3-cache and npm _cacache downloaded package caches",
+            null),
+        ["app_vs_debug_retail"] = new(
+            "Visual Studio Projeleri (Debug & Retail / Release)",
+            "Visual Studio & .NET",
+            "C:\\CURSOR ve Repos içindeki Visual Studio projelerinin Debug, Retail, Release, bin ve obj klasörleri",
+            "Seçili klasörlerdeki Visual Studio projelerinin Debug ve Retail/Release derleme çıktıları temizlenecektir.",
+            "Visual Studio Builds (Debug / Retail / Release)",
+            "Visual Studio & .NET",
+            "Debug, Retail, and Release build output directories under Visual Studio project roots",
+            "Compiled Debug and Retail/Release build outputs in scanned project folders will be removed."),
+        ["app_directx_shader"] = new(
+            "DirectX & GPU Shader Önbelleği",
+            "Grafik & Oyun",
+            "Direct3D (D3DSCache) derlenmiş gölgelendirici önbelleği",
+            null,
+            "DirectX & GPU Shader Cache",
+            "Graphics & Gaming",
+            "Compiled Direct3D shader cache (D3DSCache)",
+            null)
+    };
+
+    public static void ApplyRuleLocalization(IEnumerable<CleanerRule> rules, string? langOverride = null)
+    {
+        ArgumentNullException.ThrowIfNull(rules);
+        string normalized = NormalizeLanguageCode(langOverride ?? CurrentLanguage);
+        bool en = normalized == "en-US";
+
+        foreach (CleanerRule rule in rules)
+        {
+            if (RuleTranslations.TryGetValue(rule.Id, out LocalizedRuleCopy? copy))
+            {
+                rule.ApplyLocalizedMetadata(
+                    name: en ? copy.EnName : copy.TrName,
+                    category: en ? copy.EnCategory : copy.TrCategory,
+                    description: en ? copy.EnDescription : copy.TrDescription,
+                    warningMessage: en ? copy.EnWarning : copy.TrWarning,
+                    languageCode: normalized);
+            }
+            else
+            {
+                rule.ApplyLocalizedMetadata(
+                    rule.Name,
+                    rule.Category,
+                    rule.Description,
+                    rule.WarningMessage,
+                    normalized);
+            }
+        }
     }
 
     public static void ApplyLanguage(string? languageCode)

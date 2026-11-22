@@ -47,7 +47,7 @@ jobs:
         shell: pwsh
         run: |
           $tag = $env:GITHUB_REF_NAME
-          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v4.4.0" }
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v4.5.0" }
           $ver = $tag.TrimStart('v', 'V')
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           New-Item -ItemType Directory -Force -Path release_usb | Out-Null
@@ -85,7 +85,20 @@ jobs:
             $sums += "$setupHash  $setupName"
           }
           $sums | Set-Content -Path "dist/SHA256SUMS.txt" -Encoding UTF8
-          Write-Host "Packaged portable archives, setup installer & SHA256SUMS"
+
+          $wingetStage = "dist/winget"
+          New-Item -ItemType Directory -Force -Path $wingetStage | Out-Null
+          $exeHashUpper = $exeHash.ToUpperInvariant()
+          foreach ($manifest in Get-ChildItem "installer/winget/*.yaml") {
+            $content = (Get-Content -Path $manifest.FullName -Raw -Encoding UTF8) `
+              -replace 'REPLACE_WITH_RELEASE_SHA256', $exeHashUpper `
+              -replace '4\.5\.0', $ver `
+              -replace 'v4\.5\.0', $tag
+            Set-Content -Path (Join-Path $wingetStage $manifest.Name) -Value $content -Encoding UTF8 -NoNewline
+          }
+          $wingetZipPath = "dist/FreeCleaner-Winget-Manifests-$tag.zip"
+          Compress-Archive -Path "$wingetStage/*.yaml" -DestinationPath $wingetZipPath -Force
+          Write-Host "Packaged portable archives, setup installer, Winget manifests & SHA256SUMS"
 
       - name: Upload Artifacts & Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -95,5 +108,6 @@ jobs:
             dist/FreeCleaner-Portable-win-x64-*.zip
             dist/FreeCleaner-Portable-USB-win-x64-*.zip
             dist/FreeCleaner-Setup-win-x64-*.exe
+            dist/FreeCleaner-Winget-Manifests-*.zip
             dist/SHA256SUMS.txt
             release_out/FreeCleaner.exe

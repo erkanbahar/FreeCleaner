@@ -22,16 +22,21 @@ public partial class MainViewModel
             {
                 _selectedLanguage = normalized;
                 LocalizationService.ApplyLanguage(_selectedLanguage);
+                LocalizationService.ApplyRuleLocalization(AllRules, _selectedLanguage);
+                FilteredRulesView.Refresh();
+                RefreshExplorerContextMenuStatus();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(SectionTitle));
                 OnPropertyChanged(nameof(AdminStatusBadge));
                 OnPropertyChanged(nameof(FavoriteButtonText));
+                OnPropertyChanged(nameof(ActiveDataDirectoryDisplay));
                 PopulateModuleCatalog();
                 RebuildFavoriteNavItems();
                 SaveCurrentSettings();
                 StatusMessage = _selectedLanguage == "en-US"
                     ? "Language switched to English (en-US)."
                     : "Uygulama dili Türkçe (tr-TR) olarak güncellendi.";
+                ShowToast("FreeCleaner Pro", StatusMessage, ToastSeverity.Info, durationSeconds: 4);
                 AddLog($"[DİL / LANGUAGE] Arayüz dili '{_selectedLanguage}' olarak değiştirildi.");
             }
         }
@@ -483,6 +488,7 @@ public partial class MainViewModel
 
             if (result.IsUpdateAvailable)
             {
+                HasPendingUpdate = true;
                 TrayNotificationRequested?.Invoke("FreeCleaner Pro — Güncelleme Mevcut", result.StatusMessage, false);
                 if (!string.IsNullOrWhiteSpace(_latestDownloadAssetUrl))
                 {
@@ -507,6 +513,14 @@ public partial class MainViewModel
                     if (ask == MessageBoxResult.Yes)
                         OpenUrlSafe(result.ReleaseUrl);
                 }
+            }
+            else
+            {
+                HasPendingUpdate = false;
+                ShowToast(
+                    LocalizationService.GetText("Güncelleme Kontrolü", "Update Check", _selectedLanguage),
+                    result.StatusMessage,
+                    result.Success ? ToastSeverity.Success : ToastSeverity.Warning);
             }
         }
         finally

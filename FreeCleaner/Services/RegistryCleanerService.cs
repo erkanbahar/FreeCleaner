@@ -200,10 +200,7 @@ public static class RegistryCleanerService
         if (items.Count == 0)
             throw new InvalidOperationException("Yedeklenecek registry kaydı bulunamadı.");
 
-        string backupDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "FreeCleaner",
-            "RegistryBackups");
+        string backupDir = AppStoragePathsService.GetRegistryBackupsDirectory();
 
         Directory.CreateDirectory(backupDir);
         string filePath = Path.Combine(backupDir, $"FreeCleaner_RegBackup_{DateTime.Now:yyyyMMdd_HHmmss}.reg");
@@ -267,10 +264,7 @@ public static class RegistryCleanerService
 
     public static string? GetLatestBackupFile()
     {
-        string backupDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "FreeCleaner",
-            "RegistryBackups");
+        string backupDir = AppStoragePathsService.GetRegistryBackupsDirectory();
         return Directory.Exists(backupDir)
             ? Directory.EnumerateFiles(backupDir, "*.reg")
                 .OrderByDescending(File.GetLastWriteTimeUtc)

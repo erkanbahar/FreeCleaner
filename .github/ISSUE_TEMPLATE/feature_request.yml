@@ -1,0 +1,17 @@
+name: Feature Request / Özellik İsteği
+description: Propose a new module, cleaner rule, or usability improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Feature Description
+      placeholder: Describe what you would like to add or improve in FreeCleaner Pro.
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Safety & Portable Considerations (Optional)
+      placeholder: Mention any Windows paths, admin requirements, or safety risks to watch for.

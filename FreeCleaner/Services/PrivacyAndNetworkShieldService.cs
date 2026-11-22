@@ -378,60 +378,69 @@ public static class PrivacyAndNetworkShieldService
 
     public static List<HostsEntryItem> LoadHostsFileEntries()
     {
-        var entries = new List<HostsEntryItem>();
         string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
         if (!File.Exists(hostsPath))
-            return entries;
+            return [];
 
         try
         {
-            foreach (string rawLine in File.ReadAllLines(hostsPath))
-            {
-                string line = rawLine.Trim();
-                if (string.IsNullOrWhiteSpace(line)) continue;
-
-                // Pure comment header lines
-                if (line.StartsWith('#'))
-                {
-                    string uncommented = line.TrimStart('#').Trim();
-                    string[] tokens = uncommented.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
-                    if (tokens.Length >= 2 && (tokens[0].Contains('.') || tokens[0].Contains(':')))
-                    {
-                        entries.Add(new HostsEntryItem
-                        {
-                            IsEnabled = false,
-                            IpAddress = tokens[0],
-                            Hostname = tokens[1],
-                            Comment = tokens.Length > 2 ? string.Join(" ", tokens.Skip(2)) : "Devre dışı kural"
-                        });
-                    }
-                    continue;
-                }
-
-                string comment = string.Empty;
-                int hashIdx = line.IndexOf('#');
-                if (hashIdx > 0)
-                {
-                    comment = line[(hashIdx + 1)..].Trim();
-                    line = line[..hashIdx].Trim();
-                }
-
-                string[] parts = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 2)
-                {
-                    entries.Add(new HostsEntryItem
-                    {
-                        IsEnabled = true,
-                        IpAddress = parts[0],
-                        Hostname = parts[1],
-                        Comment = comment
-                    });
-                }
-            }
+            return ParseHostsLines(File.ReadAllLines(hostsPath));
         }
         catch (Exception ex)
         {
             ErrorLogService.Log("Hosts okuma", ex);
+            return [];
+        }
+    }
+
+    public static List<HostsEntryItem> ParseHostsLines(IEnumerable<string> rawLines)
+    {
+        var entries = new List<HostsEntryItem>();
+        foreach (string rawLine in rawLines)
+        {
+            string line = rawLine.Trim();
+            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            if (line.StartsWith('#'))
+            {
+                string uncommented = line.TrimStart('#').Trim();
+                string[] tokens = uncommented.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
+                if (tokens.Length >= 2 && (tokens[0].Contains('.') || tokens[0].Contains(':')))
+                {
+                    entries.Add(new HostsEntryItem
+                    {
+                        IsEnabled = false,
+                        IpAddress = tokens[0],
+                        Hostname = tokens[1],
+                        Comment = tokens.Length > 2 ? string.Join(" ", tokens.Skip(2)) : "Devre dışı kural",
+                        OriginalIpAddress = tokens[0],
+                        OriginalHostname = tokens[1]
+                    });
+                }
+                continue;
+            }
+
+            string comment = string.Empty;
+            int hashIdx = line.IndexOf('#');
+            if (hashIdx > 0)
+            {
+                comment = line[(hashIdx + 1)..].Trim();
+                line = line[..hashIdx].Trim();
+            }
+
+            string[] parts = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 2)
+            {
+                entries.Add(new HostsEntryItem
+                {
+                    IsEnabled = true,
+                    IpAddress = parts[0],
+                    Hostname = parts[1],
+                    Comment = comment,
+                    OriginalIpAddress = parts[0],
+                    OriginalHostname = parts[1]
+                });
+            }
         }
 
         return entries;
@@ -461,22 +470,44 @@ public static class PrivacyAndNetworkShieldService
         }
     }
 
+    public static string[] ApplyHostsUpdateLines(string[] existingLines, HostsEntryItem item, out bool found)
+    {
+        var updated = (string[])existingLines.Clone();
+        int index = Array.FindIndex(updated, line => IsMatchingHostsLine(line, item.OriginalIpAddress, item.OriginalHostname));
+        if (index < 0)
+        {
+            found = false;
+            return existingLines;
+        }
+
+        string prefix = item.IsEnabled ? string.Empty : "# ";
+        updated[index] = $"{prefix}{item.IpAddress}\t{item.Hostname}\t# {item.Comment} (FreeCleaner)";
+        found = true;
+        return updated;
+    }
+
+    public static string[] RemoveHostsMatchingLines(string[] existingLines, string ip, string hostname, out bool removed)
+    {
+        string[] remaining = existingLines
+            .Where(line => !IsMatchingHostsLine(line, ip, hostname))
+            .ToArray();
+        removed = remaining.Length < existingLines.Length;
+        return remaining;
+    }
+
     public static bool UpdateHostsEntry(HostsEntryItem item, out string message)
     {
         string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
         try
         {
             ValidateHostsInput(item.IpAddress, item.Hostname);
-            string[] lines = File.ReadAllLines(hostsPath);
-            int index = Array.FindIndex(lines, line => IsMatchingHostsLine(line, item.OriginalIpAddress, item.OriginalHostname));
-            if (index < 0)
+            string[] lines = ApplyHostsUpdateLines(File.ReadAllLines(hostsPath), item, out bool found);
+            if (!found)
             {
                 message = "Düzenlenecek hosts kaydı bulunamadı.";
                 return false;
             }
 
-            string prefix = item.IsEnabled ? string.Empty : "# ";
-            lines[index] = $"{prefix}{item.IpAddress}\t{item.Hostname}\t# {item.Comment} (FreeCleaner)";
             string backupPath = BackupHostsFile();
             File.WriteAllLines(hostsPath, lines, new System.Text.UTF8Encoding(false));
             item.MarkSaved();
@@ -501,11 +532,8 @@ public static class PrivacyAndNetworkShieldService
         string hostsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"drivers\etc\hosts");
         try
         {
-            string[] lines = File.ReadAllLines(hostsPath);
-            var remaining = lines
-                .Where(line => !IsMatchingHostsLine(line, item.IpAddress, item.Hostname))
-                .ToArray();
-            if (remaining.Length == lines.Length)
+            string[] remaining = RemoveHostsMatchingLines(File.ReadAllLines(hostsPath), item.IpAddress, item.Hostname, out bool removed);
+            if (!removed)
             {
                 message = "Silinecek hosts kaydı bulunamadı.";
                 return false;
@@ -555,9 +583,7 @@ public static class PrivacyAndNetworkShieldService
         if (!File.Exists(hostsPath))
             throw new FileNotFoundException("Windows hosts dosyası bulunamadı.", hostsPath);
 
-        string backupDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-            "FreeCleaner_Backups");
+        string backupDirectory = AppStoragePathsService.GetHostsBackupsDirectory();
         Directory.CreateDirectory(backupDirectory);
 
         string backupPath = Path.Combine(
@@ -569,9 +595,7 @@ public static class PrivacyAndNetworkShieldService
 
     public static string? GetLatestHostsBackup()
     {
-        string backupDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-            "FreeCleaner_Backups");
+        string backupDirectory = AppStoragePathsService.GetHostsBackupsDirectory();
         return Directory.Exists(backupDirectory)
             ? Directory.EnumerateFiles(backupDirectory, "hosts_*.bak")
                 .OrderByDescending(File.GetLastWriteTimeUtc)

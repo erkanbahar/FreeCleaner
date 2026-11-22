@@ -1,12 +1,16 @@
 using System.Windows;
 using System.Windows.Media;
+using Microsoft.Win32;
 
 namespace FreeCleaner.Services;
 
 public static class ThemeManagerService
 {
+    public const string SystemAutoThemeKey = "SystemAuto";
+
     public static readonly string[] AvailableThemes =
     [
+        SystemAutoThemeKey,
         "ObsidianNeon",
         "MidnightViolet",
         "EmeraldMatrix",
@@ -131,6 +135,41 @@ public static class ThemeManagerService
             PrimaryGradEnd: ParseColor("#0891B2"))
     };
 
+    public static bool IsWindowsLightThemeEnabled()
+    {
+        try
+        {
+            using RegistryKey? key = Registry.CurrentUser.OpenSubKey(
+                @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+                writable: false);
+            return key?.GetValue("AppsUseLightTheme") is int val && val == 1;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static string ResolveEffectiveThemeKey(
+        string? requestedThemeKey,
+        bool? windowsIsLightOverride = null,
+        string preferredDarkTheme = "ObsidianNeon")
+    {
+        if (string.Equals(requestedThemeKey, SystemAutoThemeKey, StringComparison.OrdinalIgnoreCase))
+        {
+            bool isLight = windowsIsLightOverride ?? IsWindowsLightThemeEnabled();
+            if (isLight)
+                return "FluentLight";
+
+            return Palettes.ContainsKey(preferredDarkTheme) ? preferredDarkTheme : "ObsidianNeon";
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestedThemeKey) && Palettes.ContainsKey(requestedThemeKey))
+            return requestedThemeKey;
+
+        return "ObsidianNeon";
+    }
+
     /// <summary>
     /// Applies the requested theme palette to Application.Current.Resources, updating unfrozen brushes in place.
     /// </summary>
@@ -140,7 +179,8 @@ public static class ThemeManagerService
         if (resources is null)
             return;
 
-        if (string.IsNullOrWhiteSpace(themeKey) || !Palettes.TryGetValue(themeKey, out var p))
+        string effectiveKey = ResolveEffectiveThemeKey(themeKey);
+        if (!Palettes.TryGetValue(effectiveKey, out var p))
             p = Palettes["ObsidianNeon"];
 
         SetSolidBrush(resources, "BgPrimaryBrush", p.BgPrimary);

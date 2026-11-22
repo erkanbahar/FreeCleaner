@@ -348,8 +348,14 @@ public partial class MainViewModel
     private void RefreshExplorerContextMenuStatus()
     {
         ExplorerContextMenuStatusText = ShellIntegrationAndProfilesService.IsExplorerContextMenuInstalled()
-            ? "✅ Durum: Windows Gezgini sağ tık menüsü AKTİF (HKCU)"
-            : "ℹ️ Durum: Windows Gezgini sağ tık menüsü henüz eklenmedi";
+            ? LocalizationService.GetText(
+                "✅ Durum: Windows Gezgini sağ tık menüsü AKTİF (HKCU)",
+                "✅ Status: Windows Explorer context menu ACTIVE (HKCU)",
+                _selectedLanguage)
+            : LocalizationService.GetText(
+                "ℹ️ Durum: Windows Gezgini sağ tık menüsü henüz eklenmedi",
+                "ℹ️ Status: Windows Explorer context menu not installed yet",
+                _selectedLanguage);
     }
 
     private CleanerConfigData BuildCurrentConfigSnapshot()
@@ -377,7 +383,9 @@ public partial class MainViewModel
             WindowHeight = _windowHeight,
             WindowMaximized = _windowMaximized,
             HasCompletedOnboarding = _hasCompletedOnboarding,
-            CustomProfiles = CustomProfiles.ToList()
+            CustomProfiles = CustomProfiles.ToList(),
+            AutoCheckUpdatesOnStartup = _autoCheckUpdatesOnStartup,
+            LastUpdateCheckDate = _lastUpdateCheckDate
         };
     }
 
@@ -440,8 +448,17 @@ public partial class MainViewModel
         try
         {
             ShellIntegrationAndProfilesService.ExportSettingsToFile(BuildCurrentConfigSnapshot(), dlg.FileName);
-            StatusMessage = $"Ayar profili dışa aktarıldı: {dlg.FileName}";
+            StatusMessage = LocalizationService.GetText(
+                $"Ayar profili dışa aktarıldı: {dlg.FileName}",
+                $"Settings exported: {dlg.FileName}",
+                _selectedLanguage);
             AddLog($"[AYAR DIŞA AKTAR] Konfigürasyon kaydedildi -> {dlg.FileName}");
+            ShowToast(
+                LocalizationService.GetText("Ayarlar Dışa Aktarıldı", "Settings Exported", _selectedLanguage),
+                dlg.FileName,
+                ToastSeverity.Success,
+                actionLabel: LocalizationService.Get("Loc_ToastOpenFolderBtn", _selectedLanguage),
+                actionKey: $"OPEN_PATH:{dlg.FileName}");
         }
         catch (Exception ex)
         {
@@ -493,8 +510,11 @@ public partial class MainViewModel
                 ? imported.StorageAlertThresholdDays
                 : 15;
             _lastStorageForecastAlertDate = imported.LastStorageForecastAlertDate ?? string.Empty;
+            _autoCheckUpdatesOnStartup = imported.AutoCheckUpdatesOnStartup;
+            _lastUpdateCheckDate = imported.LastUpdateCheckDate ?? string.Empty;
             OnPropertyChanged(nameof(ProactiveStorageAlertsEnabled));
             OnPropertyChanged(nameof(StorageAlertThresholdDays));
+            OnPropertyChanged(nameof(AutoCheckUpdatesOnStartup));
 
             CustomProfiles.Clear();
             foreach (CustomCleaningProfile cp in imported.CustomProfiles ?? [])
@@ -986,7 +1006,10 @@ public partial class MainViewModel
     }
 
     public string ActiveDataDirectoryDisplay =>
-        $"Veri Klasörü: {AppStoragePathsService.GetDataDirectory()}";
+        LocalizationService.GetText(
+            $"Veri Klasörü: {AppStoragePathsService.GetDataDirectory()}",
+            $"Data Directory: {AppStoragePathsService.GetDataDirectory()}",
+            _selectedLanguage);
 
     public bool ProactiveStorageAlertsEnabled
     {
@@ -1121,17 +1144,17 @@ public partial class MainViewModel
                 lifetimeFreed,
                 RecentCleanupBars.ToList());
 
-            StatusMessage = $"📦 Teşhis destek paketi oluşturuldu: {zipPath}";
+            StatusMessage = LocalizationService.GetText(
+                $"📦 Teşhis destek paketi oluşturuldu: {zipPath}",
+                $"📦 Diagnostic support bundle created: {zipPath}",
+                _selectedLanguage);
             AddLog($"[TEŞHİS PAKETİ] Hassas verilerden arındırılmış ZIP paketi: {zipPath}");
-
-            if (MessageBox.Show(
-                    $"Teşhis paketi hazır:\n{zipPath}\n\nDosya konumunu Gezgin'de açmak ister misiniz?",
-                    "Destek Paketi Oluşturuldu",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Information) == MessageBoxResult.Yes)
-            {
-                OpenExplorerPath(zipPath);
-            }
+            ShowToast(
+                LocalizationService.GetText("Destek Paketi Oluşturuldu", "Support Bundle Created", _selectedLanguage),
+                zipPath,
+                ToastSeverity.Success,
+                actionLabel: LocalizationService.Get("Loc_ToastOpenFolderBtn", _selectedLanguage),
+                actionKey: $"OPEN_PATH:{zipPath}");
         }
         catch (Exception ex)
         {

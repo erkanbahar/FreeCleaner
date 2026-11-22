@@ -45,6 +45,15 @@ public static partial class AppStoragePathsService
             ? GetPortableDataDirectory(baseDirOverride)
             : GetStandardDataDirectory();
 
+    public static string GetRegistryBackupsDirectory(string? baseDirOverride = null)
+        => Path.Combine(GetDataDirectory(baseDirOverride), "RegistryBackups");
+
+    public static string GetSqliteBackupsDirectory(string? baseDirOverride = null)
+        => Path.Combine(GetDataDirectory(baseDirOverride), "SQLiteBackups");
+
+    public static string GetHostsBackupsDirectory(string? baseDirOverride = null)
+        => Path.Combine(GetDataDirectory(baseDirOverride), "HostsBackups");
+
     public static (bool Success, string Message) SetPortableMode(
         bool enabled,
         string? baseDirOverride = null,
