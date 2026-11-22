@@ -48,6 +48,7 @@ public class V51UpgradesTests
         {
             try
             {
+                using (LocalizationService.BeginScopedLanguage("tr-TR"))
                 using (AppStoragePathsService.BeginScopedDataDirectory(tempDataRoot))
                 {
                     using var vm = new MainViewModel(new StubUserDialogService());
@@ -57,24 +58,24 @@ public class V51UpgradesTests
                     Assert.False(vm.CanNavigateForward);
 
                     vm.ActiveSection = "All";
-                    vm.ActiveSection = "DiskTreemap";
+                    vm.ActiveSection = "System";
                     vm.ActiveSection = "Settings";
 
                     Assert.True(vm.CanNavigateBack);
                     Assert.False(vm.CanNavigateForward);
 
                     Assert.True(vm.NavigateBack());
-                    Assert.Equal("DiskTreemap", vm.ActiveSection);
+                    Assert.Equal("System", vm.ActiveSection);
                     Assert.True(vm.CanNavigateForward);
 
                     Assert.True(vm.NavigateBack());
                     Assert.Equal("All", vm.ActiveSection);
 
                     Assert.True(vm.NavigateForward());
-                    Assert.Equal("DiskTreemap", vm.ActiveSection);
+                    Assert.Equal("System", vm.ActiveSection);
 
                     // Navigating to a new section clears forward stack
-                    vm.ActiveSection = "WingetUpdater";
+                    vm.ActiveSection = "Browsers";
                     Assert.False(vm.CanNavigateForward);
                     Assert.True(vm.CanNavigateBack);
 

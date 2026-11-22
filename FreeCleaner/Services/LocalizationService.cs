@@ -16,7 +16,46 @@ public static class LocalizationService
         new("en-US", "🇬🇧 English (EN)")
     ];
 
-    public static string CurrentLanguage { get; private set; } = "tr-TR";
+    private sealed class LanguageScope(string? initialLanguage)
+    {
+        public string Value { get; set; } = NormalizeLanguageCode(initialLanguage);
+    }
+
+    private sealed class RestoreLanguageScope(LanguageScope? previous) : IDisposable
+    {
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            _disposed = true;
+            ScopedLanguage.Value = previous;
+        }
+    }
+
+    private static readonly AsyncLocal<LanguageScope?> ScopedLanguage = new();
+    private static string _globalCurrentLanguage = "tr-TR";
+
+    public static string CurrentLanguage
+    {
+        get => ScopedLanguage.Value?.Value ?? _globalCurrentLanguage;
+        private set
+        {
+            if (ScopedLanguage.Value is { } scope)
+                scope.Value = value;
+            else
+                _globalCurrentLanguage = value;
+        }
+    }
+
+    public static IDisposable BeginScopedLanguage(string? initialLanguage = "tr-TR")
+    {
+        LanguageScope? previous = ScopedLanguage.Value;
+        ScopedLanguage.Value = new LanguageScope(initialLanguage);
+        return new RestoreLanguageScope(previous);
+    }
 
     private static readonly Dictionary<string, string> TrStrings = new(StringComparer.Ordinal)
     {

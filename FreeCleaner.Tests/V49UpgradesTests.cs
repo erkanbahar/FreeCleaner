@@ -279,6 +279,7 @@ public class V49UpgradesTests
         {
             try
             {
+                using (LocalizationService.BeginScopedLanguage("tr-TR"))
                 using (AppStoragePathsService.BeginScopedDataDirectory(tempDataRoot))
                 {
                     var fakeDialog = new RecordingUserDialogService();
@@ -305,6 +306,8 @@ public class V49UpgradesTests
                     Assert.Equal("Caution - Session Data", fakeDialog.Calls[1].Title);
                     Assert.Contains("Do you still want to enable", fakeDialog.Calls[1].Message, StringComparison.Ordinal);
                 }
+
+                Assert.Equal("tr-TR", LocalizationService.CurrentLanguage);
             }
             catch (Exception ex)
             {
