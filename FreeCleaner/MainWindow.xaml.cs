@@ -4,6 +4,7 @@ using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 using FreeCleaner.Models;
 using FreeCleaner.Services;
 using FreeCleaner.ViewModels;
@@ -177,10 +178,14 @@ public partial class MainWindow : Window
             ApplyDwmThemePolish();
             _trayService.RefreshLanguage(viewModel.SelectedLanguage);
             SyncLazyModuleHost(viewModel.ActiveSection);
+            RevealActiveNavSection(viewModel.ActiveSection);
             viewModel.PropertyChanged += (_, args) =>
             {
                 if (args.PropertyName == nameof(MainViewModel.ActiveSection))
+                {
                     SyncLazyModuleHost(viewModel.ActiveSection);
+                    RevealActiveNavSection(viewModel.ActiveSection);
+                }
                 else if (args.PropertyName == nameof(MainViewModel.SelectedTheme))
                     ApplyDwmThemePolish();
                 else if (args.PropertyName == nameof(MainViewModel.SelectedLanguage))
@@ -509,6 +514,61 @@ public partial class MainWindow : Window
             : WindowState.Maximized;
     }
 
+    private void RevealActiveNavSection(string? sectionKey)
+    {
+        if (string.IsNullOrWhiteSpace(sectionKey) || NavMenuStackPanel is null)
+            return;
+
+        if (sectionKey.Equals("Dashboard", StringComparison.OrdinalIgnoreCase))
+        {
+            ClearSearchIfPinnedHidden(PinnedDashboardContainer);
+            return;
+        }
+
+        if (sectionKey.Equals("Settings", StringComparison.OrdinalIgnoreCase))
+        {
+            ClearSearchIfPinnedHidden(PinnedSettingsContainer);
+            return;
+        }
+
+        foreach (Expander exp in NavMenuStackPanel.Children.OfType<Expander>())
+        {
+            RadioButton? targetRb = EnumerateNavButtons(exp)
+                .FirstOrDefault(rb => string.Equals(
+                    rb.CommandParameter?.ToString(),
+                    sectionKey,
+                    StringComparison.OrdinalIgnoreCase));
+            if (targetRb is null)
+                continue;
+
+            if ((exp.Visibility != Visibility.Visible || targetRb.Visibility != Visibility.Visible) &&
+                !string.IsNullOrWhiteSpace(NavSearchTextBox?.Text))
+            {
+                NavSearchTextBox.Clear();
+            }
+
+            exp.IsExpanded = true;
+            if (_preSearchExpanderStates is not null)
+                _preSearchExpanderStates[exp] = true;
+
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
+            {
+                if (targetRb.IsVisible)
+                    targetRb.BringIntoView();
+            });
+            return;
+        }
+    }
+
+    private void ClearSearchIfPinnedHidden(FrameworkElement? container)
+    {
+        if (container?.Visibility != Visibility.Visible &&
+            !string.IsNullOrWhiteSpace(NavSearchTextBox?.Text))
+        {
+            NavSearchTextBox.Clear();
+        }
+    }
+
     private void NavSearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (NavMenuStackPanel is null)
@@ -521,6 +581,9 @@ public partial class MainWindow : Window
 
         if (string.IsNullOrEmpty(query))
         {
+            UpdatePinnedAnchorSearchVisibility(PinnedDashboardContainer, PinnedDashboardNavBtn, query, showAll: true);
+            UpdatePinnedAnchorSearchVisibility(PinnedSettingsContainer, PinnedSettingsNavBtn, query, showAll: true);
+
             foreach (Expander exp in NavMenuStackPanel.Children.OfType<Expander>())
             {
                 exp.Visibility = Visibility.Visible;
@@ -541,16 +604,15 @@ public partial class MainWindow : Window
                 _preSearchExpanderStates[exp] = exp.IsExpanded;
         }
 
+        UpdatePinnedAnchorSearchVisibility(PinnedDashboardContainer, PinnedDashboardNavBtn, query, showAll: false);
+        UpdatePinnedAnchorSearchVisibility(PinnedSettingsContainer, PinnedSettingsNavBtn, query, showAll: false);
+
         foreach (Expander exp in NavMenuStackPanel.Children.OfType<Expander>())
         {
             int visibleMatches = 0;
             foreach (RadioButton rb in EnumerateNavButtons(exp))
             {
-                string labelText = CollectReadableText(rb);
-                string commandKey = rb.CommandParameter?.ToString() ?? string.Empty;
-                bool isMatch = ContainsTurkishInsensitive(labelText, query) ||
-                               ContainsTurkishInsensitive(commandKey, query);
-
+                bool isMatch = IsNavButtonMatch(rb, query);
                 rb.Visibility = isMatch ? Visibility.Visible : Visibility.Collapsed;
                 if (isMatch)
                     visibleMatches++;
@@ -566,6 +628,29 @@ public partial class MainWindow : Window
                 exp.Visibility = Visibility.Collapsed;
             }
         }
+    }
+
+    private static void UpdatePinnedAnchorSearchVisibility(
+        FrameworkElement? container,
+        RadioButton? button,
+        string query,
+        bool showAll)
+    {
+        if (container is null || button is null)
+            return;
+
+        bool visible = showAll || IsNavButtonMatch(button, query);
+        Visibility state = visible ? Visibility.Visible : Visibility.Collapsed;
+        container.Visibility = state;
+        button.Visibility = state;
+    }
+
+    private static bool IsNavButtonMatch(RadioButton rb, string query)
+    {
+        string labelText = CollectReadableText(rb);
+        string commandKey = rb.CommandParameter?.ToString() ?? string.Empty;
+        return ContainsTurkishInsensitive(labelText, query) ||
+               ContainsTurkishInsensitive(commandKey, query);
     }
 
     private void ClearNavSearchButton_Click(object sender, RoutedEventArgs e)

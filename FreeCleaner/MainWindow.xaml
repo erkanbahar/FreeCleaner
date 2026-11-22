@@ -182,6 +182,7 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <!-- Top Search & Quick Navigation Control Panel -->
@@ -279,14 +280,33 @@
                                         Command="{Binding SelectSectionCommand}"
                                         CommandParameter="LiveMonitor"/>
                             </UniformGrid>
+
+                            <!-- Pinned Top Anchor: Dashboard -->
+                            <Border x:Name="PinnedDashboardContainer"
+                                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                    BorderThickness="0,1,0,1"
+                                    Padding="0,5,0,5"
+                                    Margin="0,8,0,0">
+                                <RadioButton x:Name="PinnedDashboardNavBtn"
+                                             Style="{StaticResource NavRadioButtonStyle}"
+                                             IsChecked="{Binding IsDashboardSection, Mode=OneWay}"
+                                             Command="{Binding SelectSectionCommand}"
+                                             CommandParameter="Dashboard">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                        <TextBlock Text="{DynamicResource Loc_NavDashboard}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+                            </Border>
                         </StackPanel>
 
                         <!-- Navigation Menu (Scrollable Collapsible Category Expanders) -->
-                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+                        <ScrollViewer x:Name="NavScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
                             <StackPanel x:Name="NavMenuStackPanel">
 
                                 <!-- Pinned Favorites -->
-                                <Expander Style="{StaticResource NavCategoryExpanderStyle}"
+                                <Expander x:Name="FavoritesExpander"
+                                          Style="{StaticResource NavCategoryExpanderStyle}"
                                           Header="{DynamicResource Loc_CatFavorites}"
                                           IsExpanded="True">
                                     <ItemsControl ItemsSource="{Binding FavoriteNavItems}">
@@ -308,47 +328,12 @@
                                     </ItemsControl>
                                 </Expander>
 
-                                <!-- 1. Temizlik & Disk Kurtarma (10) -->
-                                <Expander Style="{StaticResource NavCategoryExpanderStyle}"
+                                <!-- 1. Temizlik & Bakım (7) -->
+                                <Expander x:Name="NavCatCleaningExpander"
+                                          Style="{StaticResource NavCategoryExpanderStyle}"
                                           Header="{DynamicResource Loc_CatCleaning}"
                                           IsExpanded="True">
                                     <StackPanel>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsDashboardSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="Dashboard">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE80F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavDashboard}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsDiskTreemapSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="DiskTreemap">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE8A9;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavTreemap}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsDeepSpaceRecoverySection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="DeepSpaceRecovery">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xEDA2;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavDeepSpace}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsSimilarPhotosSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="SimilarPhotos">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavSimilarPhotos}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                                      IsChecked="{Binding IsAllSection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
@@ -381,17 +366,8 @@
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="Apps">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE943;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="&#xE74C;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                                 <TextBlock Text="{DynamicResource Loc_NavAppClean}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsDiskAnalyzerSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="DiskAnalyzer">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xEDA2;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavDiskAnalyzer}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -404,30 +380,103 @@
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsBloatwareSection, Mode=OneWay}"
+                                                     IsChecked="{Binding IsBrowserExtensionsSection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="Bloatware">
+                                                     CommandParameter="BrowserExtensions">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavBloatware}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="&#xEA86;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavBrowserExtensions}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsShredderSection, Mode=OneWay}"
+                                                     IsChecked="{Binding IsSqliteOptimizerSection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="Shredder">
+                                                     CommandParameter="SqliteOptimizer">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavShredder}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="&#xEE94;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavSqliteOptimizer}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                     </StackPanel>
                                 </Expander>
 
-                                <!-- 2. Performans, Açılış & Donanım (9) -->
-                                <Expander Style="{StaticResource NavCategoryExpanderStyle}"
+                                <!-- 2. Disk, Depolama & Dosyalar (7) -->
+                                <Expander x:Name="NavCatStorageExpander"
+                                          Style="{StaticResource NavCategoryExpanderStyle}"
+                                          Header="{DynamicResource Loc_CatStorage}"
+                                          IsExpanded="False">
+                                    <StackPanel>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsDiskTreemapSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="DiskTreemap">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE8A9;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavTreemap}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsDeepSpaceRecoverySection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="DeepSpaceRecovery">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xEDA2;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavDeepSpace}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsDiskAnalyzerSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="DiskAnalyzer">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE7C5;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavDiskAnalyzer}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsSimilarPhotosSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="SimilarPhotos">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xEB9F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavSimilarPhotos}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsDiskBenchSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="DiskBench">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xEC4A;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavDiskBench}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsBatchRenamerSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="BatchRenamer">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE8AC;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavBatchRenamer}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsUnlockerSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="Unlocker">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE785;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavUnlocker}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                    </StackPanel>
+                                </Expander>
+
+                                <!-- 3. Performans, Açılış & Donanım (8) -->
+                                <Expander x:Name="NavCatPerformanceExpander"
+                                          Style="{StaticResource NavCategoryExpanderStyle}"
                                           Header="{DynamicResource Loc_CatPerformance}"
-                                          IsExpanded="True">
+                                          IsExpanded="False">
                                     <StackPanel>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                                      IsChecked="{Binding IsLiveMonitorSection, Mode=OneWay}"
@@ -470,17 +519,8 @@
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="ProcessPriority">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xEC4A;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="&#xE9D5;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                                 <TextBlock Text="{DynamicResource Loc_NavProcessPriority}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsDiskBenchSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="DiskBench">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xEC4A;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavDiskBench}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -488,7 +528,7 @@
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="SmartPower">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE945;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="&#xE83F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                                 <TextBlock Text="{DynamicResource Loc_NavSmartPower}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
@@ -513,9 +553,10 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <!-- 3. Sistem Onarım & Windows 11 (10) -->
-                                <Expander Style="{StaticResource NavCategoryExpanderStyle}"
-                                          Header="{DynamicResource Loc_CatRepairWin11}"
+                                <!-- 4. Uygulamalar & Sürücüler (4) -->
+                                <Expander x:Name="NavCatAppsUpdatesExpander"
+                                          Style="{StaticResource NavCategoryExpanderStyle}"
+                                          Header="{DynamicResource Loc_CatAppsUpdates}"
                                           IsExpanded="False">
                                     <StackPanel>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -528,24 +569,6 @@
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsWin11TweakerSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="Win11Tweaker">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE90F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavWin11Tweaker}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsRegistrySection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="Registry">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE90F;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavRegistry}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                                      IsChecked="{Binding IsUninstallerSection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="Uninstaller">
@@ -555,12 +578,39 @@
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsServicesSection, Mode=OneWay}"
+                                                     IsChecked="{Binding IsBloatwareSection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="Services">
+                                                     CommandParameter="Bloatware">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE912;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavServices}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavBloatware}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsDriversUpdatesSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="DriversUpdates">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavDriversUpdates}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                    </StackPanel>
+                                </Expander>
+
+                                <!-- 5. Windows 11, Sistem & Onarım (10) -->
+                                <Expander x:Name="NavCatRepairWin11Expander"
+                                          Style="{StaticResource NavCategoryExpanderStyle}"
+                                          Header="{DynamicResource Loc_CatRepairWin11}"
+                                          IsExpanded="False">
+                                    <StackPanel>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsWin11TweakerSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="Win11Tweaker">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE771;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavWin11Tweaker}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -573,12 +623,48 @@
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsRegistrySection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="Registry">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE8F1;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavRegistry}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsServicesSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="Services">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE912;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavServices}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsTasksAndTreeSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="TasksAndTree">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavTasksAndTree}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                                      IsChecked="{Binding IsRestoreGodModeSection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="RestoreGodMode">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                                 <TextBlock Text="{DynamicResource Loc_NavRestoreGodMode}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsCrashLogsSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="CrashLogs">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavCrashLogs}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -611,8 +697,9 @@
                                     </StackPanel>
                                 </Expander>
 
-                                <!-- 4. Ağ, Wi-Fi & Güvenlik Duvarı (6) -->
-                                <Expander Style="{StaticResource NavCategoryExpanderStyle}"
+                                <!-- 6. Ağ, Wi-Fi & Güvenlik Duvarı (6) -->
+                                <Expander x:Name="NavCatNetworkExpander"
+                                          Style="{StaticResource NavCategoryExpanderStyle}"
                                           Header="{DynamicResource Loc_CatNetwork}"
                                           IsExpanded="False">
                                     <StackPanel>
@@ -630,7 +717,7 @@
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="WifiDns">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE701;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                                 <TextBlock Text="{DynamicResource Loc_NavWifiDns}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
@@ -666,15 +753,16 @@
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="PortHunter">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE968;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="&#xE756;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                                 <TextBlock Text="{DynamicResource Loc_NavPortHunter}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                     </StackPanel>
                                 </Expander>
 
-                                <!-- 5. Güvenlik, Gizlilik & Adli Analiz (10) -->
-                                <Expander Style="{StaticResource NavCategoryExpanderStyle}"
+                                <!-- 7. Güvenlik, Gizlilik & Kasa (10) -->
+                                <Expander x:Name="NavCatSecurityExpander"
+                                          Style="{StaticResource NavCategoryExpanderStyle}"
                                           Header="{DynamicResource Loc_CatSecurity}"
                                           IsExpanded="False">
                                     <StackPanel>
@@ -688,21 +776,21 @@
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsExifScrubberSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="ExifScrubber">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE722;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavExifScrubber}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                                      IsChecked="{Binding IsProcessSecuritySection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="ProcessSecurity">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="&#xEA18;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                                 <TextBlock Text="{DynamicResource Loc_NavProcessSecurity}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsPrivacySection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="Privacy">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavPrivacy}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -715,12 +803,21 @@
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsPrivacySection, Mode=OneWay}"
+                                                     IsChecked="{Binding IsShredderSection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="Privacy">
+                                                     CommandParameter="Shredder">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavPrivacy}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavShredder}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </RadioButton>
+                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
+                                                     IsChecked="{Binding IsExifScrubberSection, Mode=OneWay}"
+                                                     Command="{Binding SelectSectionCommand}"
+                                                     CommandParameter="ExifScrubber">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="&#xE722;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="{DynamicResource Loc_NavExifScrubber}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
@@ -746,7 +843,7 @@
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="CredentialSsh">
                                             <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE8D7;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                <TextBlock Text="&#xE77B;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                                 <TextBlock Text="{DynamicResource Loc_NavCredentialSsh}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
@@ -759,20 +856,12 @@
                                                 <TextBlock Text="{DynamicResource Loc_NavUsbForensics}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsCrashLogsSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="CrashLogs">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavCrashLogs}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
                                     </StackPanel>
                                 </Expander>
 
-                                <!-- 6. Geliştirici, AI & Verimlilik (13) -->
-                                <Expander Style="{StaticResource NavCategoryExpanderStyle}"
+                                <!-- 8. Geliştirici & Yapay Zeka (6) -->
+                                <Expander x:Name="NavCatDevAiExpander"
+                                          Style="{StaticResource NavCategoryExpanderStyle}"
                                           Header="{DynamicResource Loc_CatDevAi}"
                                           IsExpanded="False">
                                     <StackPanel>
@@ -822,33 +911,6 @@
                                             </StackPanel>
                                         </RadioButton>
                                         <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsSqliteOptimizerSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="SqliteOptimizer">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xEE94;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavSqliteOptimizer}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsBatchRenamerSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="BatchRenamer">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE8AC;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavBatchRenamer}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsUnlockerSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="Unlocker">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE785;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavUnlocker}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
                                                      IsChecked="{Binding IsPathDoctorSection, Mode=OneWay}"
                                                      Command="{Binding SelectSectionCommand}"
                                                      CommandParameter="PathDoctor">
@@ -857,50 +919,33 @@
                                                 <TextBlock Text="{DynamicResource Loc_NavPathDoctor}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsTasksAndTreeSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="TasksAndTree">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE823;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavTasksAndTree}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsBrowserExtensionsSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="BrowserExtensions">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xEA86;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavBrowserExtensions}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsDriversUpdatesSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="DriversUpdates">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE777;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavDriversUpdates}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
-                                        <RadioButton Style="{StaticResource NavRadioButtonStyle}"
-                                                     IsChecked="{Binding IsSettingsSection, Mode=OneWay}"
-                                                     Command="{Binding SelectSectionCommand}"
-                                                     CommandParameter="Settings">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                <TextBlock Text="{DynamicResource Loc_NavSettings}" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </RadioButton>
                                     </StackPanel>
                                 </Expander>
 
                             </StackPanel>
                         </ScrollViewer>
 
+                        <!-- Pinned Bottom Anchor: Settings -->
+                        <Border x:Name="PinnedSettingsContainer"
+                                Grid.Row="2"
+                                BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                BorderThickness="0,1,0,0"
+                                Padding="0,6,0,0"
+                                Margin="0,6,0,0">
+                            <RadioButton x:Name="PinnedSettingsNavBtn"
+                                         Style="{StaticResource NavRadioButtonStyle}"
+                                         IsChecked="{Binding IsSettingsSection, Mode=OneWay}"
+                                         Command="{Binding SelectSectionCommand}"
+                                         CommandParameter="Settings">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="15" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Text="{DynamicResource Loc_NavSettings}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </RadioButton>
+                        </Border>
+
                         <!-- Safety Option Box -->
-                        <Border Grid.Row="2"
+                        <Border Grid.Row="3"
                                 Background="{DynamicResource CardSurfaceGradientBrush}"
                                 BorderBrush="{DynamicResource BorderSubtleBrush}"
                                 BorderThickness="1"
@@ -927,7 +972,7 @@
                         </Border>
 
                         <!-- System Telemetry Card at Bottom -->
-                        <Border Grid.Row="3"
+                        <Border Grid.Row="4"
                         Background="{DynamicResource BgSecondaryBrush}"
                         BorderBrush="{DynamicResource BorderSubtleBrush}"
                         BorderThickness="1"

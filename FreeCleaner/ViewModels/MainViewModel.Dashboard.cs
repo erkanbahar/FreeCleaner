@@ -565,12 +565,18 @@ public partial class MainViewModel
 
         const string TrCmd = "Hızlı Komut";
         const string EnCmd = "Quick Action";
-        const string TrClean = "Temizlik & Disk";
-        const string EnClean = "Clean & Disk";
+        const string TrOverview = "Genel Bakış";
+        const string EnOverview = "Overview";
+        const string TrClean = "Temizlik & Bakım";
+        const string EnClean = "Cleaning & Maintenance";
+        const string TrStorage = "Disk & Depolama";
+        const string EnStorage = "Disk & Storage";
         const string TrPerf = "Performans & Donanım";
         const string EnPerf = "Performance & Hardware";
-        const string TrSys = "Sistem & Windows 11";
-        const string EnSys = "System & Windows 11";
+        const string TrApps = "Uygulamalar & Sürücüler";
+        const string EnApps = "Apps & Drivers";
+        const string TrSys = "Windows 11 & Onarım";
+        const string EnSys = "Windows 11 & Repair";
         const string TrNet = "Ağ & Firewall";
         const string EnNet = "Network & Firewall";
         const string TrSec = "Güvenlik & Gizlilik";
@@ -608,66 +614,84 @@ public partial class MainViewModel
                 $"custom ozel profil {custom.Name}");
         }
 
-        // All 57 Modules
-        AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "Overview (Dashboard) & Health Score", "\uE80F", TrClean, EnClean, "dashboard ana sayfa overview saglik skoru gecmis lifetime forecast");
-        AddEntry("DiskTreemap", "🗺️ Görsel Disk Haritası (Treemap + Danışman)", "🗺️ Visual Disk Treemap & Smart Advisor", "\uE8A9", TrClean, EnClean, "treemap harita disk gorsel boyut klasor danisman snapshot diff");
-        AddEntry("DeepSpaceRecovery", "💾 Dev Windows Sistem Alanı Kurtarıcısı (15–40 GB)", "💾 Deep Windows Space Recovery (15–40 GB)", "\uEDA2", TrClean, EnClean, "hiberfil winsxs compactos nvidia amd installer deep space");
-        AddEntry("SimilarPhotos", "🖼️ Benzer / Tekrarlayan Fotoğraf Bulucu (dHash)", "🖼️ Similar Photo Finder (Perceptual dHash)", "\uEB9F", TrClean, EnClean, "benzer fotograf similar duplicate dhash resim galeri");
-        AddEntry("LiveMonitor", "Canlı CPU, RAM & Ağ Grafikleri", "Live CPU, RAM & Network Graphs", "\uE9D9", TrPerf, EnPerf, "canli live grafik cpu ram ag hizi monitor sparkline");
+        // All 60 Modules (Pinned Top Anchor + 8 Sidebar Categories + Pinned Bottom Anchor)
+        AddEntry("Dashboard", "Genel Bakış (Dashboard) & Sağlık Skoru", "Overview (Dashboard) & Health Score", "\uE80F", TrOverview, EnOverview, "dashboard ana sayfa overview saglik skoru gecmis lifetime forecast");
+
+        // 1. Temizlik & Bakım (7)
         AddEntry("All", "Akıllı Temizlik (Tümü)", "Smart Cleaner (All Rules)", "\uE770", TrClean, EnClean, "temizlik cop temp gecici smart clean");
         AddEntry("System", "Windows & Sistem Temizliği", "Windows & System Cleanup", "\uE7F8", TrClean, EnClean, "windows temp log recycle bin system");
         AddEntry("Browsers", "Web Tarayıcıları Temizliği", "Web Browsers & AI Cache Cleanup", "\uE774", TrClean, EnClean, "chrome edge firefox brave cache cookie gemini nano optguideondevicemodel weights.bin");
-        AddEntry("Apps", "Uygulama & Geliştirici Önbelleği", "Apps & Developer Caches", "\uE943", TrClean, EnClean, "app cache discord steam vscode");
-        AddEntry("DiskAnalyzer", "Büyük & Kopya Dosya Bulucu", "Large & Duplicate File Finder (Hardlink)", "\uEDA2", TrClean, EnClean, "buyuk large dosya duplicate sha256 kopya hardlink");
+        AddEntry("Apps", "Uygulama & Geliştirici Önbelleği", "Apps & Developer Caches", "\uE74C", TrClean, EnClean, "app cache discord steam vscode");
         AddEntry("Downloads", "İndirilenler, Boş Klasör & Düzenleyici", "Downloads, Empty Folders & Organizer", "\uE896", TrClean, EnClean, "downloads kurulum setup iso bos klasor organize sort undo");
-        AddEntry("Bloatware", "Bloatware (UWP Appx) Kaldırıcı", "Appx Bloatware Remover", "\uE74D", TrClean, EnClean, "bloatware appx uwp xbox windows 11");
-        AddEntry("Shredder", "Dosya Öğütücü (DoD 5220.22-M)", "File Shredder (DoD 5220.22-M)", "\uE74D", TrClean, EnClean, "shredder kalici silme bos alan wipe");
+        AddEntry("BrowserExtensions", "Tarayıcı Eklentileri Denetçisi", "Browser Extensions Auditor", "\uEA86", TrClean, EnClean, "extension eklenti chrome edge browser");
+        AddEntry("SqliteOptimizer", "Tarayıcı & IDE SQLite Sıkıştırıcı", "Browser & IDE SQLite Vacuum Optimizer", "\uEE94", TrClean, EnClean, "sqlite veritabani wal chrome vscode cursor vacuum");
+
+        // 2. Disk, Depolama & Dosyalar (7)
+        AddEntry("DiskTreemap", "🗺️ Görsel Disk Haritası (Treemap + Danışman)", "🗺️ Visual Disk Treemap & Smart Advisor", "\uE8A9", TrStorage, EnStorage, "treemap harita disk gorsel boyut klasor danisman snapshot diff");
+        AddEntry("DeepSpaceRecovery", "💾 Dev Windows Sistem Alanı Kurtarıcısı (15–40 GB)", "💾 Deep Windows Space Recovery (15–40 GB)", "\uEDA2", TrStorage, EnStorage, "hiberfil winsxs compactos nvidia amd installer deep space");
+        AddEntry("DiskAnalyzer", "Büyük & Kopya Dosya Bulucu", "Large & Duplicate File Finder (Hardlink)", "\uE7C5", TrStorage, EnStorage, "buyuk large dosya duplicate sha256 kopya hardlink");
+        AddEntry("SimilarPhotos", "🖼️ Benzer / Tekrarlayan Fotoğraf Bulucu (dHash)", "🖼️ Similar Photo Finder (Perceptual dHash)", "\uEB9F", TrStorage, EnStorage, "benzer fotograf similar duplicate dhash resim galeri");
+        AddEntry("DiskBench", "SSD / NVMe Disk Hız Testi", "SSD / NVMe Read & Write Benchmark", "\uEC4A", TrStorage, EnStorage, "ssd nvme benchmark okuma yazma hiz");
+        AddEntry("BatchRenamer", "Toplu Dosya Adlandırıcı (PowerRename)", "Batch File Renamer (PowerRename)", "\uE8AC", TrStorage, EnStorage, "rename toplu adlandirma prefix suffix");
+        AddEntry("Unlocker", "Kilitli Dosya Çözücü (File Unlocker)", "Locked File Unlocker (Restart Manager)", "\uE785", TrStorage, EnStorage, "kilitli dosya locked unlocker restart manager");
+
+        // 3. Performans, Açılış & Donanım (8)
+        AddEntry("LiveMonitor", "Canlı CPU, RAM & Ağ Grafikleri", "Live CPU, RAM & Network Graphs", "\uE9D9", TrPerf, EnPerf, "canli live grafik cpu ram ag hizi monitor sparkline");
         AddEntry("Startup", "Başlangıç (Startup) Yöneticisi", "Startup Applications Manager", "\uE7E8", TrPerf, EnPerf, "startup acilis baslangic");
         AddEntry("BootPerformance", "Açılış Süresi (Boot Time) Analizi", "Boot Time Bottleneck Analyzer", "\uE916", TrPerf, EnPerf, "boot acilis suresi darbogaz startup");
         AddEntry("Booster", "RAM & Ağ Hızlandırıcı", "RAM & Network Booster", "\uE945", TrPerf, EnPerf, "ram booster hizlandirici dns");
-        AddEntry("ProcessPriority", "Canlı CPU Önceliği & Eco Mod", "Live CPU Priority & EcoQoS", "\uEC4A", TrPerf, EnPerf, "cpu oncelik priority eco game boost");
-        AddEntry("DiskBench", "SSD / NVMe Disk Hız Testi", "SSD / NVMe Read & Write Benchmark", "\uEC4A", TrPerf, EnPerf, "ssd nvme benchmark okuma yazma hiz");
-        AddEntry("SmartPower", "Disk Sağlığı (S.M.A.R.T.) & Güç Planı", "Disk S.M.A.R.T., Battery & Power Plan", "\uE945", TrPerf, EnPerf, "smart disk saglik pil guc oyun modu battery power");
+        AddEntry("ProcessPriority", "Canlı CPU Önceliği & Eco Mod", "Live CPU Priority & EcoQoS", "\uE9D5", TrPerf, EnPerf, "cpu oncelik priority eco game boost");
+        AddEntry("SmartPower", "Disk Sağlığı (S.M.A.R.T.) & Güç Planı", "Disk S.M.A.R.T., Battery & Power Plan", "\uE83F", TrPerf, EnPerf, "smart disk saglik pil guc oyun modu battery power");
         AddEntry("HardwareSpecs", "Donanım, BIOS & OEM Lisans", "Hardware Inventory, BIOS & OEM Key", "\uE950", TrPerf, EnPerf, "cpu gpu ram bios anakart lisans product key");
         AddEntry("MonitorGpu", "Monitör (Hz) & GPU Doktoru", "Monitor EDID (Hz) & GPU Reset Doctor", "\uE7F4", TrPerf, EnPerf, "monitor edid hz yenileme gpu reset");
-        AddEntry("WingetUpdater", "Winget Program Güncelleyici", "Winget Bulk App Updater", "\uE896", TrSys, EnSys, "winget guncelle update yazilim apps");
-        AddEntry("Win11Tweaker", "Windows 11 İnce Ayar (Tweaker)", "Windows 11 Ultimate Tweaker", "\uE90F", TrSys, EnSys, "win11 sag tik explorer bing gemini nano chrome ai tweak");
-        AddEntry("Registry", "Kayıt Defteri (Registry) Temizleyici", "Registry Scanner & Backup", "\uE90F", TrSys, EnSys, "registry regedit yedek backup");
-        AddEntry("Uninstaller", "Program Kaldırıcı & Yetim Kalıntılar", "Program Uninstaller & Orphan Cleaner", "\uE7B8", TrSys, EnSys, "uninstall program kaldir appdata orphan");
-        AddEntry("Services", "Windows Servisleri Yöneticisi", "Windows Services Optimizer", "\uE912", TrSys, EnSys, "services hizmetler telemetri");
+
+        // 4. Uygulamalar & Sürücüler (4)
+        AddEntry("WingetUpdater", "Winget Program Güncelleyici", "Winget Bulk App Updater", "\uE896", TrApps, EnApps, "winget guncelle update yazilim apps");
+        AddEntry("Uninstaller", "Program Kaldırıcı & Yetim Kalıntılar", "Program Uninstaller & Orphan Cleaner", "\uE7B8", TrApps, EnApps, "uninstall program kaldir appdata orphan");
+        AddEntry("Bloatware", "Bloatware (UWP Appx) Kaldırıcı", "Appx Bloatware Remover", "\uE74D", TrApps, EnApps, "bloatware appx uwp xbox windows 11");
+        AddEntry("DriversUpdates", "KB Güncellemeler & Sürücü Deposu", "Windows Updates (KB) & DriverStore", "\uE777", TrApps, EnApps, "hotfix kb driverstore pnputil drivers");
+
+        // 5. Windows 11, Sistem & Onarım (10)
+        AddEntry("Win11Tweaker", "Windows 11 İnce Ayar (Tweaker)", "Windows 11 Ultimate Tweaker", "\uE771", TrSys, EnSys, "win11 sag tik explorer bing gemini nano chrome ai tweak");
         AddEntry("RepairCenter", "Sistem Onarım Merkezi (SFC/DISM)", "System Repair Center (SFC / DISM)", "\uE90F", TrSys, EnSys, "sfc dism onarim repair windows.old fontcache");
+        AddEntry("Registry", "Kayıt Defteri (Registry) Temizleyici", "Registry Scanner & Backup", "\uE8F1", TrSys, EnSys, "registry regedit yedek backup");
+        AddEntry("Services", "Windows Servisleri Yöneticisi", "Windows Services Optimizer", "\uE912", TrSys, EnSys, "services hizmetler telemetri");
+        AddEntry("TasksAndTree", "Zamanlanmış Görevler & Klasör Ağacı", "Task Scheduler & Folder Size Tree", "\uE823", TrSys, EnSys, "task scheduler klasor boyutu folder size");
         AddEntry("RestoreGodMode", "Geri Yükleme Noktası & God Mode", "Restore Points & Windows God Mode", "\uE81C", TrSys, EnSys, "restore point tanri modu god mode");
+        AddEntry("CrashLogs", "Mavi Ekran (BSOD) & Olay Günlüğü", "BSOD Crash Dumps & Event Logs", "\uE7BA", TrSys, EnSys, "bsod dmp eventlog cokme crash");
         AddEntry("ContextMenu", "Sağ Tık Bağlam Menüsü (Shell)", "Shell Context Menu Manager", "\uE700", TrSys, EnSys, "context menu shell sag tik");
         AddEntry("FileAssoc", "Dosya Uzantısı Doktoru (UserChoice)", "File Association Doctor (UserChoice)", "\uE8A5", TrSys, EnSys, "uzanti file association progid default");
         AddEntry("FontManager", "Font (Yazı Tipi) Yöneticisi", "System & User Font Manager", "\uE8D2", TrSys, EnSys, "font yazi tipi ttf otf");
+
+        // 6. Ağ, Wi-Fi & Güvenlik Duvarı (6)
         AddEntry("LanScanner", "Yerel Ağ (LAN / Wi-Fi) Radarı", "Local Network (LAN / Wi-Fi) Radar", "\uE701", TrNet, EnNet, "lan arp ping modem wifi cihaz device");
-        AddEntry("WifiDns", "Wi-Fi Şifreleri & DNS Ping Testi", "Saved Wi-Fi Passwords & DNS Ping", "\uE701", TrNet, EnNet, "wifi sifre password dns ping");
+        AddEntry("WifiDns", "Wi-Fi Şifreleri & DNS Ping Testi", "Saved Wi-Fi Passwords & DNS Ping", "\uE774", TrNet, EnNet, "wifi sifre password dns ping");
         AddEntry("Network", "Canlı Ağ Bağlantıları & Hosts", "Live TCP/UDP Connections & Hosts", "\uE968", TrNet, EnNet, "tcp udp netstat hosts");
         AddEntry("NetworkAdapterDoctor", "Ağ Adaptörü, MAC & Winsock Doktoru", "Network Adapter, MAC & Winsock Doctor", "\uE839", TrNet, EnNet, "mac ip gateway dhcp winsock arp");
         AddEntry("FirewallBlocker", "Firewall & Uygulama İnternet Kesici", "Windows Firewall & 1-Click Blocker", "\uE72E", TrNet, EnNet, "firewall guvenlik duvari engel block");
-        AddEntry("PortHunter", "Geliştirici Port Avcısı (Port Killer)", "Developer Port Hunter (Port Killer)", "\uE968", TrNet, EnNet, "port 3000 8080 5000 pid kill");
+        AddEntry("PortHunter", "Geliştirici Port Avcısı (Port Killer)", "Developer Port Hunter (Port Killer)", "\uE756", TrNet, EnNet, "port 3000 8080 5000 pid kill");
+
+        // 7. Güvenlik, Gizlilik & Kasa (10)
         AddEntry("DefenderAuditor", "Windows Defender & İstisna Denetçisi", "Defender Shield & Exclusions Auditor", "\uE83D", TrSec, EnSec, "defender antivirus tarama exclusion");
-        AddEntry("ExifScrubber", "📸 Fotoğraf EXIF / GPS Gizlilik Temizleyici", "📸 Photo EXIF / GPS Privacy Scrubber", "\uE722", TrSec, EnSec, "exif gps fotograf resim photo gizlilik metadata scrubber");
         AddEntry("ProcessSecurity", "Süreç & Dijital İmza Denetçisi", "Process & X.509 Signature Auditor", "\uEA18", TrSec, EnSec, "imza x509 sha256 unsigned process signature");
-        AddEntry("CryptoVault", "AES-256 Dosya Kasası & Çoklu Hash", "AES-256 Vault (.fcvault) & Multi-Hash", "\uE8D7", TrSec, EnSec, "aes256 sifrele encrypt fcvault md5 sha256 sha512");
         AddEntry("Privacy", "Windows Gizlilik & Telemetri Kalkanı", "Windows Privacy & Telemetry Shield", "\uE72E", TrSec, EnSec, "gizlilik privacy mru jumplist telemetri");
+        AddEntry("CryptoVault", "AES-256 Dosya Kasası & Çoklu Hash", "AES-256 Vault (.fcvault) & Multi-Hash", "\uE8D7", TrSec, EnSec, "aes256 sifrele encrypt fcvault md5 sha256 sha512");
+        AddEntry("Shredder", "Dosya Öğütücü (DoD 5220.22-M)", "File Shredder (DoD 5220.22-M)", "\uE74D", TrSec, EnSec, "shredder kalici silme bos alan wipe");
+        AddEntry("ExifScrubber", "📸 Fotoğraf EXIF / GPS Gizlilik Temizleyici", "📸 Photo EXIF / GPS Privacy Scrubber", "\uE722", TrSec, EnSec, "exif gps fotograf resim photo gizlilik metadata scrubber");
         AddEntry("ClipboardShield", "Akıllı Pano & Takip URL Temizleyici", "Smart Clipboard Privacy Shield", "\uE77F", TrSec, EnSec, "clipboard pano utm api key iban");
         AddEntry("BitLocker", "BitLocker & ISO/VHD Sanal Disk", "BitLocker & Mounted ISO/VHD", "\uEDA2", TrSec, EnSec, "bitlocker iso vhd vhdx mount");
-        AddEntry("CredentialSsh", "Kimlik Kasası (cmdkey) & SSH", "Credential Vault (cmdkey) & SSH", "\uE8D7", TrSec, EnSec, "ssh credential cmdkey git key");
+        AddEntry("CredentialSsh", "Kimlik Kasası (cmdkey) & SSH", "Credential Vault (cmdkey) & SSH", "\uE77B", TrSec, EnSec, "ssh credential cmdkey git key");
         AddEntry("UsbForensics", "USB Depolama Geçmişi (USBSTOR)", "USB Storage Forensics (USBSTOR)", "\uE88E", TrSec, EnSec, "usb usbstor adli analiz history");
-        AddEntry("CrashLogs", "Mavi Ekran (BSOD) & Olay Günlüğü", "BSOD Crash Dumps & Event Logs", "\uE7BA", TrSec, EnSec, "bsod dmp eventlog cokme crash");
+
+        // 8. Geliştirici & Yapay Zeka (6)
         AddEntry("AiModelCleaner", "Yapay Zeka (AI / LLM) Model Avcısı", "Local AI / LLM Model & Cache Hunter", "\uE99A", TrDev, EnDev, "ollama huggingface lmstudio gguf safetensors ai llm chrome gemini nano optguideondevicemodel weights.bin claude rootfs vhdx");
         AddEntry("DockerWsl", "WSL2 & Docker Yöneticisi", "WSL2 & Docker Cleaner", "\uE756", TrDev, EnDev, "wsl wsl2 docker container prune");
         AddEntry("GitRepoCompressor", "Git Depo (.git) Sıkıştırıcı (git gc)", "Git Repository (.git) Compressor (git gc)", "\uE8B7", TrDev, EnDev, "git gc branch repo");
         AddEntry("DevCleaner", "VS Debug/Retail & DevCleaner", "DevCleaner (VS Debug/Retail, node_modules)", "\uE943", TrDev, EnDev, "visual studio debug release obj node_modules");
         AddEntry("PackageCaches", "NuGet / NPM & WSL2 / Claude VHDX Yöneticisi", "Package Caches & WSL2 / Claude VHDX", "\uE7B8", TrDev, EnDev, "nuget npm pip cargo gradle maven vhdx claude rootfs compact sikistir");
-        AddEntry("SqliteOptimizer", "Tarayıcı & IDE SQLite Sıkıştırıcı", "Browser & IDE SQLite Vacuum Optimizer", "\uEE94", TrDev, EnDev, "sqlite veritabani wal chrome vscode cursor vacuum");
-        AddEntry("BatchRenamer", "Toplu Dosya Adlandırıcı (PowerRename)", "Batch File Renamer (PowerRename)", "\uE8AC", TrDev, EnDev, "rename toplu adlandirma prefix suffix");
-        AddEntry("Unlocker", "Kilitli Dosya Çözücü (File Unlocker)", "Locked File Unlocker (Restart Manager)", "\uE785", TrDev, EnDev, "kilitli dosya locked unlocker restart manager");
         AddEntry("PathDoctor", "PATH Doktoru & Kırık Kısayollar", "Environment PATH & Shortcut Doctor", "\uE950", TrDev, EnDev, "path ortam degiskeni lnk kisayol shortcut");
-        AddEntry("TasksAndTree", "Zamanlanmış Görevler & Klasör Ağacı", "Task Scheduler & Folder Size Tree", "\uE823", TrDev, EnDev, "task scheduler klasor boyutu folder size");
-        AddEntry("BrowserExtensions", "Tarayıcı Eklentileri Denetçisi", "Browser Extensions Auditor", "\uEA86", TrDev, EnDev, "extension eklenti chrome edge browser");
-        AddEntry("DriversUpdates", "KB Güncellemeler & Sürücü Deposu", "Windows Updates (KB) & DriverStore", "\uE777", TrDev, EnDev, "hotfix kb driverstore pnputil drivers");
+
+        // Pinned Bottom Anchor
         AddEntry("Settings", "Tema, Dil, Güncelleme, Beyaz Liste & Raporlar", "Settings, Themes, Language, Portable & Bundles", "\uE713", TrSet, EnSet, "tema theme dil language tr en guncelle update tray portable support zip whitelist ayarlar rapor settings");
     }
 }
