@@ -4,11 +4,28 @@ updates:
     directory: "/FreeCleaner"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "Microsoft.Data.Sqlite"
+        update-types: ["version-update:semver-major"]
+    groups:
+      runtime-dependencies:
+        patterns:
+          - "*"
+
   - package-ecosystem: "nuget"
     directory: "/FreeCleaner.Tests"
     schedule:
       interval: "weekly"
+    groups:
+      test-dependencies:
+        patterns:
+          - "*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
