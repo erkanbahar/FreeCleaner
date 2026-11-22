@@ -1,5 +1,5 @@
 PackageIdentifier: ErkanBahar.FreeCleanerPro
-PackageVersion: 4.5.0
+PackageVersion: 4.6.0
 Platform:
   - Windows.Desktop
 MinimumOSVersion: 10.0.19041.0
@@ -8,7 +8,7 @@ Commands:
   - freecleaner
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/erkanbahar/FreeCleaner/releases/download/v4.5.0/FreeCleaner.exe
+    InstallerUrl: https://github.com/erkanbahar/FreeCleaner/releases/download/v4.6.0/FreeCleaner.exe
     InstallerSha256: REPLACE_WITH_RELEASE_SHA256
     PortableCommandAlias: freecleaner
 ManifestType: installer

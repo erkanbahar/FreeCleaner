@@ -256,7 +256,7 @@ public class V45UpgradesTests
     {
         string repoRoot = FindRepoRoot();
         string version = AppUpdateService.CurrentVersion;
-        Assert.Equal("4.5.0", version);
+        Assert.Equal("4.6.0", version);
 
         string[] governanceFiles =
         [

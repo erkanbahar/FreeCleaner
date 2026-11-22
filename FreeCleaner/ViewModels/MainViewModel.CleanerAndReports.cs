@@ -46,7 +46,7 @@ public partial class MainViewModel
             _selectedLanguage);
         AddLog("Analiz başlatıldı (Hiçbir dosya silinmiyor, Beyaz Liste korunuyor)...");
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         var progress = new Progress<(int Percent, string CurrentRuleName, long TotalFoundBytes, int TotalFoundCount)>(report =>
         {
             ProgressPercent = report.Percent;
@@ -60,7 +60,7 @@ public partial class MainViewModel
 
         try
         {
-            var results = await _engine.AnalyzeAsync(AllRules, ExcludedPaths.ToList(), progress, _cts.Token);
+            var results = await _engine.AnalyzeAsync(AllRules, ExcludedPaths.ToList(), progress, token);
 
             foreach (var item in results)
             {
@@ -227,7 +227,7 @@ public partial class MainViewModel
         StatusMessage = LocalizationService.GetText("Temizlik işlemi yürütülüyor...", "Cleaning in progress...", _selectedLanguage);
         AddLog($"Temizlik başlatıldı ({selectedCount:N0} öğe, {selectedSize})...");
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         var progress = new Progress<(int Percent, string CurrentFile, long FreedBytes, int DeletedCount)>(report =>
         {
             ProgressPercent = report.Percent;
@@ -246,7 +246,7 @@ public partial class MainViewModel
                 AllRules,
                 UseRecycleBinSafety,
                 progress,
-                _cts.Token);
+                token);
 
             LastFreedBytes = summary.FreedBytes;
             LastDeletedFiles = summary.DeletedFilesCount;

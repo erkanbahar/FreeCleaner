@@ -385,7 +385,9 @@ public partial class MainViewModel
             HasCompletedOnboarding = _hasCompletedOnboarding,
             CustomProfiles = CustomProfiles.ToList(),
             AutoCheckUpdatesOnStartup = _autoCheckUpdatesOnStartup,
-            LastUpdateCheckDate = _lastUpdateCheckDate
+            LastUpdateCheckDate = _lastUpdateCheckDate,
+            DevWorkspacePath = _devWorkspacePath,
+            GitWorkspacePath = _gitWorkspacePath
         };
     }
 
@@ -512,6 +514,16 @@ public partial class MainViewModel
             _lastStorageForecastAlertDate = imported.LastStorageForecastAlertDate ?? string.Empty;
             _autoCheckUpdatesOnStartup = imported.AutoCheckUpdatesOnStartup;
             _lastUpdateCheckDate = imported.LastUpdateCheckDate ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(imported.DevWorkspacePath) && Directory.Exists(imported.DevWorkspacePath))
+            {
+                _devWorkspacePath = imported.DevWorkspacePath;
+                OnPropertyChanged(nameof(DevWorkspacePath));
+            }
+            if (!string.IsNullOrWhiteSpace(imported.GitWorkspacePath) && Directory.Exists(imported.GitWorkspacePath))
+            {
+                _gitWorkspacePath = imported.GitWorkspacePath;
+                OnPropertyChanged(nameof(GitWorkspacePath));
+            }
             OnPropertyChanged(nameof(ProactiveStorageAlertsEnabled));
             OnPropertyChanged(nameof(StorageAlertThresholdDays));
             OnPropertyChanged(nameof(AutoCheckUpdatesOnStartup));

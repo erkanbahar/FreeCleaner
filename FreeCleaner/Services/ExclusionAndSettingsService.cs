@@ -40,6 +40,8 @@ public class CleanerConfigData
     public List<CustomCleaningProfile> CustomProfiles { get; set; } = [];
     public bool AutoCheckUpdatesOnStartup { get; set; } = true;
     public string LastUpdateCheckDate { get; set; } = string.Empty;
+    public string DevWorkspacePath { get; set; } = string.Empty;
+    public string GitWorkspacePath { get; set; } = string.Empty;
 }
 
 public static class ExclusionAndSettingsService

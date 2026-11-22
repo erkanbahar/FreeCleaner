@@ -48,12 +48,19 @@ public partial class App : Application
         {
             Dispatcher.BeginInvoke(async () =>
             {
-                window.BringToFrontFromExternalTrigger();
-                var forwardedAction = Services.ShellIntegrationAndProfilesService.ParseStartupArguments(forwardedArgs);
-                if (forwardedAction.Kind != Services.CliLaunchActionKind.None &&
-                    window.DataContext is ViewModels.MainViewModel vm)
+                try
                 {
-                    await vm.ApplyCliLaunchActionAsync(forwardedAction);
+                    window.BringToFrontFromExternalTrigger();
+                    var forwardedAction = Services.ShellIntegrationAndProfilesService.ParseStartupArguments(forwardedArgs);
+                    if (forwardedAction.Kind != Services.CliLaunchActionKind.None &&
+                        window.DataContext is ViewModels.MainViewModel vm)
+                    {
+                        await vm.ApplyCliLaunchActionAsync(forwardedAction);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Services.ErrorLogService.Log("IPC Başlatma", ex);
                 }
             });
         });
@@ -62,8 +69,15 @@ public partial class App : Application
         {
             window.Loaded += async (_, _) =>
             {
-                if (window.DataContext is ViewModels.MainViewModel viewModel)
-                    await viewModel.ApplyCliLaunchActionAsync(cliAction);
+                try
+                {
+                    if (window.DataContext is ViewModels.MainViewModel viewModel)
+                        await viewModel.ApplyCliLaunchActionAsync(cliAction);
+                }
+                catch (Exception ex)
+                {
+                    Services.ErrorLogService.Log("CLI Başlatma", ex);
+                }
             };
         }
     }

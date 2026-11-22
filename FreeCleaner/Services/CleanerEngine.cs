@@ -296,7 +296,7 @@ public class CleanerEngine
                 Id = "app_vs_debug_retail",
                 Name = "Visual Studio Projeleri (Debug & Retail / Release)",
                 Category = "Visual Studio & .NET",
-                Description = "C:\\CURSOR ve Repos içindeki Visual Studio projelerinin Debug, Retail, Release, bin ve obj klasörleri",
+                Description = "Geliştirici çalışma klasörlerindeki (source\\repos, Projects, Repos) Visual Studio projelerinin Debug, Retail, Release, bin ve obj klasörleri",
                 IconGlyph = "\uE943",
                 Group = RuleGroup.DeveloperAndApps,
                 RiskLevel = RiskLevel.High,
@@ -329,10 +329,10 @@ public class CleanerEngine
         string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         string[] candidateRoots =
         [
-            @"C:\CURSOR",
             Path.Combine(userProfile, "source", "repos"),
             Path.Combine(userProfile, "Repos"),
-            Path.Combine(userProfile, "Projects")
+            Path.Combine(userProfile, "Projects"),
+            Path.Combine(userProfile, "Documents", "Visual Studio 2022", "Projects")
         ];
 
         foreach (string root in candidateRoots)

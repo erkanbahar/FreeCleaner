@@ -626,9 +626,7 @@ public static class EnterprisePowerToolsService
         {
             try
             {
-                string reportDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-                    "FreeCleaner_Raporlar");
+                string reportDir = AppStoragePathsService.GetReportsDirectory();
                 Directory.CreateDirectory(reportDir);
 
                 string reportFile = Path.Combine(reportDir, $"Pil_Saglik_Raporu_{DateTime.Now:yyyyMMdd_HHmmss}.html");

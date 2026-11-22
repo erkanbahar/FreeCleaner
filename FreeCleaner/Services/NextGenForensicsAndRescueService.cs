@@ -223,7 +223,7 @@ public static class NextGenForensicsAndRescueService
             // B) Saved Wi-Fi Profiles & Cleartext Passwords via netsh wlan
             try
             {
-                string profilesOut = RunNetshOutput("wlan show profiles");
+                string profilesOut = RunNetshOutput("wlan", "show", "profiles");
                 var profileNames = new List<string>();
 
                 foreach (var rawLine in profilesOut.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
@@ -243,7 +243,7 @@ public static class NextGenForensicsAndRescueService
 
                 foreach (var ssid in profileNames.Distinct(StringComparer.OrdinalIgnoreCase))
                 {
-                    string detailOut = RunNetshOutput($"wlan show profile name=\"{ssid}\" key=clear");
+                    string detailOut = RunNetshOutput("wlan", "show", "profile", $"name={ssid}", "key=clear");
                     string auth = "WPA2/WPA3";
                     string password = "(Şifresiz / Açık Ağ veya Bulunamadı)";
 
@@ -283,19 +283,11 @@ public static class NextGenForensicsAndRescueService
         });
     }
 
-    private static string RunNetshOutput(string args)
+    private static string RunNetshOutput(params string[] arguments)
     {
         try
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = $"/c \"chcp 65001 >nul && netsh.exe {args}\"",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true,
-                StandardOutputEncoding = Encoding.UTF8
-            };
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo("netsh.exe", arguments, redirectOutput: true);
             using var proc = Process.Start(psi);
             if (proc is null) return string.Empty;
             string output = proc.StandardOutput.ReadToEnd();

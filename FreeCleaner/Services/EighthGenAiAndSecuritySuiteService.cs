@@ -288,15 +288,8 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
                 string appName = Path.GetFileNameWithoutExtension(exeFullPath);
                 string ruleName = $"FreeCleaner_Block_{appName}";
 
-                string cmd = $"netsh advfirewall firewall add rule name=\"{ruleName}\" dir=out action=block program=\"{exeFullPath}\" enable=yes & netsh advfirewall firewall add rule name=\"{ruleName}_In\" dir=in action=block program=\"{exeFullPath}\" enable=yes";
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c \"{cmd}\"",
-                    UseShellExecute = true,
-                    Verb = "runas",
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
+                string script = SafeProcessRunner.BuildFirewallBlockScript(ruleName, exeFullPath);
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: true);
                 using var proc = Process.Start(psi);
                 proc?.WaitForExit(10000);
 
@@ -319,17 +312,8 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
 
             try
             {
-                var cmds = selected.Select(r => $"netsh advfirewall firewall delete rule name=\"{r.RuleName}\"");
-                string joined = string.Join(" & ", cmds);
-
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c \"{joined}\"",
-                    UseShellExecute = true,
-                    Verb = "runas",
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
+                string script = SafeProcessRunner.BuildFirewallDeleteScript(selected.Select(r => r.RuleName));
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: true);
                 using var proc = Process.Start(psi);
                 proc?.WaitForExit(10000);
 
@@ -829,13 +813,8 @@ Get-Volume | Where-Object { $_.DriveLetter } | ForEach-Object {
 
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"Mount-DiskImage -ImagePath '{isoOrVhdPath.Replace("'", "''")}' -ErrorAction Stop\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
+                string script = SafeProcessRunner.BuildMountDiskImageScript(isoOrVhdPath);
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script);
                 using var proc = Process.Start(psi);
                 proc?.WaitForExit(10000);
                 return proc?.ExitCode == 0
@@ -855,20 +834,9 @@ Get-Volume | Where-Object { $_.DriveLetter } | ForEach-Object {
         {
             try
             {
-                char driveLetter = item.DriveRoot[0];
-                string ps = item.BackingImagePath.EndsWith(".vhd", StringComparison.OrdinalIgnoreCase) ||
-                            item.BackingImagePath.EndsWith(".vhdx", StringComparison.OrdinalIgnoreCase) ||
-                            item.BackingImagePath.EndsWith(".iso", StringComparison.OrdinalIgnoreCase)
-                    ? $"Dismount-DiskImage -ImagePath '{item.BackingImagePath.Replace("'", "''")}' -ErrorAction SilentlyContinue"
-                    : $"Get-Volume -DriveLetter '{driveLetter}' | Get-DiskImage -ErrorAction SilentlyContinue | Dismount-DiskImage -ErrorAction SilentlyContinue; (New-Object -ComObject Shell.Application).Namespace(17).ParseName('{driveLetter}:').InvokeVerb('Eject')";
-
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{ps}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
+                char driveLetter = !string.IsNullOrEmpty(item.DriveRoot) ? item.DriveRoot[0] : 'C';
+                string ps = SafeProcessRunner.BuildDismountDiskImageScript(item.BackingImagePath, driveLetter);
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps);
                 using var proc = Process.Start(psi);
                 proc?.WaitForExit(8000);
                 return (true, $"{item.DriveRoot} ({item.VolumeLabel}) sanal diski / ISO imajı sistemden ayrıldı (Dismount).");

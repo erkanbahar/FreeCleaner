@@ -24,10 +24,60 @@ public class RelayCommand(Action<object?> execute, Predicate<object?>? canExecut
     }
 }
 
+public sealed class AsyncRelayCommand(
+    Func<object?, Task> executeAsync,
+    Predicate<object?>? canExecute = null,
+    Action<Exception>? onError = null) : ICommand
+{
+    private bool _isExecuting;
+
+    public bool CanExecute(object? parameter)
+        => !_isExecuting && (canExecute?.Invoke(parameter) ?? true);
+
+    public async void Execute(object? parameter)
+        => await ExecuteAsync(parameter);
+
+    public async Task ExecuteAsync(object? parameter)
+    {
+        if (!CanExecute(parameter))
+            return;
+
+        _isExecuting = true;
+        CommandManager.InvalidateRequerySuggested();
+        try
+        {
+            await executeAsync(parameter);
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected when an active scan/operation is cancelled.
+        }
+        catch (Exception ex)
+        {
+            if (onError is not null)
+                onError(ex);
+            else
+                ErrorLogService.Log("AsyncRelayCommand", ex);
+        }
+        finally
+        {
+            _isExecuting = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+
+    public event EventHandler? CanExecuteChanged
+    {
+        add => CommandManager.RequerySuggested += value;
+        remove => CommandManager.RequerySuggested -= value;
+    }
+}
+
 public sealed record SimilarSensitivityOption(string Label, int MaxDistance);
 
-public partial class MainViewModel : INotifyPropertyChanged
+public partial class MainViewModel : INotifyPropertyChanged, IDisposable
 {
+    private bool _disposed;
     private readonly CleanerEngine _engine = new();
     private readonly DispatcherTimer _autoMonitorTimer;
     private readonly DispatcherTimer _liveTelemetryTimer;
@@ -151,7 +201,7 @@ public partial class MainViewModel : INotifyPropertyChanged
     private string _lastForecastSampleDateKey = string.Empty;
 
     // 2nd Generation Advanced Modules state
-    private string _devWorkspacePath = @"C:\CURSOR";
+    private string _devWorkspacePath = AppStoragePathsService.ResolveDefaultDevWorkspaceRoot();
     private bool _vsIncludeDebug = true;
     private bool _vsIncludeRetailAndRelease = true;
     private bool _vsIncludeObjAndVs = true;
@@ -600,6 +650,10 @@ public partial class MainViewModel : INotifyPropertyChanged
         _hasCompletedOnboarding = savedConfig.HasCompletedOnboarding;
         _autoCheckUpdatesOnStartup = savedConfig.AutoCheckUpdatesOnStartup;
         _lastUpdateCheckDate = savedConfig.LastUpdateCheckDate ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(savedConfig.DevWorkspacePath) && Directory.Exists(savedConfig.DevWorkspacePath))
+            _devWorkspacePath = savedConfig.DevWorkspacePath;
+        if (!string.IsNullOrWhiteSpace(savedConfig.GitWorkspacePath) && Directory.Exists(savedConfig.GitWorkspacePath))
+            _gitWorkspacePath = savedConfig.GitWorkspacePath;
         foreach (CustomCleaningProfile cp in savedConfig.CustomProfiles ?? [])
         {
             if (!string.IsNullOrWhiteSpace(cp.Name))
@@ -639,8 +693,8 @@ public partial class MainViewModel : INotifyPropertyChanged
         FilteredActivityLogsView.Filter = FilterActivityLogPredicate;
 
         // Cleaner Commands
-        AnalyzeCommand = new RelayCommand(async _ => await RunAnalyzeAsync(), _ => !IsBusy);
-        CleanCommand = new RelayCommand(async _ => await RunCleanAsync(), _ => !IsBusy && HasAnalyzed && TotalSelectedFilesCount > 0);
+        AnalyzeCommand = CreateAsyncCommand(async _ => await RunAnalyzeAsync(), _ => !IsBusy);
+        CleanCommand = CreateAsyncCommand(async _ => await RunCleanAsync(), _ => !IsBusy && HasAnalyzed && TotalSelectedFilesCount > 0);
         CancelCommand = new RelayCommand(_ => _cts?.Cancel(), _ => IsBusy);
         SelectSectionCommand = new RelayCommand(param =>
         {
@@ -667,7 +721,7 @@ public partial class MainViewModel : INotifyPropertyChanged
         });
 
         // Registry Commands
-        ScanRegistryCommand = new RelayCommand(async _ => await RunRegistryScanAsync(), _ => !IsBusy);
+        ScanRegistryCommand = CreateAsyncCommand(async _ => await RunRegistryScanAsync(), _ => !IsBusy);
         BackupRegistryCommand = new RelayCommand(_ => RunRegistryBackupOnly(), _ => !IsBusy && RegistryIssues.Any(x => x.IsSelected));
         RestoreRegistryBackupCommand = new RelayCommand(_ => RestoreLatestRegistryBackup(), _ => !IsBusy && RegistryCleanerService.GetLatestBackupFile() is not null);
         RefreshBackupsCommand = new RelayCommand(_ => LoadBackups(), _ => !IsBusy);
@@ -678,8 +732,8 @@ public partial class MainViewModel : INotifyPropertyChanged
 
         // Disk Analyzer Commands
         BrowseDiskFolderCommand = new RelayCommand(_ => BrowseDiskTargetFolder(), _ => !IsBusy);
-        ScanLargeFilesCommand = new RelayCommand(async _ => await RunScanLargeFilesAsync(), _ => !IsBusy);
-        ScanDuplicatesCommand = new RelayCommand(async _ => await RunScanDuplicatesAsync(), _ => !IsBusy);
+        ScanLargeFilesCommand = CreateAsyncCommand(async _ => await RunScanLargeFilesAsync(), _ => !IsBusy);
+        ScanDuplicatesCommand = CreateAsyncCommand(async _ => await RunScanDuplicatesAsync(), _ => !IsBusy);
         DeleteSelectedDiskFilesCommand = new RelayCommand(_ => DeleteSelectedDiskAnalyzerFiles(), _ => !IsBusy && DiskAnalyzerItems.Any(x => x.IsSelected));
         OpenDiskFileLocationCommand = new RelayCommand(param =>
         {
@@ -688,7 +742,7 @@ public partial class MainViewModel : INotifyPropertyChanged
         });
 
         // Uninstaller & Orphan Commands
-        RefreshInstalledAppsCommand = new RelayCommand(async _ => await LoadInstalledAppsAsync(), _ => !IsBusy);
+        RefreshInstalledAppsCommand = CreateAsyncCommand(async _ => await LoadInstalledAppsAsync(), _ => !IsBusy);
         UninstallAppCommand = new RelayCommand(param =>
         {
             if (param is InstalledAppModel app)
@@ -699,13 +753,13 @@ public partial class MainViewModel : INotifyPropertyChanged
                     MessageBox.Show(msg, "Kaldırıcı Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         });
-        ScanOrphanFoldersCommand = new RelayCommand(async _ => await RunScanOrphanFoldersAsync(), _ => !IsBusy);
+        ScanOrphanFoldersCommand = CreateAsyncCommand(async _ => await RunScanOrphanFoldersAsync(), _ => !IsBusy);
         CleanOrphanFoldersCommand = new RelayCommand(_ => CleanSelectedOrphanFolders(), _ => !IsBusy && OrphanFolders.Any(x => x.IsSelected));
 
         // Booster & Reports Commands
-        OptimizeRamCommand = new RelayCommand(async _ => await RunOptimizeRamAsync(), _ => !IsBusy);
-        FlushDnsCommand = new RelayCommand(async _ => await RunFlushDnsAsync(), _ => !IsBusy);
-        ResetNetCacheCommand = new RelayCommand(async _ => await RunResetNetCacheAsync(), _ => !IsBusy);
+        OptimizeRamCommand = CreateAsyncCommand(async _ => await RunOptimizeRamAsync(), _ => !IsBusy);
+        FlushDnsCommand = CreateAsyncCommand(async _ => await RunFlushDnsAsync(), _ => !IsBusy);
+        ResetNetCacheCommand = CreateAsyncCommand(async _ => await RunResetNetCacheAsync(), _ => !IsBusy);
         LaunchCleanMgrCommand = new RelayCommand(_ => SystemBoosterAndReportService.LaunchWindowsDiskCleanup());
         LaunchSystemRestoreCommand = new RelayCommand(_ => SystemBoosterAndReportService.LaunchSystemPropertiesRestore());
         RefreshTopProcessesCommand = new RelayCommand(_ => LoadTopMemoryProcesses());
@@ -729,25 +783,25 @@ public partial class MainViewModel : INotifyPropertyChanged
 
         // DevCleaner & Gamer Commands
         BrowseDevWorkspaceCommand = new RelayCommand(_ => BrowseDevWorkspace(), _ => !IsBusy);
-        ScanVsDebugRetailCommand = new RelayCommand(async _ => await RunScanVsDebugRetailAsync(autoDeleteAfterScan: false), _ => !IsBusy);
-        AutoCleanVsDebugRetailCommand = new RelayCommand(async _ => await RunScanVsDebugRetailAsync(autoDeleteAfterScan: true), _ => !IsBusy);
-        ScanDevProjectsCommand = new RelayCommand(async _ => await RunScanDevProjectsAsync(), _ => !IsBusy);
-        ScanGamerCachesCommand = new RelayCommand(async _ => await RunScanGamerCachesAsync(), _ => !IsBusy);
+        ScanVsDebugRetailCommand = CreateAsyncCommand(async _ => await RunScanVsDebugRetailAsync(autoDeleteAfterScan: false), _ => !IsBusy);
+        AutoCleanVsDebugRetailCommand = CreateAsyncCommand(async _ => await RunScanVsDebugRetailAsync(autoDeleteAfterScan: true), _ => !IsBusy);
+        ScanDevProjectsCommand = CreateAsyncCommand(async _ => await RunScanDevProjectsAsync(), _ => !IsBusy);
+        ScanGamerCachesCommand = CreateAsyncCommand(async _ => await RunScanGamerCachesAsync(), _ => !IsBusy);
         CleanDevArtifactsCommand = new RelayCommand(_ => CleanSelectedDevArtifacts(), _ => !IsBusy && DevArtifactItems.Any(x => x.IsSelected));
 
         // File Shredder & Free Space Wiper Commands
         AddShredFilesCommand = new RelayCommand(_ => AddFilesToShredQueue(), _ => !IsBusy);
         AddShredFolderCommand = new RelayCommand(_ => AddFolderToShredQueue(), _ => !IsBusy);
         ClearShredQueueCommand = new RelayCommand(_ => ShredQueueItems.Clear(), _ => !IsBusy && ShredQueueItems.Count > 0);
-        ExecuteShredderCommand = new RelayCommand(async _ => await RunFileShredderAsync(), _ => !IsBusy && ShredQueueItems.Count > 0);
-        WipeFreeSpaceCommand = new RelayCommand(async _ => await RunFreeSpaceWiperAsync(), _ => !IsBusy);
+        ExecuteShredderCommand = CreateAsyncCommand(async _ => await RunFileShredderAsync(), _ => !IsBusy && ShredQueueItems.Count > 0);
+        WipeFreeSpaceCommand = CreateAsyncCommand(async _ => await RunFreeSpaceWiperAsync(), _ => !IsBusy);
 
         // Privacy Shield Commands
-        ScanPrivacyTracesCommand = new RelayCommand(async _ => await RunScanPrivacyTracesAsync(), _ => !IsBusy);
-        CleanPrivacyTracesCommand = new RelayCommand(async _ => await RunCleanPrivacyTracesAsync(), _ => !IsBusy && PrivacyTraces.Any(x => x.IsSelected));
+        ScanPrivacyTracesCommand = CreateAsyncCommand(async _ => await RunScanPrivacyTracesAsync(), _ => !IsBusy);
+        CleanPrivacyTracesCommand = CreateAsyncCommand(async _ => await RunCleanPrivacyTracesAsync(), _ => !IsBusy && PrivacyTraces.Any(x => x.IsSelected));
 
         // Network Connections & Hosts Commands
-        RefreshConnectionsCommand = new RelayCommand(async _ => await LoadActiveConnectionsAsync(), _ => !IsBusy);
+        RefreshConnectionsCommand = CreateAsyncCommand(async _ => await LoadActiveConnectionsAsync(), _ => !IsBusy);
         RefreshHostsCommand = new RelayCommand(_ => LoadHostsEntries(), _ => !IsBusy);
         AddHostEntryCommand = new RelayCommand(_ => AddNewHostEntry(), _ => !IsBusy);
         RestoreHostsBackupCommand = new RelayCommand(_ => RestoreLatestHostsBackup(), _ => !IsBusy && PrivacyAndNetworkShieldService.GetLatestHostsBackup() is not null);
@@ -759,42 +813,42 @@ public partial class MainViewModel : INotifyPropertyChanged
         LoadBackups();
 
         // Task Scheduler & Folder Space Tree Commands
-        RefreshScheduledTasksCommand = new RelayCommand(async _ => await LoadScheduledTasksAsync(), _ => !IsBusy);
+        RefreshScheduledTasksCommand = CreateAsyncCommand(async _ => await LoadScheduledTasksAsync(), _ => !IsBusy);
         BrowseSpaceTreeFolderCommand = new RelayCommand(_ => BrowseSpaceTreeFolder(), _ => !IsBusy);
-        AnalyzeFolderSpaceTreeCommand = new RelayCommand(async _ => await RunAnalyzeFolderSpaceTreeAsync(), _ => !IsBusy);
+        AnalyzeFolderSpaceTreeCommand = CreateAsyncCommand(async _ => await RunAnalyzeFolderSpaceTreeAsync(), _ => !IsBusy);
 
         // 3rd Gen Ultimate Suite Commands
-        ScanOldInstallersCommand = new RelayCommand(async _ => await RunScanOldInstallersAsync(), _ => !IsBusy);
+        ScanOldInstallersCommand = CreateAsyncCommand(async _ => await RunScanOldInstallersAsync(), _ => !IsBusy);
         BrowseEmptyFolderTargetCommand = new RelayCommand(_ => BrowseEmptyFolderTarget(), _ => !IsBusy);
-        ScanEmptyFoldersCommand = new RelayCommand(async _ => await RunScanEmptyFoldersAsync(), _ => !IsBusy);
+        ScanEmptyFoldersCommand = CreateAsyncCommand(async _ => await RunScanEmptyFoldersAsync(), _ => !IsBusy);
         CleanDownloadsAndEmptyCommand = new RelayCommand(_ => CleanSelectedDownloadsAndEmpty(), _ => !IsBusy && DownloadsAndEmptyItems.Any(x => x.IsSelected));
         RefreshContextMenuCommand = new RelayCommand(_ => LoadContextMenuEntries(), _ => !IsBusy);
         DeleteContextMenuCommand = new RelayCommand(_ => DeleteSelectedContextMenuEntries(), _ => !IsBusy && ContextMenuEntries.Any(x => x.IsSelected));
-        RefreshServicesCommand = new RelayCommand(async _ => await LoadOptimizableServicesAsync(), _ => !IsBusy);
-        StartServiceCommand = new RelayCommand(async param =>
+        RefreshServicesCommand = CreateAsyncCommand(async _ => await LoadOptimizableServicesAsync(), _ => !IsBusy);
+        StartServiceCommand = CreateAsyncCommand(async param =>
         {
             if (param is WindowsServiceOptItem svc)
                 await ControlServiceAsync(svc, start: true);
         }, _ => !IsBusy);
-        StopServiceCommand = new RelayCommand(async param =>
+        StopServiceCommand = CreateAsyncCommand(async param =>
         {
             if (param is WindowsServiceOptItem svc)
                 await ControlServiceAsync(svc, start: false);
         }, _ => !IsBusy);
-        RefreshDiskAndPowerCommand = new RelayCommand(async _ => await LoadDiskAndPowerAsync(), _ => !IsBusy);
-        ActivatePowerPlanCommand = new RelayCommand(async param =>
+        RefreshDiskAndPowerCommand = CreateAsyncCommand(async _ => await LoadDiskAndPowerAsync(), _ => !IsBusy);
+        ActivatePowerPlanCommand = CreateAsyncCommand(async param =>
         {
             if (param is PowerPlanItem plan)
                 await ActivatePowerPlanAsync(plan);
         }, _ => !IsBusy);
-        UnlockUltimatePowerCommand = new RelayCommand(async _ => await UnlockUltimatePowerPlanAsync(), _ => !IsBusy);
-        RunDismCheckCommand = new RelayCommand(async _ => await RunDismHealthCheckAsync(), _ => !IsBusy);
+        UnlockUltimatePowerCommand = CreateAsyncCommand(async _ => await UnlockUltimatePowerPlanAsync(), _ => !IsBusy);
+        RunDismCheckCommand = CreateAsyncCommand(async _ => await RunDismHealthCheckAsync(), _ => !IsBusy);
         LaunchSfcScannowCommand = new RelayCommand(_ =>
         {
             UltimateSystemSuiteService.LaunchElevatedSfcScannow();
             AddLog("[ONARIM MERKEZİ] Yönetici CMD üzerinde 'sfc /scannow' başlatıldı.");
         });
-        CleanFontAndWindowsOldCommand = new RelayCommand(async _ => await CleanFontCacheAndWindowsOldAsync(), _ => !IsBusy);
+        CleanFontAndWindowsOldCommand = CreateAsyncCommand(async _ => await CleanFontCacheAndWindowsOldAsync(), _ => !IsBusy);
         RestartAsAdminCommand = new RelayCommand(_ =>
         {
             if (UltimateSystemSuiteService.RestartAppAsAdministrator())
@@ -806,32 +860,32 @@ public partial class MainViewModel : INotifyPropertyChanged
         // 4th Gen Enterprise & Power-User Commands
         BrowseUnlockerFileCommand = new RelayCommand(_ => BrowseUnlockerFile(), _ => !IsBusy);
         BrowseUnlockerFolderCommand = new RelayCommand(_ => BrowseUnlockerFolder(), _ => !IsBusy);
-        ScanLockingProcessesCommand = new RelayCommand(async _ => await RunScanLockingProcessesAsync(), _ => !IsBusy);
-        KillLockingProcessCommand = new RelayCommand(async param =>
+        ScanLockingProcessesCommand = CreateAsyncCommand(async _ => await RunScanLockingProcessesAsync(), _ => !IsBusy);
+        KillLockingProcessCommand = CreateAsyncCommand(async param =>
         {
             if (param is LockingProcessItem proc)
                 await KillLockingProcessAndRescanAsync(proc);
         }, _ => !IsBusy);
-        ScanBrowserExtensionsCommand = new RelayCommand(async _ => await LoadBrowserExtensionsAsync(), _ => !IsBusy);
+        ScanBrowserExtensionsCommand = CreateAsyncCommand(async _ => await LoadBrowserExtensionsAsync(), _ => !IsBusy);
         OpenExtensionFolderCommand = new RelayCommand(param =>
         {
             if (param is BrowserExtensionItem ext)
                 OpenExplorerPath(ext.FullPath);
         });
         RemoveSelectedExtensionsCommand = new RelayCommand(_ => RemoveSelectedBrowserExtensions(), _ => !IsBusy && BrowserExtensions.Any(x => x.IsSelected));
-        ScanDriversAndHotfixesCommand = new RelayCommand(async _ => await LoadDriversAndHotfixesAsync(), _ => !IsBusy);
-        ScanPathAndShortcutsCommand = new RelayCommand(async _ => await LoadPathAndShortcutIssuesAsync(), _ => !IsBusy);
+        ScanDriversAndHotfixesCommand = CreateAsyncCommand(async _ => await LoadDriversAndHotfixesAsync(), _ => !IsBusy);
+        ScanPathAndShortcutsCommand = CreateAsyncCommand(async _ => await LoadPathAndShortcutIssuesAsync(), _ => !IsBusy);
         FixPathAndShortcutsCommand = new RelayCommand(_ => FixSelectedPathAndShortcuts(), _ => !IsBusy && PathAndShortcutIssues.Any(x => x.IsSelected));
-        ActivateGameBoosterCommand = new RelayCommand(async _ => await RunGameBoosterAsync(), _ => !IsBusy);
-        GenerateBatteryReportCommand = new RelayCommand(async _ => await RunGenerateBatteryReportAsync(), _ => !IsBusy);
+        ActivateGameBoosterCommand = CreateAsyncCommand(async _ => await RunGameBoosterAsync(), _ => !IsBusy);
+        GenerateBatteryReportCommand = CreateAsyncCommand(async _ => await RunGenerateBatteryReportAsync(), _ => !IsBusy);
 
         // 5th Gen Forensics, Wi-Fi, Package Caches, Restore Point & FileAssoc Commands
-        ScanCrashLogsCommand = new RelayCommand(async _ => await LoadCrashAndEventLogsAsync(), _ => !IsBusy);
-        CleanCrashDumpsCommand = new RelayCommand(async _ => await RunCleanCrashDumpsAsync(), _ => !IsBusy && CrashAndEventLogs.Any(x => !string.IsNullOrWhiteSpace(x.DumpFilePath)));
-        ScanWifiAndDnsCommand = new RelayCommand(async _ => await LoadWifiAndDnsAsync(), _ => !IsBusy);
-        ScanPackageCachesCommand = new RelayCommand(async _ => await LoadGlobalPackageCachesAsync(), _ => !IsBusy);
-        CleanPackageCachesCommand = new RelayCommand(async _ => await RunCleanPackageCachesAsync(), _ => !IsBusy && GlobalPackageCaches.Any(x => x.IsSelected && x.CanSafeDelete));
-        CompactVhdxCommand = new RelayCommand(async param =>
+        ScanCrashLogsCommand = CreateAsyncCommand(async _ => await LoadCrashAndEventLogsAsync(), _ => !IsBusy);
+        CleanCrashDumpsCommand = CreateAsyncCommand(async _ => await RunCleanCrashDumpsAsync(), _ => !IsBusy && CrashAndEventLogs.Any(x => !string.IsNullOrWhiteSpace(x.DumpFilePath)));
+        ScanWifiAndDnsCommand = CreateAsyncCommand(async _ => await LoadWifiAndDnsAsync(), _ => !IsBusy);
+        ScanPackageCachesCommand = CreateAsyncCommand(async _ => await LoadGlobalPackageCachesAsync(), _ => !IsBusy);
+        CleanPackageCachesCommand = CreateAsyncCommand(async _ => await RunCleanPackageCachesAsync(), _ => !IsBusy && GlobalPackageCaches.Any(x => x.IsSelected && x.CanSafeDelete));
+        CompactVhdxCommand = CreateAsyncCommand(async param =>
         {
             if (param is GlobalPackageCacheItem item)
                 await RunCompactVhdxAsync(item);
@@ -841,40 +895,40 @@ public partial class MainViewModel : INotifyPropertyChanged
             if (param is GlobalPackageCacheItem item)
                 OpenExplorerPath(item.FolderPath);
         });
-        RefreshRestorePointsCommand = new RelayCommand(async _ => await LoadRestorePointsAsync(), _ => !IsBusy);
-        CreateRestorePointCommand = new RelayCommand(async _ => await RunCreateRestorePointAsync(), _ => !IsBusy);
+        RefreshRestorePointsCommand = CreateAsyncCommand(async _ => await LoadRestorePointsAsync(), _ => !IsBusy);
+        CreateRestorePointCommand = CreateAsyncCommand(async _ => await RunCreateRestorePointAsync(), _ => !IsBusy);
         OpenGodModeCommand = new RelayCommand(_ => ExecuteOpenGodMode());
         LaunchSystemToolCommand = new RelayCommand(param =>
         {
             if (param is string tool && !string.IsNullOrWhiteSpace(tool))
                 NextGenForensicsAndRescueService.LaunchSystemUtility(tool);
         });
-        ScanFileAssocCommand = new RelayCommand(async _ => await LoadFileAssociationsAsync(), _ => !IsBusy);
+        ScanFileAssocCommand = CreateAsyncCommand(async _ => await LoadFileAssociationsAsync(), _ => !IsBusy);
         ResetFileAssocCommand = new RelayCommand(_ => ExecuteResetFileAssociations(), _ => !IsBusy && FileAssociations.Any(x => x.IsSelected));
 
         // 6th Gen Port Hunter, Bloatware, Disk Benchmark, Hardware & USB History Commands
-        ScanListeningPortsCommand = new RelayCommand(async _ => await LoadListeningPortsAsync(), _ => !IsBusy);
-        KillPortProcessCommand = new RelayCommand(async param =>
+        ScanListeningPortsCommand = CreateAsyncCommand(async _ => await LoadListeningPortsAsync(), _ => !IsBusy);
+        KillPortProcessCommand = CreateAsyncCommand(async param =>
         {
             if (param is ListeningPortItem item)
                 await KillPortAndRefreshAsync(item);
         }, _ => !IsBusy);
-        ScanAppxBloatwareCommand = new RelayCommand(async _ => await LoadAppxBloatwareAsync(), _ => !IsBusy);
-        RemoveSelectedAppxCommand = new RelayCommand(async _ => await RunRemoveSelectedAppxAsync(), _ => !IsBusy && AppxBloatwareItems.Any(x => x.IsSelected));
-        RefreshBenchmarkDrivesCommand = new RelayCommand(async _ => await LoadBenchmarkDrivesAsync(), _ => !IsBusy);
-        RunDiskBenchmarkCommand = new RelayCommand(async _ => await ExecuteDiskBenchmarkAsync(), _ => !IsBusy);
-        RefreshHardwareInventoryCommand = new RelayCommand(async _ => await LoadHardwareSpecsAsync(), _ => !IsBusy);
-        ScanUsbHistoryCommand = new RelayCommand(async _ => await LoadUsbHistoryAsync(), _ => !IsBusy);
+        ScanAppxBloatwareCommand = CreateAsyncCommand(async _ => await LoadAppxBloatwareAsync(), _ => !IsBusy);
+        RemoveSelectedAppxCommand = CreateAsyncCommand(async _ => await RunRemoveSelectedAppxAsync(), _ => !IsBusy && AppxBloatwareItems.Any(x => x.IsSelected));
+        RefreshBenchmarkDrivesCommand = CreateAsyncCommand(async _ => await LoadBenchmarkDrivesAsync(), _ => !IsBusy);
+        RunDiskBenchmarkCommand = CreateAsyncCommand(async _ => await ExecuteDiskBenchmarkAsync(), _ => !IsBusy);
+        RefreshHardwareInventoryCommand = CreateAsyncCommand(async _ => await LoadHardwareSpecsAsync(), _ => !IsBusy);
+        ScanUsbHistoryCommand = CreateAsyncCommand(async _ => await LoadUsbHistoryAsync(), _ => !IsBusy);
         CleanUsbHistoryCommand = new RelayCommand(_ => ExecuteCleanUsbHistory(), _ => !IsBusy && UsbHistoryItems.Any(x => x.IsSelected));
 
         // 7th Gen Commands initialization
-        ScanProcessSecurityCommand = new RelayCommand(async _ => await LoadProcessSecurityItemsAsync(), _ => !IsBusy);
+        ScanProcessSecurityCommand = CreateAsyncCommand(async _ => await LoadProcessSecurityItemsAsync(), _ => !IsBusy);
         OpenProcessSecurityFileCommand = new RelayCommand(param =>
         {
             if (param is ProcessSecurityAuditItem item)
                 OpenExplorerPath(item.ExecutablePath);
         });
-        KillProcessSecurityItemCommand = new RelayCommand(async param =>
+        KillProcessSecurityItemCommand = CreateAsyncCommand(async param =>
         {
             if (param is ProcessSecurityAuditItem item)
                 await KillSecurityProcessAndRefreshAsync(item);
@@ -883,13 +937,13 @@ public partial class MainViewModel : INotifyPropertyChanged
         PreviewBatchRenameCommand = new RelayCommand(_ => GenerateBatchRenamePreview(), _ => !IsBusy);
         ApplyBatchRenameCommand = new RelayCommand(_ => ExecuteApplyBatchRename(), _ => !IsBusy && BatchRenameItems.Any(x => x.IsSelected));
         UndoBatchRenameCommand = new RelayCommand(_ => ExecuteUndoBatchRename(), _ => !IsBusy);
-        RefreshNetworkAdaptersCommand = new RelayCommand(async _ => await LoadNetworkAdaptersAsync(), _ => !IsBusy);
-        RunNetworkRepairActionCommand = new RelayCommand(async param =>
+        RefreshNetworkAdaptersCommand = CreateAsyncCommand(async _ => await LoadNetworkAdaptersAsync(), _ => !IsBusy);
+        RunNetworkRepairActionCommand = CreateAsyncCommand(async param =>
         {
             if (param is string actionKey)
                 await ExecuteNetworkRepairActionAsync(actionKey);
         }, _ => !IsBusy);
-        ScanInstalledFontsCommand = new RelayCommand(async _ => await LoadInstalledFontsAsync(), _ => !IsBusy);
+        ScanInstalledFontsCommand = CreateAsyncCommand(async _ => await LoadInstalledFontsAsync(), _ => !IsBusy);
         RemoveSelectedUserFontsCommand = new RelayCommand(_ => ExecuteRemoveSelectedUserFonts(), _ => !IsBusy && InstalledFonts.Any(x => x.IsSelected && x.IsUserFont));
         OpenWindowsFontsFolderCommand = new RelayCommand(_ => OpenExplorerPath(Environment.GetFolderPath(Environment.SpecialFolder.Fonts)));
         InspectClipboardNowCommand = new RelayCommand(_ => ExecuteInspectClipboardNow());
@@ -906,20 +960,20 @@ public partial class MainViewModel : INotifyPropertyChanged
 
         // 8th Gen Commands initialization
         BrowseAiScanFolderCommand = new RelayCommand(_ => BrowseAiScanFolder(), _ => !IsBusy);
-        ScanAiModelCachesCommand = new RelayCommand(async _ => await LoadAiModelCachesAsync(), _ => !IsBusy);
-        CleanSelectedAiCachesCommand = new RelayCommand(async _ => await ExecuteCleanAiCachesAsync(), _ => !IsBusy && AiModelCaches.Any(x => x.IsSelected));
+        ScanAiModelCachesCommand = CreateAsyncCommand(async _ => await LoadAiModelCachesAsync(), _ => !IsBusy);
+        CleanSelectedAiCachesCommand = CreateAsyncCommand(async _ => await ExecuteCleanAiCachesAsync(), _ => !IsBusy && AiModelCaches.Any(x => x.IsSelected));
         OpenAiCacheLocationCommand = new RelayCommand(param =>
         {
             if (param is AiModelCacheItem item)
                 OpenExplorerPath(item.FullPath);
         });
-        RefreshFirewallRulesCommand = new RelayCommand(async _ => await LoadFirewallBlockRulesAsync(), _ => !IsBusy);
-        BrowseAndBlockExeFirewallCommand = new RelayCommand(async _ => await BrowseAndBlockExecutableInFirewallAsync(), _ => !IsBusy);
-        RemoveSelectedFirewallRulesCommand = new RelayCommand(async _ => await ExecuteRemoveSelectedFirewallRulesAsync(), _ => !IsBusy && FirewallBlockRules.Any(x => x.IsSelected));
+        RefreshFirewallRulesCommand = CreateAsyncCommand(async _ => await LoadFirewallBlockRulesAsync(), _ => !IsBusy);
+        BrowseAndBlockExeFirewallCommand = CreateAsyncCommand(async _ => await BrowseAndBlockExecutableInFirewallAsync(), _ => !IsBusy);
+        RemoveSelectedFirewallRulesCommand = CreateAsyncCommand(async _ => await ExecuteRemoveSelectedFirewallRulesAsync(), _ => !IsBusy && FirewallBlockRules.Any(x => x.IsSelected));
         BrowseVaultTargetFileCommand = new RelayCommand(_ => BrowseVaultTargetFile(), _ => !IsBusy);
-        ComputeMultiHashesCommand = new RelayCommand(async _ => await ExecuteComputeMultiHashesAsync(), _ => !IsBusy);
-        EncryptVaultFileCommand = new RelayCommand(async _ => await ExecuteEncryptVaultFileAsync(), _ => !IsBusy);
-        DecryptVaultFileCommand = new RelayCommand(async _ => await ExecuteDecryptVaultFileAsync(), _ => !IsBusy);
+        ComputeMultiHashesCommand = CreateAsyncCommand(async _ => await ExecuteComputeMultiHashesAsync(), _ => !IsBusy);
+        EncryptVaultFileCommand = CreateAsyncCommand(async _ => await ExecuteEncryptVaultFileAsync(), _ => !IsBusy);
+        DecryptVaultFileCommand = CreateAsyncCommand(async _ => await ExecuteDecryptVaultFileAsync(), _ => !IsBusy);
         CopyHashValueCommand = new RelayCommand(param =>
         {
             if (param is FileHashAndVaultResultItem row && !string.IsNullOrEmpty(row.HashOrOutputValue))
@@ -935,22 +989,22 @@ public partial class MainViewModel : INotifyPropertyChanged
                 ExecuteToggleWindowsTweak(tweak);
         }, _ => !IsBusy);
         RestartExplorerNowCommand = new RelayCommand(_ => ExecuteRestartExplorerNow(), _ => !IsBusy);
-        RefreshVolumesAndBitLockerCommand = new RelayCommand(async _ => await LoadVolumeSecurityAndMountsAsync(), _ => !IsBusy);
-        BrowseAndMountDiskImageCommand = new RelayCommand(async _ => await BrowseAndMountIsoOrVhdAsync(), _ => !IsBusy);
-        DismountVolumeItemCommand = new RelayCommand(async param =>
+        RefreshVolumesAndBitLockerCommand = CreateAsyncCommand(async _ => await LoadVolumeSecurityAndMountsAsync(), _ => !IsBusy);
+        BrowseAndMountDiskImageCommand = CreateAsyncCommand(async _ => await BrowseAndMountIsoOrVhdAsync(), _ => !IsBusy);
+        DismountVolumeItemCommand = CreateAsyncCommand(async param =>
         {
             if (param is VolumeSecurityAndMountItem vol)
                 await ExecuteDismountVolumeAsync(vol);
         }, _ => !IsBusy);
 
         // 9th Gen Commands initialization
-        ScanWingetUpgradesCommand = new RelayCommand(async _ => await LoadWingetUpgradesAsync(), _ => !IsBusy);
-        UpgradeSelectedWingetCommand = new RelayCommand(async _ => await ExecuteWingetUpgradeAsync(upgradeAll: false), _ => !IsBusy && WingetUpgrades.Any(x => x.IsSelected));
-        UpgradeAllWingetCommand = new RelayCommand(async _ => await ExecuteWingetUpgradeAsync(upgradeAll: true), _ => !IsBusy);
-        ScanLanDevicesCommand = new RelayCommand(async _ => await LoadLanDevicesAsync(), _ => !IsBusy);
-        ScanSqliteDatabasesCommand = new RelayCommand(async _ => await LoadSqliteDatabasesAsync(), _ => !IsBusy);
-        OptimizeSqliteDatabasesCommand = new RelayCommand(async _ => await ExecuteOptimizeSqliteDatabasesAsync(), _ => !IsBusy && SqliteDatabases.Any(x => x.IsSelected));
-        ScanCredentialsAndSshCommand = new RelayCommand(async _ => await LoadCredentialsAndSshAsync(), _ => !IsBusy);
+        ScanWingetUpgradesCommand = CreateAsyncCommand(async _ => await LoadWingetUpgradesAsync(), _ => !IsBusy);
+        UpgradeSelectedWingetCommand = CreateAsyncCommand(async _ => await ExecuteWingetUpgradeAsync(upgradeAll: false), _ => !IsBusy && WingetUpgrades.Any(x => x.IsSelected));
+        UpgradeAllWingetCommand = CreateAsyncCommand(async _ => await ExecuteWingetUpgradeAsync(upgradeAll: true), _ => !IsBusy);
+        ScanLanDevicesCommand = CreateAsyncCommand(async _ => await LoadLanDevicesAsync(), _ => !IsBusy);
+        ScanSqliteDatabasesCommand = CreateAsyncCommand(async _ => await LoadSqliteDatabasesAsync(), _ => !IsBusy);
+        OptimizeSqliteDatabasesCommand = CreateAsyncCommand(async _ => await ExecuteOptimizeSqliteDatabasesAsync(), _ => !IsBusy && SqliteDatabases.Any(x => x.IsSelected));
+        ScanCredentialsAndSshCommand = CreateAsyncCommand(async _ => await LoadCredentialsAndSshAsync(), _ => !IsBusy);
         DeleteSelectedCredentialsCommand = new RelayCommand(_ => ExecuteDeleteSelectedCredentials(), _ => !IsBusy && CredentialsAndSshItems.Any(x => x.IsSelected && x.CanDeleteFromVault));
         CopyCredentialOrSshValueCommand = new RelayCommand(param =>
         {
@@ -960,36 +1014,36 @@ public partial class MainViewModel : INotifyPropertyChanged
                 StatusMessage = $"'{item.TargetOrKeyName}' detayı / açık anahtarı panoya kopyalandı!";
             }
         });
-        RefreshProcessPriorityListCommand = new RelayCommand(async _ => await LoadProcessPriorityItemsAsync(), _ => !IsBusy);
-        SetProcessHighPriorityCommand = new RelayCommand(async param =>
+        RefreshProcessPriorityListCommand = CreateAsyncCommand(async _ => await LoadProcessPriorityItemsAsync(), _ => !IsBusy);
+        SetProcessHighPriorityCommand = CreateAsyncCommand(async param =>
         {
             if (param is ProcessPriorityItem item)
                 await ChangeProcessPriorityAndRefreshAsync(item, ProcessPriorityClass.High);
         }, _ => !IsBusy);
-        SetProcessNormalPriorityCommand = new RelayCommand(async param =>
+        SetProcessNormalPriorityCommand = CreateAsyncCommand(async param =>
         {
             if (param is ProcessPriorityItem item)
                 await ChangeProcessPriorityAndRefreshAsync(item, ProcessPriorityClass.Normal);
         }, _ => !IsBusy);
-        SetProcessEcoPriorityCommand = new RelayCommand(async param =>
+        SetProcessEcoPriorityCommand = CreateAsyncCommand(async param =>
         {
             if (param is ProcessPriorityItem item)
                 await ChangeProcessPriorityAndRefreshAsync(item, ProcessPriorityClass.Idle);
         }, _ => !IsBusy);
 
         // 10th Gen Commands initialization
-        ScanBootPerformanceCommand = new RelayCommand(async _ => await LoadBootPerformanceAsync(), _ => !IsBusy);
-        ScanDockerAndWslCommand = new RelayCommand(async _ => await LoadDockerAndWslItemsAsync(), _ => !IsBusy);
-        ShutdownWslCommand = new RelayCommand(async _ => await ExecuteShutdownWslAsync(), _ => !IsBusy);
-        PruneDockerSystemCommand = new RelayCommand(async _ => await ExecutePruneDockerSystemAsync(), _ => !IsBusy);
-        ScanDefenderAuditCommand = new RelayCommand(async _ => await LoadDefenderAuditAsync(), _ => !IsBusy);
-        UpdateDefenderSignaturesCommand = new RelayCommand(async _ => await ExecuteDefenderActionAsync(quickScan: false), _ => !IsBusy);
-        RunDefenderQuickScanCommand = new RelayCommand(async _ => await ExecuteDefenderActionAsync(quickScan: true), _ => !IsBusy);
-        ScanMonitorsAndGpuCommand = new RelayCommand(async _ => await LoadMonitorsAndGpuAsync(), _ => !IsBusy);
-        RestartGpuDriverCommand = new RelayCommand(async _ => await ExecuteRestartGpuDriverAsync(), _ => !IsBusy);
+        ScanBootPerformanceCommand = CreateAsyncCommand(async _ => await LoadBootPerformanceAsync(), _ => !IsBusy);
+        ScanDockerAndWslCommand = CreateAsyncCommand(async _ => await LoadDockerAndWslItemsAsync(), _ => !IsBusy);
+        ShutdownWslCommand = CreateAsyncCommand(async _ => await ExecuteShutdownWslAsync(), _ => !IsBusy);
+        PruneDockerSystemCommand = CreateAsyncCommand(async _ => await ExecutePruneDockerSystemAsync(), _ => !IsBusy);
+        ScanDefenderAuditCommand = CreateAsyncCommand(async _ => await LoadDefenderAuditAsync(), _ => !IsBusy);
+        UpdateDefenderSignaturesCommand = CreateAsyncCommand(async _ => await ExecuteDefenderActionAsync(quickScan: false), _ => !IsBusy);
+        RunDefenderQuickScanCommand = CreateAsyncCommand(async _ => await ExecuteDefenderActionAsync(quickScan: true), _ => !IsBusy);
+        ScanMonitorsAndGpuCommand = CreateAsyncCommand(async _ => await LoadMonitorsAndGpuAsync(), _ => !IsBusy);
+        RestartGpuDriverCommand = CreateAsyncCommand(async _ => await ExecuteRestartGpuDriverAsync(), _ => !IsBusy);
         BrowseGitWorkspaceCommand = new RelayCommand(_ => BrowseGitWorkspace(), _ => !IsBusy);
-        ScanGitReposCommand = new RelayCommand(async _ => await LoadGitReposAsync(), _ => !IsBusy);
-        CompressSelectedGitReposCommand = new RelayCommand(async _ => await ExecuteCompressSelectedGitReposAsync(), _ => !IsBusy && GitRepoItems.Any(x => x.IsSelected));
+        ScanGitReposCommand = CreateAsyncCommand(async _ => await LoadGitReposAsync(), _ => !IsBusy);
+        CompressSelectedGitReposCommand = CreateAsyncCommand(async _ => await ExecuteCompressSelectedGitReposAsync(), _ => !IsBusy && GitRepoItems.Any(x => x.IsSelected));
         OpenGitRepoFolderCommand = new RelayCommand(param =>
         {
             if (param is GitRepoCompressionItem repo)
@@ -997,7 +1051,7 @@ public partial class MainViewModel : INotifyPropertyChanged
         });
 
         // Flagship Dashboard, Favorites, Live Telemetry & Theme Commands
-        RunOneClickHealthCheckCommand = new RelayCommand(async _ => await RunOneClickHealthCheckAsync(), _ => !IsBusy);
+        RunOneClickHealthCheckCommand = CreateAsyncCommand(async _ => await RunOneClickHealthCheckAsync(), _ => !IsBusy);
         ToggleCurrentFavoriteCommand = new RelayCommand(_ => ToggleCurrentSectionFavorite());
         ApplyThemeCommand = new RelayCommand(param =>
         {
@@ -1007,14 +1061,14 @@ public partial class MainViewModel : INotifyPropertyChanged
 
         // 11th Gen Disk Treemap, Photo EXIF/GPS Scrubber & App Update Commands
         BrowseTreemapFolderCommand = new RelayCommand(_ => BrowseTreemapFolder(), _ => !IsBusy);
-        AnalyzeTreemapCommand = new RelayCommand(async _ => await LoadTreemapAsync(forceRefresh: true), _ => !IsBusy);
-        NavigateTreemapParentCommand = new RelayCommand(async _ => await NavigateTreemapParentAsync(), _ => !IsBusy);
-        QuickSelectTreemapPathCommand = new RelayCommand(async param =>
+        AnalyzeTreemapCommand = CreateAsyncCommand(async _ => await LoadTreemapAsync(forceRefresh: true), _ => !IsBusy);
+        NavigateTreemapParentCommand = CreateAsyncCommand(async _ => await NavigateTreemapParentAsync(), _ => !IsBusy);
+        QuickSelectTreemapPathCommand = CreateAsyncCommand(async param =>
         {
             if (param is string preset)
                 await SelectTreemapPresetAsync(preset);
         }, _ => !IsBusy);
-        DrillDownTreemapNodeCommand = new RelayCommand(async param =>
+        DrillDownTreemapNodeCommand = CreateAsyncCommand(async param =>
         {
             if (param is TreemapNodeItem node && node.IsDirectory && System.IO.Directory.Exists(node.FullPath))
             {
@@ -1030,32 +1084,32 @@ public partial class MainViewModel : INotifyPropertyChanged
         OpenTreemapCurrentFolderCommand = new RelayCommand(_ => OpenExplorerPath(TreemapCurrentPath));
 
         BrowseExifFolderCommand = new RelayCommand(_ => BrowseExifFolder(), _ => !IsBusy);
-        ScanPhotosExifCommand = new RelayCommand(async _ => await LoadPhotoMetadataAsync(), _ => !IsBusy);
-        ScrubSelectedPhotosCommand = new RelayCommand(async _ => await ScrubSelectedPhotosAsync(), _ => !IsBusy && PhotoMetadataItems.Any(p => p.IsSelected));
+        ScanPhotosExifCommand = CreateAsyncCommand(async _ => await LoadPhotoMetadataAsync(), _ => !IsBusy);
+        ScrubSelectedPhotosCommand = CreateAsyncCommand(async _ => await ScrubSelectedPhotosAsync(), _ => !IsBusy && PhotoMetadataItems.Any(p => p.IsSelected));
         OpenPhotoLocationCommand = new RelayCommand(param =>
         {
             if (param is PhotoMetadataItem photo)
                 OpenExplorerPath(photo.FullPath);
         });
 
-        CheckForUpdatesCommand = new RelayCommand(async _ => await CheckForUpdatesAsync(), _ => !IsBusy);
+        CheckForUpdatesCommand = CreateAsyncCommand(async _ => await CheckForUpdatesAsync(), _ => !IsBusy);
         OpenLatestReleasePageCommand = new RelayCommand(_ => OpenUrlSafe(_latestReleaseUrl));
 
         // 12th Gen Commands
-        MoveTreemapNodeToRecycleBinCommand = new RelayCommand(async param =>
+        MoveTreemapNodeToRecycleBinCommand = CreateAsyncCommand(async param =>
         {
             if (param is TreemapNodeItem node)
                 await MoveTreemapNodeToRecycleBinAsync(node);
         }, param => !IsBusy && param is TreemapNodeItem { CanSafeDelete: true });
-        ScanDeepSpaceCommand = new RelayCommand(async _ => await LoadDeepSpaceAsync(), _ => !IsBusy);
-        ExecuteDeepSpaceItemCommand = new RelayCommand(async param =>
+        ScanDeepSpaceCommand = CreateAsyncCommand(async _ => await LoadDeepSpaceAsync(), _ => !IsBusy);
+        ExecuteDeepSpaceItemCommand = CreateAsyncCommand(async param =>
         {
             if (param is DeepSpaceItem item)
                 await ExecuteDeepSpaceItemAsync(item);
         }, param => !IsBusy && param is DeepSpaceItem { CanExecuteAction: true });
         BrowseSimilarPhotosFolderCommand = new RelayCommand(_ => BrowseSimilarPhotosFolder(), _ => !IsBusy);
-        ScanSimilarPhotosCommand = new RelayCommand(async _ => await LoadSimilarPhotosAsync(), _ => !IsBusy);
-        CleanSelectedSimilarPhotosCommand = new RelayCommand(async _ => await CleanSelectedSimilarPhotosAsync(), _ => !IsBusy && SimilarPhotoItems.Any(p => p.IsSelected));
+        ScanSimilarPhotosCommand = CreateAsyncCommand(async _ => await LoadSimilarPhotosAsync(), _ => !IsBusy);
+        CleanSelectedSimilarPhotosCommand = CreateAsyncCommand(async _ => await CleanSelectedSimilarPhotosAsync(), _ => !IsBusy && SimilarPhotoItems.Any(p => p.IsSelected));
         OpenSimilarPhotoLocationCommand = new RelayCommand(param =>
         {
             if (param is SimilarPhotoItem photo)
@@ -1074,20 +1128,20 @@ public partial class MainViewModel : INotifyPropertyChanged
         RemoveExplorerContextMenuCommand = new RelayCommand(_ => ExecuteRemoveExplorerContextMenu());
         ExportSettingsConfigCommand = new RelayCommand(_ => ExecuteExportSettingsConfig());
         ImportSettingsConfigCommand = new RelayCommand(_ => ExecuteImportSettingsConfig());
-        MergeDuplicatesWithHardlinksCommand = new RelayCommand(
+        MergeDuplicatesWithHardlinksCommand = CreateAsyncCommand(
             async _ => await MergeDuplicatesWithHardlinksAsync(),
             _ => !IsBusy && DiskAnalyzerItems.Any(x => x.IsDuplicate && x.IsSelected));
 
         // 14th Gen Commands
         SaveTreemapSnapshotCommand = new RelayCommand(_ => ExecuteSaveTreemapSnapshot(), _ => !IsBusy && _lastTreemapRawEntries.Count > 0);
-        CompareTreemapSnapshotCommand = new RelayCommand(async _ => await ExecuteCompareTreemapSnapshotAsync(), _ => !IsBusy);
+        CompareTreemapSnapshotCommand = CreateAsyncCommand(async _ => await ExecuteCompareTreemapSnapshotAsync(), _ => !IsBusy);
         ClearTreemapDiffCommand = new RelayCommand(_ => ExecuteClearTreemapDiff());
         OpenTreemapDiffPathCommand = new RelayCommand(param =>
         {
             if (param is DiskGrowthDiffItem diff)
                 OpenExplorerPath(diff.FullPath);
         });
-        DownloadAndInstallUpdateCommand = new RelayCommand(
+        DownloadAndInstallUpdateCommand = CreateAsyncCommand(
             async _ => await DownloadAndInstallUpdateAsync(),
             _ => CanDownloadUpdate);
 
@@ -1149,8 +1203,15 @@ public partial class MainViewModel : INotifyPropertyChanged
         };
         _autoMonitorTimer.Tick += async (_, _) =>
         {
-            await CheckAutoMonitorThresholdAsync();
-            await CheckScheduledMaintenanceAsync();
+            try
+            {
+                await CheckAutoMonitorThresholdAsync();
+                await CheckScheduledMaintenanceAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorLogService.Log("Arka Plan İzleme", ex);
+            }
         };
         if (_autoMonitorEnabled)
             _autoMonitorTimer.Start();

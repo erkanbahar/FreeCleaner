@@ -1838,7 +1838,7 @@ public static class LocalizationService
         ["app_vs_debug_retail"] = new(
             "Visual Studio Projeleri (Debug & Retail / Release)",
             "Visual Studio & .NET",
-            "C:\\CURSOR ve Repos içindeki Visual Studio projelerinin Debug, Retail, Release, bin ve obj klasörleri",
+            "Geliştirici çalışma klasörlerindeki (source\\repos, Projects, Repos) Visual Studio projelerinin Debug, Retail, Release, bin ve obj klasörleri",
             "Seçili klasörlerdeki Visual Studio projelerinin Debug ve Retail/Release derleme çıktıları temizlenecektir.",
             "Visual Studio Builds (Debug / Retail / Release)",
             "Visual Studio & .NET",

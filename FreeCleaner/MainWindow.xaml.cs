@@ -251,6 +251,7 @@ public partial class MainWindow : Window
         Microsoft.Win32.SystemEvents.UserPreferenceChanged -= SystemEvents_UserPreferenceChanged;
         _trayService?.Dispose();
         _trayService = null;
+        (DataContext as IDisposable)?.Dispose();
     }
 
     public void BringToFrontFromExternalTrigger() => RestoreWindowFromTray();

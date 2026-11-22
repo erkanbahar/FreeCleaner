@@ -54,6 +54,42 @@ public static partial class AppStoragePathsService
     public static string GetHostsBackupsDirectory(string? baseDirOverride = null)
         => Path.Combine(GetDataDirectory(baseDirOverride), "HostsBackups");
 
+    public static string GetReportsDirectory(string? baseDirOverride = null)
+        => IsPortableModeEnabled(baseDirOverride)
+            ? Path.Combine(GetPortableDataDirectory(baseDirOverride), "Reports")
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                "FreeCleaner_Raporlar");
+
+    public static string GetFontBackupsDirectory(string? baseDirOverride = null)
+        => IsPortableModeEnabled(baseDirOverride)
+            ? Path.Combine(GetPortableDataDirectory(baseDirOverride), "FontBackups")
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                "FreeCleaner_FontBackup");
+
+    public static string ResolveDefaultDevWorkspaceRoot(IEnumerable<string>? candidateRootsOverride = null)
+    {
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        IEnumerable<string> candidates = candidateRootsOverride ??
+        [
+            Path.Combine(userProfile, "source", "repos"),
+            Path.Combine(userProfile, "Projects"),
+            Path.Combine(userProfile, "Repos"),
+            Path.Combine(userProfile, "Documents")
+        ];
+
+        foreach (string dir in candidates)
+        {
+            if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir))
+                return dir;
+        }
+
+        return !string.IsNullOrWhiteSpace(userProfile) && Directory.Exists(userProfile)
+            ? userProfile
+            : AppContext.BaseDirectory;
+    }
+
     public static (bool Success, string Message) SetPortableMode(
         bool enabled,
         string? baseDirOverride = null,

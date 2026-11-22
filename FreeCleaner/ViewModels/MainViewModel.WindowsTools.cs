@@ -110,10 +110,10 @@ public partial class MainViewModel
         DownloadsAndEmptyItems.Clear();
         StatusMessage = $"İndirilenler ve Masaüstü klasörlerinde {InstallerMinAgeDays} günden eski kurulum (.exe, .msi) ve arşiv (.zip, .iso) dosyaları aranıyor...";
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         try
         {
-            var found = await UltimateSystemSuiteService.ScanOldInstallersAndArchivesAsync(InstallerMinAgeDays, _cts.Token);
+            var found = await UltimateSystemSuiteService.ScanOldInstallersAndArchivesAsync(InstallerMinAgeDays, token);
             foreach (var item in found)
                 DownloadsAndEmptyItems.Add(item);
 
@@ -146,10 +146,10 @@ public partial class MainViewModel
         DownloadsAndEmptyItems.Clear();
         StatusMessage = $"'{EmptyFolderScanTarget}' altındaki içi boş klasörler taranıyor...";
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         try
         {
-            var found = await UltimateSystemSuiteService.ScanEmptyDirectoriesAsync(EmptyFolderScanTarget, _cts.Token);
+            var found = await UltimateSystemSuiteService.ScanEmptyDirectoriesAsync(EmptyFolderScanTarget, token);
             foreach (var item in found)
                 DownloadsAndEmptyItems.Add(item);
 

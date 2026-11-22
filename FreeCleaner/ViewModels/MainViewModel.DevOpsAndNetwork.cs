@@ -106,7 +106,7 @@ public partial class MainViewModel
         WingetProgressPercent = 0;
         WingetProgressCounterText = $"0 / {targets.Count}";
         WingetCurrentPackageText = "Winget güncellemesi hazırlanıyor...";
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
 
         // Progress<T> marshals callbacks back to the UI thread automatically
         var progress = new Progress<(int Completed, int Total, WingetUpgradeItem Item, bool IsStarting, bool Success)>(p =>
@@ -137,7 +137,7 @@ public partial class MainViewModel
 
         try
         {
-            var (updated, failed, msg) = await NinthGenWingetAndNetworkSuiteService.UpgradeWingetPackagesWithProgressAsync(targets, progress, _cts.Token);
+            var (updated, failed, msg) = await NinthGenWingetAndNetworkSuiteService.UpgradeWingetPackagesWithProgressAsync(targets, progress, token);
             WingetProgressPercent = 100;
             ProgressPercent = 100;
             WingetCurrentPackageText = $"✅ Tamamlandı — {updated} başarılı, {failed} başarısız.";
@@ -269,7 +269,7 @@ public partial class MainViewModel
 
     // ==================== 16. 10TH GEN BOOT TIME, DOCKER/WSL2, DEFENDER AUDITOR, MONITOR/HZ & GIT GC ====================
 
-    private string _gitWorkspacePath = @"C:\CURSOR";
+    private string _gitWorkspacePath = AppStoragePathsService.ResolveDefaultDevWorkspaceRoot();
     public string GitWorkspacePath
     {
         get => _gitWorkspacePath;
@@ -279,6 +279,8 @@ public partial class MainViewModel
             {
                 _gitWorkspacePath = value;
                 OnPropertyChanged();
+                if (!string.IsNullOrWhiteSpace(value))
+                    SaveCurrentSettings();
             }
         }
     }

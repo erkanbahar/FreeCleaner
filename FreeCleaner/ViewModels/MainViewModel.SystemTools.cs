@@ -20,6 +20,8 @@ public partial class MainViewModel
             {
                 _devWorkspacePath = value;
                 OnPropertyChanged();
+                if (!string.IsNullOrWhiteSpace(value))
+                    SaveCurrentSettings();
             }
         }
     }
@@ -72,7 +74,7 @@ public partial class MainViewModel
         StatusMessage = $"'{DevWorkspacePath}' içindeki Visual Studio projelerinin Debug / Retail / Release klasörleri taranıyor...";
         AddLog($"[VS TEMİZLEYİCİ] Visual Studio Debug & Retail klasörleri taranıyor: {DevWorkspacePath}");
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         var progress = new Progress<(string CurrentDir, int FoundCount)>(rep =>
         {
             CurrentOperationDetail = $"Bulunan VS Klasörü: {rep.FoundCount} • {rep.CurrentDir}";
@@ -86,7 +88,7 @@ public partial class MainViewModel
                 VsIncludeRetailAndRelease,
                 VsIncludeObjAndVs,
                 progress,
-                _cts.Token);
+                token);
 
             foreach (var item in found)
                 DevArtifactItems.Add(item);
@@ -248,7 +250,7 @@ public partial class MainViewModel
         StatusMessage = $"'{DevWorkspacePath}' içindeki yazılım projelerinin derleme/paket klasörleri taranıyor...";
         AddLog($"[DEVCLEANER] Proje klasörü taranıyor: {DevWorkspacePath}");
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         var progress = new Progress<(string CurrentDir, int FoundCount)>(rep =>
         {
             CurrentOperationDetail = $"Bulunan: {rep.FoundCount} • {rep.CurrentDir}";
@@ -256,7 +258,7 @@ public partial class MainViewModel
 
         try
         {
-            var found = await DevAndGamerCleanerService.ScanWorkspaceArtifactsAsync(DevWorkspacePath, progress, _cts.Token);
+            var found = await DevAndGamerCleanerService.ScanWorkspaceArtifactsAsync(DevWorkspacePath, progress, token);
             foreach (var item in found)
                 DevArtifactItems.Add(item);
 
@@ -283,10 +285,10 @@ public partial class MainViewModel
         StatusMessage = "GPU Shader (NVIDIA/AMD), Steam, Epic, Pip, Yarn, Gradle ve Cargo önbellekleri taranıyor...";
         AddLog("[GAMER & GLOBAL CACHE] Oyun ve paket yöneticisi önbellekleri taranıyor...");
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         try
         {
-            var found = await DevAndGamerCleanerService.ScanGlobalDevAndGamerCachesAsync(_cts.Token);
+            var found = await DevAndGamerCleanerService.ScanGlobalDevAndGamerCachesAsync(token);
             foreach (var item in found)
                 DevArtifactItems.Add(item);
 
@@ -405,7 +407,7 @@ public partial class MainViewModel
 
         IsBusy = true;
         ProgressPercent = 0;
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
 
         var progress = new Progress<(int Percent, string CurrentItem)>(rep =>
         {
@@ -419,7 +421,7 @@ public partial class MainViewModel
                 ShredQueueItems,
                 ShredPassesCount,
                 progress,
-                _cts.Token);
+                token);
 
             LastFreedBytes += bytes;
             LastDeletedFiles += shreddedCount;
@@ -444,7 +446,7 @@ public partial class MainViewModel
 
         IsBusy = true;
         ProgressPercent = 0;
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
 
         var progress = new Progress<(int Percent, string Status)>(rep =>
         {
@@ -458,7 +460,7 @@ public partial class MainViewModel
                 "C:\\",
                 FreeSpaceWipeMb,
                 progress,
-                _cts.Token);
+                token);
 
             StatusMessage = $"Boş alan sıfırlama tamamlandı ({CleanerRule.FormatBytes(wiped)} sektör temizlendi).";
             AddLog($"[BOŞ ALAN SİLİCİ] {CleanerRule.FormatBytes(wiped)} boş disk alanı kriptografik olarak sıfırlandı.");

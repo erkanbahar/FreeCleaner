@@ -439,9 +439,7 @@ public static class SeventhGenSecurityAndPowerSuiteService
         int deleted = 0;
         long freed = 0;
 
-        string backupDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-            "FreeCleaner_FontBackup");
+        string backupDir = AppStoragePathsService.GetFontBackupsDirectory();
 
         foreach (var font in items.Where(x => x.IsSelected))
         {
@@ -466,7 +464,7 @@ public static class SeventhGenSecurityAndPowerSuiteService
         }
 
         string msg = deleted > 0
-            ? $"{deleted} kullanıcı fontu Masaüstü/FreeCleaner_FontBackup klasörüne yedeklendi ve kaldırıldı ({CleanerRule.FormatBytes(freed)} açıldı)."
+            ? $"{deleted} kullanıcı fontu '{backupDir}' klasörüne yedeklendi ve kaldırıldı ({CleanerRule.FormatBytes(freed)} açıldı)."
             : "Yalnızca 'Kullanıcı Fontu' kategorisindeki seçili fontlar güvenli şekilde silinebilir.";
 
         return (deleted, freed, msg);

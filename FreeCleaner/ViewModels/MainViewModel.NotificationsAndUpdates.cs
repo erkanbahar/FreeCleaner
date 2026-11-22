@@ -191,4 +191,55 @@ public partial class MainViewModel
             message,
             deletedCount > 0 ? ToastSeverity.Success : ToastSeverity.Info);
     }
+
+    private AsyncRelayCommand CreateAsyncCommand(Func<object?, Task> executeAsync, Predicate<object?>? canExecute = null)
+        => new(executeAsync, canExecute, HandleUnhandledCommandException);
+
+    private void HandleUnhandledCommandException(Exception ex)
+    {
+        ErrorLogService.Log("Komut Hatası", ex);
+        IsBusy = false;
+        string msg = LocalizationService.GetText(
+            $"İşlem beklenmeyen bir hatayla karşılaştı: {ex.Message}",
+            $"Operation encountered an unexpected error: {ex.Message}",
+            _selectedLanguage);
+        StatusMessage = msg;
+        AddLog($"[HATA] {ex.Message}");
+        ShowToast(
+            LocalizationService.GetText("İşlem Hatası", "Operation Error", _selectedLanguage),
+            msg,
+            ToastSeverity.Error);
+    }
+
+    private CancellationToken ResetCancellationTokenSource()
+    {
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        return _cts.Token;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        _autoMonitorTimer.Stop();
+        _liveTelemetryTimer.Stop();
+        _trayWatcherTimer.Stop();
+        _toastDismissTimer.Stop();
+
+        try
+        {
+            _cts?.Cancel();
+        }
+        catch
+        {
+            // Ignore cancellation errors during shutdown.
+        }
+
+        _cts?.Dispose();
+        _cts = null;
+        GC.SuppressFinalize(this);
+    }
 }

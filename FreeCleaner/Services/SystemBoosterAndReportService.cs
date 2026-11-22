@@ -181,9 +181,7 @@ public static class SystemBoosterAndReportService
         long lifetimeFreedBytes = 0,
         IReadOnlyList<CleanupHistoryBarItem>? recentHistory = null)
     {
-        string exportDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-            "FreeCleaner_Raporlar");
+        string exportDir = AppStoragePathsService.GetReportsDirectory();
         Directory.CreateDirectory(exportDir);
 
         string stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");

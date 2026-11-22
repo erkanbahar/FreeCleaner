@@ -209,13 +209,8 @@ public static class SixthGenHardwareAndDevSuiteService
             {
                 try
                 {
-                    var psi = new ProcessStartInfo
-                    {
-                        FileName = "powershell.exe",
-                        Arguments = $"-NoProfile -Command \"Remove-AppxPackage -Package '{item.PackageFullName}' -ErrorAction Stop\"",
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
+                    string script = SafeProcessRunner.BuildRemoveAppxScript(item.PackageFullName);
+                    ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script);
                     using var proc = Process.Start(psi);
                     proc?.WaitForExit(10000);
                     if (proc?.ExitCode == 0)

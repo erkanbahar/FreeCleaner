@@ -1,10 +1,10 @@
-# FreeCleaner Pro v4.5 (.NET 10 WPF)
+# FreeCleaner Pro v4.6 (.NET 10 WPF)
 
 [![FreeCleaner .NET 10 CI](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--windows-512BD4?logo=dotnet)
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011%20(x64)-0078D6?logo=windows)
 ![Modules](https://img.shields.io/badge/Modules-57%20Tools-10B981)
-![Tests](https://img.shields.io/badge/Tests-71%20Passing-22C55E)
+![Tests](https://img.shields.io/badge/Tests-76%20Passing-22C55E)
 ![Language](https://img.shields.io/badge/Language-English%20%7C%20T%C3%BCrk%C3%A7e-38BDF8)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
@@ -29,14 +29,14 @@
 - **🛡️ Global Crash Guard (`CrashGuardService`):** Captures unhandled UI/AppDomain/Task exceptions cleanly, writes redacted `crashes/crash-*.log` reports (`%USERPROFILE%` + secret sanitization), and offers one-click redacted Desktop Support Bundle `.zip` export (`latest_crash_sanitized.log` included).
 - **📊 SVG Diagnostic HTML Report & Filterable Activity Console:** Exports rich HTML/JSON reports featuring an inline SVG health-score gauge and 14-day cleanup history bars, paired with live log search, clipboard copy, `.log` export, and clear buttons in the Activity Console.
 - **🪟 Native Windows 11 DWM & Manifest Polish:** Includes `app.manifest` (`PerMonitorV2` DPI awareness and `longPathAware` for deep `node_modules`/cache paths) plus DWM rounded corners and theme-adaptive frame attributes.
-- **🎒 True Portable Mode (`portable.flag`), Unified Backup Retention & Support Bundle (`.zip`):** Keeps settings, history, snapshots, telemetry, logs, and Registry/Hosts/SQLite backups inside local `data\` when enabled; lets you list, restore, delete, or prune old backups in one center; and exports a redacted support `.zip` (`diagnostic_report.html`, `system_summary.json`, sanitized logs).
+- **🎒 Zero-Footprint Portable Mode (`portable.flag`), Unified Backup Retention & Support Bundle (`.zip`):** Keeps settings, history, snapshots, telemetry, logs, reports, font backups, and Registry/Hosts/SQLite backups strictly inside local `data\` when enabled; lets you list, restore, delete, or prune old backups in one center; and exports a redacted support `.zip` (`diagnostic_report.html`, `system_summary.json`, sanitized logs).
 - **🩺 Dashboard, Lifetime Saved Space, Storage Fill Forecast & 100-Point Health Check:** Scores disk usage, junk load, startup items, and RAM; tracks **Lifetime Reclaimed Space**, a 14-day cleanup chart, and linear `C:` storage growth forecast (`+GB/day` & days to 90%).
 - **🗺️ Interactive Disk Treemap & Smart File Advisor:** Fast Win32 `FileSystemEnumerator` scanning visualizes large folders in seconds and classifies 30+ known targets (`OptGuideOnDeviceModel`, `Claude-Data rootfs.vhdx`, `Docker VHDX`, `hiberfil.sys`, `node_modules`) with safe recycle or protection guidance.
 - **💾 Deep Windows Space Recovery & VHDX Compactor:** Manages `hiberfil.sys` (`powercfg`), `WinSxS` (`DISM`), lossless `CompactOS`, `NVIDIA/AMD` installer caches, and one-click DiskPart `compact vdisk` for WSL2 / Docker / Claude VM `.vhdx` virtual disks.
 - **🖼️ Perceptual Similar Photo Finder (`dHash`), 📸 EXIF Scrubber & 🗂️ Smart Folder Organizer:** Clusters burst photos with 64-bit `dHash`, strips GPS/EXIF metadata pixel-safely, and organizes Downloads / Desktop folders with one-click Undo.
 - **📈 Live CPU / RAM & Network Sparkline Monitor:** 1-second Win32 `GetSystemTimes` + `NetworkInterface` telemetry with sparkline charts and top-10 memory consumers.
 - **⌨️ 100% Runtime Bilingual UI (`57/57` Views + `CleanerRule` + Tray), `SystemAuto` Theme & In-App Toasts:** Live switching across `SystemAuto` (synced dynamically with Windows Light/Dark mode via `AppsUseLightTheme`), `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix`, and `FluentLight` themes; full `en-US` / `tr-TR` translation across **all 57/57 Lazy Views**, all 20 default `CleanerRule` entries/risk labels, Command Palette, and System Tray (`Free` vs `Boş`); plus **Window Placement Memory**, Toast overlays, shortcuts (`Ctrl+K`, `Ctrl+F`, `Ctrl+,`, `Ctrl+1..6`, `F5`, `Esc`), and `AutomationProperties.Name` labels.
-- **📦 Windows Setup Installer, Automated Winget Pipeline & MIT Governance:** Every module instantiates on demand via `LazyViewRegistry`, backed by cohesive ViewModel partials (`CleanerAndReports`, `NotificationsAndUpdates`, etc.), modular domain models, `installer/FreeCleaner.iss`, auto-hashed `FreeCleaner-Winget-Manifests-*.zip` release packaging, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `.github/dependabot.yml`, Issue Forms, **71 passing tests** (`30.72%` line / `21.92%` branch Cobertura coverage), and CI `-p:TreatWarningsAsErrors=true`.
+- **📦 ReadyToRun Installer, Hardened Process Invocation & MIT Governance:** Uses `AsyncRelayCommand` + `IDisposable` timer/token lifecycle cleanup, `SafeProcessRunner` (`ArgumentList` & `-EncodedCommand` shell-injection protection), generic workspace auto-discovery, `installer/FreeCleaner.iss`, `PublishReadyToRun` builds, auto-hashed `FreeCleaner-Winget-Manifests-*.zip`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, **76 passing tests** (`30.99%` line / `21.98%` branch Cobertura coverage), and CI `-p:TreatWarningsAsErrors=true`.
 
 ### All Modules (6 Categories • 57 Tools)
 
@@ -141,7 +141,7 @@
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### CLI Build & Unit Tests (71 Tests + Coverage)
+#### CLI Build & Unit Tests (76 Tests + Coverage)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
@@ -152,12 +152,12 @@ dotnet run --project FreeCleaner/FreeCleaner.csproj
 #### Single-File Portable `.exe` & Windows Installer (`Setup .exe`)
 ```powershell
 .\scripts\Publish-Portable.ps1
-# Optional pre-flagged USB portable output:
-.\scripts\Publish-Portable.ps1 -IncludePortableFlag
-# Optional Inno Setup 6 Windows Installer (dist/FreeCleaner-Setup-win-x64-v4.5.0.exe):
-ISCC.exe /DMyAppVersion=4.5.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
+# Optional ReadyToRun + pre-flagged USB portable + Winget manifest preview:
+.\scripts\Publish-Portable.ps1 -ReadyToRun -IncludePortableFlag -GenerateWingetManifests
+# Optional Inno Setup 6 Windows Installer (dist/FreeCleaner-Setup-win-x64-v4.6.0.exe):
+ISCC.exe /DMyAppVersion=4.6.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
 ```
-Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag v4.5.0 && git push origin v4.5.0`) triggers `.github/workflows/release.yml` to verify tests, build with warnings-as-errors, and publish Standard Portable `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe` installer, pre-hashed `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe`, and `SHA256SUMS.txt` on GitHub Releases.
+Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag v4.6.0 && git push origin v4.6.0`) triggers `.github/workflows/release.yml` to verify tests, build `PublishReadyToRun` with warnings-as-errors, and publish Standard Portable `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe` installer, pre-hashed `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe`, and `SHA256SUMS.txt` on GitHub Releases.
 
 ---
 
@@ -180,14 +180,14 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **🛡️ Global Çökme Koruması (`CrashGuardService`):** Beklenmedik UI, `AppDomain` ve arka plan `Task` hatalarını yakalar; `%USERPROFILE%` ve gizli anahtarlardan arındırılmış dökümleri `crashes/crash-*.log` altına yazar (en fazla 20 log saklar) ve Masaüstüne `latest_crash_sanitized.log` içeren Teşhis Destek Paketi `.zip` oluşturulmasını önerir.
 - **📊 SVG Sağlık Göstergeli HTML Rapor & Filtrelenebilir Konsol:** Inline SVG sağlık puanı kadranı ve 14 günlük geçmiş çubukları içeren HTML/JSON rapor üretir; işlem konsolunda canlı arama, panoya kopyalama, `.log` dışa aktarma ve temizleme araçları sunar.
 - **🪟 Windows 11 Yerel Pencere Cilası & `app.manifest`:** `PerMonitorV2` DPI, `longPathAware` uzun yol desteği ve DWM yuvarlatılmış pencere/uyumlu çerçeve özellikleri içerir.
-- **🎒 Gerçek Taşınabilir Mod (`portable.flag`), Birleşik Yedekleme Merkezi & Destek Paketi (`.zip`):** Etkinleştirildiğinde tüm ayar, geçmiş, snapshot, telemetri, log ve Registry/Hosts/SQLite yedeklerini uygulama yanındaki `data\` klasöründe tutar; yedekleri tek merkezden geri yükleme, silme veya budama (pruning) ile yönetir ve hassas verilerden arındırılmış destek `.zip` arşivi dışa aktarır.
+- **🎒 Tam Sıfır İzli Taşınabilir Mod (`portable.flag`), Birleşik Yedekleme Merkezi & Destek Paketi (`.zip`):** Etkinleştirildiğinde tüm ayar, geçmiş, snapshot, telemetri, log, rapor, font yedekleri ve Registry/Hosts/SQLite yedeklerini yalnızca uygulama yanındaki `data\` klasöründe tutar; yedekleri tek merkezden geri yükleme, silme veya budama (pruning) ile yönetir ve hassas verilerden arındırılmış destek `.zip` arşivi dışa aktarır.
 - **🩺 Genel Bakış (Dashboard), Ömür Boyu Kazanılan Alan, Doluluk Tahmini & 100 Puanlık Sağlık Kontrolü:** Disk doluluğu, çöp yükü, başlangıç uygulamaları ve RAM'i puanlar; **Ömür Boyu Kurtarılan Alan**, 14 günlük grafik ve `C:` için doğrusal dolma tahminini (`+GB/gün` & `%90`'a kalan gün) gösterir.
 - **🗺️ Etkileşimli Görsel Disk Haritası (Treemap + Akıllı Dosya Danışmanı):** Doğrudan Win32 `FileSystemEnumerator` ve 2 seviyeli paralel taramayla dev klasörleri saniyeler içinde görselleştirir; `OptGuideOnDeviceModel`, `Claude-Data rootfs.vhdx`, `Docker VHDX`, `hiberfil.sys`, `node_modules` gibi 30+ bilinen yapıyı tanıyıp **Güvenle Geri Dönüşüm'e Gönder** veya koruma önerisi sunar.
 - **💾 Dev Windows Sistem Alanı Kurtarıcısı & VHDX Sıkıştırıcı:** Hazırda bekletmeyi kapatma/yarıya indirme (`powercfg`), bileşen deposu temizliği (`DISM`), kayıpsız `CompactOS` sıkıştırma, `NVIDIA/AMD` sürücü artıkları ve WSL2/Docker/Claude VM `.vhdx` sanal diskleri için tek tıkla DiskPart `compact vdisk` desteği sunar.
 - **🖼️ Benzer Fotoğraf Bulucu (`dHash`), 📸 EXIF Temizleyici & 🗂️ Akıllı Klasör Düzenleyici:** 64-bit `dHash` ile seri fotoğrafları kümeleyip en kalitelisini korur, EXIF/GPS metaverilerini siler ve İndirilenler / Masaüstü klasörlerini önizleme + tek tıkla Geri Al (Undo) ile düzenler.
 - **📈 Canlı CPU / RAM & Ağ Hızı Sparkline Monitörü:** Win32 `GetSystemTimes` + `NetworkInterface` üzerinden saniyede bir güncellenen gerçek zamanlı sparkline grafikler ve en çok bellek kullanan ilk 10 işlem tablosu.
 - **⌨️ %100 Çalışma Zamanı Çift Dilli Arayüz (`57/57` Ekran + `CleanerRule` + Tepsi), `SystemAuto` Tema & Toast Bildirimleri:** `SystemAuto` (Windows Açık/Koyu modu ile canlı senkronize), `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix` ve `FluentLight` temalarıyla **57/57 modüler Lazy View**, tüm 20 varsayılan `CleanerRule` temizlik kuralı/risk etiketi, Komut Paleti ve Sistem Tepsisi (`Boş` / `Free`) `tr-TR` ve `en-US` arasında anında çevrilir; çoklu monitör güvenli **Pencere Konum Belleği**, Toast bildirimleri, kısayollar (`Ctrl+K`, `Ctrl+F`, `Ctrl+,`, `Ctrl+1..6`, `F5`, `Esc`) ve `AutomationProperties.Name` etiketleri içerir.
-- **📦 Windows Setup Kurulumu, Otomatik Winget Hattı & Açık Kaynak Standartları:** ViewModel parçaları (`CleanerAndReports`, `NotificationsAndUpdates` vb.), alan bazlı model dosyaları, `installer/FreeCleaner.iss`, otomatik hash'li `FreeCleaner-Winget-Manifests-*.zip` release çıktısı, `LICENSE` (MIT), `SECURITY.md`, `CONTRIBUTING.md`, `.github/dependabot.yml`, Issue Formları, **71 başarılı birim testi** (`%30.72` satır / `%21.92` dal Cobertura kapsamı) ve CI `-p:TreatWarningsAsErrors=true` ile korunur.
+- **📦 ReadyToRun Kurulum, Sertleştirilmiş Süreç Çağrıları & Açık Kaynak Standartları:** `AsyncRelayCommand` + `IDisposable` zamanlayıcı/belirteç temizliği, `SafeProcessRunner` (`ArgumentList` ve `-EncodedCommand` komut enjeksiyonu koruması), otomatik kullanıcı çalışma dizini keşfi, `installer/FreeCleaner.iss`, `PublishReadyToRun` derlemesi, otomatik hash'li `FreeCleaner-Winget-Manifests-*.zip`, `LICENSE` (MIT), `SECURITY.md`, `CONTRIBUTING.md`, **76 başarılı birim testi** (`%30.99` satır / `%21.98` dal Cobertura kapsamı) ve CI `-p:TreatWarningsAsErrors=true` ile korunur.
 
 ### Tüm Modüller (6 Kategori • 57 Araç)
 
@@ -292,7 +292,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### Komut Satırı ile Derleme & Test (71 Test + Kapsam)
+#### Komut Satırı ile Derleme & Test (76 Test + Kapsam)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
@@ -303,9 +303,9 @@ dotnet run --project FreeCleaner/FreeCleaner.csproj
 #### Tek Dosya Taşınabilir `.exe` & Windows Setup Kurulumu
 ```powershell
 .\scripts\Publish-Portable.ps1
-# İsteğe bağlı hazır USB taşınabilir mod (portable.flag) üretimi:
-.\scripts\Publish-Portable.ps1 -IncludePortableFlag
-# İsteğe bağlı Inno Setup 6 Windows Kurulum Dosyası (dist/FreeCleaner-Setup-win-x64-v4.5.0.exe):
-ISCC.exe /DMyAppVersion=4.5.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
+# İsteğe bağlı ReadyToRun + USB taşınabilir (portable.flag) + Winget manifest önizlemesi:
+.\scripts\Publish-Portable.ps1 -ReadyToRun -IncludePortableFlag -GenerateWingetManifests
+# İsteğe bağlı Inno Setup 6 Windows Kurulum Dosyası (dist/FreeCleaner-Setup-win-x64-v4.6.0.exe):
+ISCC.exe /DMyAppVersion=4.6.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
 ```
-Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.5.0 && git push origin v4.5.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp Standart Taşınabilir `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe`, gerçek hash'li `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe` ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar.
+Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.6.0 && git push origin v4.6.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp `PublishReadyToRun` derlemesiyle Standart Taşınabilir `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe`, gerçek hash'li `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe` ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar.

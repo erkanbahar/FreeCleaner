@@ -68,10 +68,10 @@ public partial class MainViewModel
         StatusMessage = "Kayıt Defteri (Registry) bozuk yollar ve yetim girdiler için taranıyor...";
         AddLog("[KAYIT DEFTERİ] Güvenli kayıt defteri taraması başlatıldı...");
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         try
         {
-            var found = await RegistryCleanerService.ScanRegistryIssuesAsync(_cts.Token);
+            var found = await RegistryCleanerService.ScanRegistryIssuesAsync(token);
             foreach (var issue in found)
             {
                 RegistryIssues.Add(issue);
@@ -204,7 +204,7 @@ public partial class MainViewModel
         StatusMessage = $"'{DiskScanTargetFolder}' içinde {SelectedMinSizeMb} MB üzeri büyük dosyalar aranıyor...";
         AddLog($"[DİSK ANALİZİ] Büyük dosya taraması başlatıldı (Min: {SelectedMinSizeMb} MB)...");
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         var progress = new Progress<(string CurrentDir, int FoundCount)>(rep =>
         {
             CurrentOperationDetail = $"Bulunan: {rep.FoundCount} • Taranan: {rep.CurrentDir}";
@@ -217,7 +217,7 @@ public partial class MainViewModel
                 minBytes,
                 ExcludedPaths.ToList(),
                 progress,
-                _cts.Token);
+                token);
 
             foreach (var item in items)
                 DiskAnalyzerItems.Add(item);
@@ -247,7 +247,7 @@ public partial class MainViewModel
         StatusMessage = $"'{DiskScanTargetFolder}' içinde SHA-256 ile birebir kopya (duplicate) dosyalar aranıyor...";
         AddLog($"[KOPYA BULUCU] SHA-256 kopya dosya analizi başlatıldı (Min: {SelectedMinSizeMb} MB)...");
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         var progress = new Progress<(string StatusText, int FoundDuplicates)>(rep =>
         {
             CurrentOperationDetail = $"{rep.StatusText} (Toplam {rep.FoundDuplicates})";
@@ -260,7 +260,7 @@ public partial class MainViewModel
                 minBytes,
                 ExcludedPaths.ToList(),
                 progress,
-                _cts.Token);
+                token);
 
             foreach (var item in items)
                 DiskAnalyzerItems.Add(item);
@@ -342,7 +342,7 @@ public partial class MainViewModel
         OrphanFolders.Clear();
         StatusMessage = "AppData içinde kaldırılmış programlardan kalan yetim (orphan) klasörler taranıyor...";
 
-        _cts = new CancellationTokenSource();
+        CancellationToken token = ResetCancellationTokenSource();
         try
         {
             if (InstalledApps.Count == 0)
@@ -351,7 +351,7 @@ public partial class MainViewModel
                 foreach (var a in apps) InstalledApps.Add(a);
             }
 
-            var orphans = await UninstallerAndOrphanService.ScanOrphanFoldersAsync(InstalledApps, _cts.Token);
+            var orphans = await UninstallerAndOrphanService.ScanOrphanFoldersAsync(InstalledApps, token);
             foreach (var orphan in orphans)
                 OrphanFolders.Add(orphan);
 

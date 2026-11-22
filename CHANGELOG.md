@@ -6,6 +6,14 @@
 
 ## English
 
+### [4.6.0] - 2026-11-22
+#### Security, Reliability & Portability Hardening
+- **Eliminated 109 `async void` Commands (`AsyncRelayCommand`), `_cts` Leaks & Timer Leaks**: Added `AsyncRelayCommand` with centralized exception handling, Toast/log error reporting (`HandleUnhandledCommandException`), and reentrancy guards; migrated all 109 asynchronous ViewModel commands off raw `async void` `RelayCommand` delegates; routed every scan token through `ResetCancellationTokenSource()`; wrapped `App.xaml.cs` IPC/CLI startup lambdas and `_autoMonitorTimer.Tick` cleanly; and implemented `IDisposable` on `MainViewModel` (invoked on `MainWindow_Closed`) to stop timers and dispose active tokens on exit.
+- **Shell & Command Injection Hardening (`SafeProcessRunner`)**: Replaced interpolated `cmd.exe /c` elevated strings and `netsh.exe` command concatenation in `EighthGenAiAndSecuritySuiteService` (Firewall block/unblock, ISO/VHD mount/dismount), `SixthGenHardwareAndDevSuiteService` (`Remove-AppxPackage`), and `NextGenForensicsAndRescueService` (`netsh wlan` Wi-Fi SSID queries) with direct `ArgumentList` invocation and UTF-16LE Base64 `-EncodedCommand` scripts using single-quote escaping.
+- **Zero Hardcoded Developer Paths (`ResolveDefaultDevWorkspaceRoot`)**: Removed hardcoded `C:\CURSOR` paths from `CleanerEngine`, `LocalizationService`, and ViewModel defaults in favor of automatic `%USERPROFILE%\source\repos` / `Projects` / `Repos` discovery while persisting `DevWorkspacePath` and `GitWorkspacePath` in `settings.json`.
+- **Zero-Footprint USB Portable Mode (`Reports` & `FontBackups`)**: Routed HTML/JSON report exports (`SystemBoosterAndReportService`, `EnterprisePowerToolsService`) and user font backups (`SeventhGenSecurityAndPowerSuiteService`) to `data\Reports` and `data\FontBackups` via `AppStoragePathsService` when `portable.flag` is enabled.
+- **ReadyToRun Release & Expanded Tests (`76` Tests | `30.99%` Line / `21.98%` Branch Coverage)**: Added `-p:PublishReadyToRun=true` to `.github/workflows/release.yml`, `-ReadyToRun` & `-GenerateWingetManifests` switches to `scripts/Publish-Portable.ps1`, and 5 hardening/invariant unit tests in `V46UpgradesTests.cs` (`76` passing tests under `-p:TreatWarningsAsErrors=true`, raising Cobertura coverage from `30.72%` / `21.92%` to `30.99%` line / `21.98%` branch coverage).
+
 ### [4.5.0] - 2026-11-22
 #### Added & Improved
 - **Runtime Bilingual Cleaner Rules (`CleanerRule`) & Localized Status Copy**: Extended `CleanerRule` with live change notifications and `ApplyLocalizedMetadata(...)` mapped across all 20 default `CleanerEngine` rules in `LocalizationService.cs`, dynamically translating rule titles, categories, descriptions, warnings, `StatusText`, and `RiskLabel` (`Low/Medium/High` ↔ `Düşük/Orta/Yüksek`) along with core ViewModel status messages without requiring an app restart.
@@ -61,6 +69,14 @@
 ---
 
 ## Türkçe
+
+### [4.6.0] - 2026-11-22
+#### Güvenlik, Dayanıklılık & Taşınabilirlik Sertleştirmesi
+- **109 `async void` Komutunun Kaldırılması (`AsyncRelayCommand`), `_cts` & Zamanlayıcı Sızıntılarının Giderilmesi**: Merkezi hata yakalama, Toast/log hata bildirimi (`HandleUnhandledCommandException`) ve yeniden giriş (reentrancy) koruması sunan `AsyncRelayCommand` eklendi; tüm 109 asenkron ViewModel komutu `CreateAsyncCommand` yapısına geçirildi; tüm iptal belirteçleri `ResetCancellationTokenSource()` ile eski `CancellationTokenSource` örneklerini temizleyecek şekilde yenilendi; `App.xaml.cs` IPC/CLI başlatıcıları ile `_autoMonitorTimer.Tick` korumaya alındı ve `MainViewModel` için `IDisposable` (`MainWindow_Closed` çağrısı dahil) eklendi.
+- **Kabuk & Komut Enjeksiyonu Koruması (`SafeProcessRunner`)**: `EighthGenAiAndSecuritySuiteService` (Firewall engelleme/kaldırma, ISO/VHD mount/dismount), `SixthGenHardwareAndDevSuiteService` (`Remove-AppxPackage`) ve `NextGenForensicsAndRescueService` (`netsh wlan` Wi-Fi profil sorguları) içindeki birleştirilmiş `cmd.exe /c` ve kabuk dizgileri kaldırılarak doğrudan `ProcessStartInfo.ArgumentList` ve tek-tırnak kaçışlı UTF-16LE Base64 `-EncodedCommand` yapısına geçildi.
+- **Geliştiriciye Özel Sabit Yolların Kaldırılması (`ResolveDefaultDevWorkspaceRoot`)**: `CleanerEngine`, `LocalizationService` ve ViewModel varsayılanlarındaki sabit `C:\CURSOR` yolları kaldırıldı; yerine kullanıcı dizinlerini (`source\repos`, `Projects`, `Repos`) otomatik bulan keşif ve `settings.json` üzerinden `DevWorkspacePath` / `GitWorkspacePath` kalıcılığı getirildi.
+- **USB Taşınabilir Modda Tam Sıfır İz (`Reports` & `FontBackups`)**: `portable.flag` etkinken HTML/JSON raporları (`SystemBoosterAndReportService`, `EnterprisePowerToolsService`) ve font yedekleri (`SeventhGenSecurityAndPowerSuiteService`) Masaüstü yerine doğrudan `data\Reports` ve `data\FontBackups` klasörlerine yönlendirildi.
+- **ReadyToRun Release & Genişletilmiş Test Suite (`76` Test | `%30.99` Satır / `%21.98` Dal Kapsamı)**: `.github/workflows/release.yml` içine `-p:PublishReadyToRun=true`, `scripts/Publish-Portable.ps1` içine `-ReadyToRun` ve `-GenerateWingetManifests` parametreleri ile `V46UpgradesTests.cs` dosyasına 5 yeni güvenlik/mimari testi eklendi (`76` başarılı test, Cobertura kapsamı `%30.72` / `%21.92` → `%30.99` satır / `%21.98` dal).
 
 ### [4.5.0] - 2026-11-22
 #### Eklenenler ve İyileştirmeler
