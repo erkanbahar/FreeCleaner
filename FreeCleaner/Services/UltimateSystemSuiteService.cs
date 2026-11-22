@@ -271,22 +271,16 @@ public static class UltimateSystemSuiteService
 
         try
         {
-            var psi = new ProcessStartInfo
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "sc.exe",
+                ["query", serviceName],
+                redirectOutput: true);
+            ProcessRunResult result = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(3));
+            if (result.Started && !result.TimedOut)
             {
-                FileName = "sc.exe",
-                Arguments = $"query \"{serviceName}\"",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardOutput = true
-            };
-            using var proc = Process.Start(psi);
-            if (proc is not null)
-            {
-                string output = proc.StandardOutput.ReadToEnd();
-                proc.WaitForExit(2000);
-                if (output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase))
+                if (result.StandardOutput.Contains("RUNNING", StringComparison.OrdinalIgnoreCase))
                     return ("Çalışıyor (Running)", startType);
-                if (output.Contains("STOPPED", StringComparison.OrdinalIgnoreCase))
+                if (result.StandardOutput.Contains("STOPPED", StringComparison.OrdinalIgnoreCase))
                     return ("Durduruldu (Stopped)", startType);
             }
         }
@@ -297,113 +291,87 @@ public static class UltimateSystemSuiteService
 
     public static async Task<(bool Success, string Message)> ControlWindowsServiceAsync(string serviceName, bool start)
     {
-        return await Task.Run(() =>
+        try
         {
-            try
+            string action = start ? "start" : "stop";
+            if (IsRunningAsAdministrator())
             {
-                string action = start ? "start" : "stop";
-                if (IsRunningAsAdministrator())
-                {
-                    var psi = new ProcessStartInfo
-                    {
-                        FileName = "sc.exe",
-                        Arguments = $"{action} \"{serviceName}\"",
-                        CreateNoWindow = true,
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true
-                    };
-                    using var proc = Process.Start(psi);
-                    if (proc is null)
-                        return (false, "sc.exe başlatılamadı.");
+                ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "sc.exe",
+                    [action, serviceName],
+                    redirectOutput: true);
+                ProcessRunResult result = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(8)).ConfigureAwait(false);
+                if (!result.Started)
+                    return (false, "sc.exe başlatılamadı.");
 
-                    string outText = proc.StandardOutput.ReadToEnd() + " " + proc.StandardError.ReadToEnd();
-                    proc.WaitForExit(5000);
-                    return (proc.ExitCode == 0, $"Servis komutu ({action} {serviceName}) uygulandı.");
-                }
-                else
-                {
-                    var elevatedPsi = new ProcessStartInfo
-                    {
-                        FileName = "sc.exe",
-                        Arguments = $"{action} \"{serviceName}\"",
-                        Verb = "runas",
-                        UseShellExecute = true,
-                        WindowStyle = ProcessWindowStyle.Hidden
-                    };
-                    using var proc = Process.Start(elevatedPsi);
-                    proc?.WaitForExit(5000);
-                    return (true, $"Servis komutu ({action} {serviceName}) yönetici yetkisiyle gönderildi.");
-                }
+                return (!result.TimedOut && result.ExitCode == 0, $"Servis komutu ({action} {serviceName}) uygulandı.");
             }
-            catch (Exception ex)
+            else
             {
-                return (false, ex.Message);
+                string script = SafeProcessRunner.BuildServiceControlElevatedScript(action, serviceName);
+                ProcessStartInfo elevatedPsi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: true);
+                await SafeProcessRunner.RunAsync(elevatedPsi, TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+                return (true, $"Servis komutu ({action} {serviceName}) yönetici yetkisiyle gönderildi.");
             }
-        });
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("Services:Control", ex);
+            return (false, ex.Message);
+        }
     }
 
     // ==================== 4. S.M.A.R.T. DISK HEALTH & POWER PLANS ====================
 
     public static async Task<List<PhysicalDiskHealthItem>> GetPhysicalDisksHealthAsync()
     {
-        return await Task.Run(() =>
+        var list = new List<PhysicalDiskHealthItem>();
+        try
         {
-            var list = new List<PhysicalDiskHealthItem>();
-            try
+            const string psScript = "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-PhysicalDisk | Select-Object FriendlyName,MediaType,HealthStatus,OperationalStatus,Size,BusType | ConvertTo-Json -Compress";
+            ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(psScript, runAsAdmin: false, redirectOutput: true);
+            ProcessRunResult runResult = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(7)).ConfigureAwait(false);
+            if (runResult.Started && !runResult.TimedOut)
             {
-                var psi = new ProcessStartInfo
+                string json = runResult.StandardOutput.Trim();
+                if (!string.IsNullOrWhiteSpace(json))
                 {
-                    FileName = "powershell.exe",
-                    Arguments = "-NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-PhysicalDisk | Select-Object FriendlyName,MediaType,HealthStatus,OperationalStatus,Size,BusType | ConvertTo-Json -Compress\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    StandardOutputEncoding = System.Text.Encoding.UTF8
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string json = proc.StandardOutput.ReadToEnd().Trim();
-                    proc.WaitForExit(5000);
-
-                    if (!string.IsNullOrWhiteSpace(json))
+                    using var doc = System.Text.Json.JsonDocument.Parse(json);
+                    if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Array)
                     {
-                        using var doc = System.Text.Json.JsonDocument.Parse(json);
-                        if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Array)
-                        {
-                            foreach (var elem in doc.RootElement.EnumerateArray())
-                                ParseDiskElement(elem, list);
-                        }
-                        else if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object)
-                        {
-                            ParseDiskElement(doc.RootElement, list);
-                        }
+                        foreach (var elem in doc.RootElement.EnumerateArray())
+                            ParseDiskElement(elem, list);
+                    }
+                    else if (doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object)
+                    {
+                        ParseDiskElement(doc.RootElement, list);
                     }
                 }
             }
-            catch { }
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("PhysicalDiskHealth", ex);
+        }
 
-            if (list.Count == 0)
+        if (list.Count == 0)
+        {
+            // Fallback to DriveInfo
+            foreach (var d in DriveInfo.GetDrives().Where(x => x.IsReady))
             {
-                // Fallback to DriveInfo
-                foreach (var d in DriveInfo.GetDrives().Where(x => x.IsReady))
+                list.Add(new PhysicalDiskHealthItem
                 {
-                    list.Add(new PhysicalDiskHealthItem
-                    {
-                        FriendlyName = $"Mantıksal Sürücü ({d.Name})",
-                        MediaType = d.DriveType.ToString(),
-                        HealthStatus = "Sağlıklı (Healthy)",
-                        OperationalStatus = "OK",
-                        SizeFormatted = CleanerRule.FormatBytes(d.TotalSize),
-                        BusType = d.DriveFormat
-                    });
-                }
+                    FriendlyName = $"Mantıksal Sürücü ({d.Name})",
+                    MediaType = d.DriveType.ToString(),
+                    HealthStatus = "Sağlıklı (Healthy)",
+                    OperationalStatus = "OK",
+                    SizeFormatted = CleanerRule.FormatBytes(d.TotalSize),
+                    BusType = d.DriveFormat
+                });
             }
+        }
 
-            return list;
-        });
+        return list;
 
         static void ParseDiskElement(System.Text.Json.JsonElement elem, List<PhysicalDiskHealthItem> target)
         {
@@ -428,105 +396,84 @@ public static class UltimateSystemSuiteService
 
     public static async Task<List<PowerPlanItem>> GetPowerPlansAsync()
     {
-        return await Task.Run(() =>
+        var plans = new List<PowerPlanItem>();
+        try
         {
-            var plans = new List<PowerPlanItem>();
-            try
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "powercfg.exe",
+                ["/list"],
+                redirectOutput: true);
+            ProcessRunResult runResult = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            if (runResult.Started && !runResult.TimedOut)
             {
-                var psi = new ProcessStartInfo
+                foreach (string line in runResult.StandardOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                 {
-                    FileName = "cmd.exe",
-                    Arguments = "/c \"chcp 65001 >nul && powercfg.exe /list\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    StandardOutputEncoding = System.Text.Encoding.UTF8
-                };
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(3000);
+                    int guidIdx = line.IndexOf("GUID:", StringComparison.OrdinalIgnoreCase);
+                    if (guidIdx < 0) continue;
 
-                    foreach (string line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+                    string afterGuid = line[(guidIdx + 5)..].Trim();
+                    string[] parts = afterGuid.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length == 0) continue;
+
+                    string guid = parts[0].Trim();
+                    bool isActive = line.TrimEnd().EndsWith('*');
+
+                    int openParen = line.IndexOf('(');
+                    int closeParen = line.LastIndexOf(')');
+                    string planName = (openParen > 0 && closeParen > openParen)
+                        ? line[(openParen + 1)..closeParen]
+                        : guid;
+
+                    plans.Add(new PowerPlanItem
                     {
-                        int guidIdx = line.IndexOf("GUID:", StringComparison.OrdinalIgnoreCase);
-                        if (guidIdx < 0) continue;
-
-                        string afterGuid = line[(guidIdx + 5)..].Trim();
-                        string[] parts = afterGuid.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                        if (parts.Length == 0) continue;
-
-                        string guid = parts[0].Trim();
-                        bool isActive = line.TrimEnd().EndsWith('*');
-
-                        int openParen = line.IndexOf('(');
-                        int closeParen = line.LastIndexOf(')');
-                        string planName = (openParen > 0 && closeParen > openParen)
-                            ? line[(openParen + 1)..closeParen]
-                            : guid;
-
-                        plans.Add(new PowerPlanItem
-                        {
-                            Guid = guid,
-                            Name = planName,
-                            IsActive = isActive
-                        });
-                    }
+                        Guid = guid,
+                        Name = planName,
+                        IsActive = isActive
+                    });
                 }
             }
-            catch { }
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("PowerPlans:List", ex);
+        }
 
-            return plans;
-        });
+        return plans;
     }
 
     public static async Task<bool> SetActivePowerPlanAsync(string planGuid)
     {
-        return await Task.Run(() =>
+        if (!Guid.TryParse(planGuid, out Guid parsedGuid))
+            return false;
+
+        try
         {
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powercfg.exe",
-                    Arguments = $"/setactive {planGuid}",
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                };
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(3000);
-                return proc?.ExitCode == 0;
-            }
-            catch
-            {
-                return false;
-            }
-        });
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "powercfg.exe",
+                ["/setactive", parsedGuid.ToString("D")]);
+            ProcessRunResult result = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            return result.Started && !result.TimedOut && result.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public static async Task<bool> UnlockUltimatePerformancePlanAsync()
     {
-        return await Task.Run(() =>
+        try
         {
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powercfg.exe",
-                    Arguments = "-duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61",
-                    CreateNoWindow = true,
-                    UseShellExecute = false
-                };
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(3000);
-                return proc?.ExitCode == 0;
-            }
-            catch
-            {
-                return false;
-            }
-        });
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "powercfg.exe",
+                ["-duplicatescheme", "e9a42b02-d5df-448d-aa00-03f14749eb61"]);
+            ProcessRunResult result = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+            return result.Started && !result.TimedOut && result.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // ==================== 5. SYSTEM REPAIR CENTER (DISM / SFC / WINDOWS.OLD / FONTCACHE) ====================
@@ -569,72 +516,57 @@ public static class UltimateSystemSuiteService
 
     public static async Task<string> RunDismCheckHealthAsync()
     {
-        return await Task.Run(() =>
+        try
         {
+            if (IsRunningAsAdministrator())
+            {
+                ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "dism.exe",
+                    ["/Online", "/Cleanup-Image", "/CheckHealth"],
+                    redirectOutput: true);
+                ProcessRunResult result = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                if (!result.Started)
+                    return "DISM başlatılamadı.";
+                if (result.TimedOut)
+                    return "DISM CheckHealth zaman aşımına uğradı.";
+                return (result.StandardOutput + " " + result.StandardError).Replace("\r\n", " ").Trim();
+            }
+
+            // If the app itself is not running as Admin, execute DISM via elevated UAC prompt and capture output to temp file
+            string tempOutFile = Path.Combine(Path.GetTempPath(), $"FreeCleaner_DISM_{Guid.NewGuid():N}.txt");
             try
             {
-                if (IsRunningAsAdministrator())
+                string script = SafeProcessRunner.BuildDismCheckHealthElevatedScript(tempOutFile);
+                ProcessStartInfo elevatedPsi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: true);
+                ProcessRunResult elevatedResult = await SafeProcessRunner.RunAsync(elevatedPsi, TimeSpan.FromSeconds(30)).ConfigureAwait(false);
+                if (!elevatedResult.Started)
+                    return "Yönetici izni (UAC) alınamadı.";
+
+                if (File.Exists(tempOutFile))
                 {
-                    var psi = new ProcessStartInfo
-                    {
-                        FileName = "dism.exe",
-                        Arguments = "/Online /Cleanup-Image /CheckHealth",
-                        CreateNoWindow = true,
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true
-                    };
-                    using var proc = Process.Start(psi);
-                    if (proc is null) return "DISM başlatılamadı.";
-                    string output = proc.StandardOutput.ReadToEnd() + " " + proc.StandardError.ReadToEnd();
-                    proc.WaitForExit(15000);
-                    return output.Replace("\r\n", " ").Trim();
+                    string resultText = (await File.ReadAllTextAsync(tempOutFile).ConfigureAwait(false)).Replace("\r\n", " ").Trim();
+                    if (!string.IsNullOrWhiteSpace(resultText))
+                        return resultText;
                 }
-
-                // If the app itself is not running as Admin, execute DISM via elevated UAC prompt and capture output to temp file
-                string tempOutFile = Path.Combine(Path.GetTempPath(), $"FreeCleaner_DISM_{Guid.NewGuid():N}.txt");
-                try
-                {
-                    var elevatedPsi = new ProcessStartInfo
-                    {
-                        FileName = "cmd.exe",
-                        Arguments = $"/c dism.exe /Online /Cleanup-Image /CheckHealth > \"{tempOutFile}\" 2>&1",
-                        Verb = "runas",
-                        UseShellExecute = true,
-                        WindowStyle = ProcessWindowStyle.Hidden
-                    };
-
-                    using var elevatedProc = Process.Start(elevatedPsi);
-                    if (elevatedProc is null)
-                        return "Yönetici izni (UAC) alınamadı.";
-
-                    elevatedProc.WaitForExit(20000);
-
-                    if (File.Exists(tempOutFile))
-                    {
-                        string resultText = File.ReadAllText(tempOutFile).Replace("\r\n", " ").Trim();
-                        if (!string.IsNullOrWhiteSpace(resultText))
-                            return resultText;
-                    }
-                    return "DISM CheckHealth yönetici yetkisiyle tamamlandı.";
-                }
-                finally
-                {
-                    if (File.Exists(tempOutFile))
-                    {
-                        try { File.Delete(tempOutFile); } catch { }
-                    }
-                }
+                return "DISM CheckHealth yönetici yetkisiyle tamamlandı.";
             }
-            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+            finally
             {
-                return "Kullanıcı UAC (Yönetici İzni) onayını iptal etti.";
+                if (File.Exists(tempOutFile))
+                {
+                    try { File.Delete(tempOutFile); } catch { }
+                }
             }
-            catch (Exception ex)
-            {
-                return $"Hata: {ex.Message}";
-            }
-        });
+        }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            return "Kullanıcı UAC (Yönetici İzni) onayını iptal etti.";
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("DISM:CheckHealth", ex);
+            return $"Hata: {ex.Message}";
+        }
     }
 
     public static void LaunchElevatedSfcScannow()

@@ -132,6 +132,7 @@ public partial class MainViewModel
             _latestDownloadAssetUrl = result.DownloadAssetUrl;
             _latestDownloadAssetName = result.DownloadAssetName;
             _latestExpectedSha256 = result.ExpectedSha256;
+            _latestChecksumsAssetUrl = result.ChecksumsAssetUrl;
             UpdateStatusText = result.StatusMessage;
             OnPropertyChanged(nameof(CanDownloadUpdate));
 
@@ -148,9 +149,10 @@ public partial class MainViewModel
                     durationSeconds: 9);
             }
         }
-        catch
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             // Startup update check is strictly silent and best-effort.
+            ErrorLogService.Log("AppUpdate:SilentStartup", ex);
         }
     }
 

@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   build-publish-release:
@@ -48,7 +50,7 @@ jobs:
         shell: pwsh
         run: |
           $tag = $env:GITHUB_REF_NAME
-          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v4.6.0" }
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v4.7.0" }
           $ver = $tag.TrimStart('v', 'V')
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           New-Item -ItemType Directory -Force -Path release_usb | Out-Null
@@ -93,13 +95,23 @@ jobs:
           foreach ($manifest in Get-ChildItem "installer/winget/*.yaml") {
             $content = (Get-Content -Path $manifest.FullName -Raw -Encoding UTF8) `
               -replace 'REPLACE_WITH_RELEASE_SHA256', $exeHashUpper `
-              -replace '4\.6\.0', $ver `
-              -replace 'v4\.6\.0', $tag
+              -replace '4\.7\.0', $ver `
+              -replace 'v4\.7\.0', $tag
             Set-Content -Path (Join-Path $wingetStage $manifest.Name) -Value $content -Encoding UTF8 -NoNewline
           }
           $wingetZipPath = "dist/FreeCleaner-Winget-Manifests-$tag.zip"
           Compress-Archive -Path "$wingetStage/*.yaml" -DestinationPath $wingetZipPath -Force
           Write-Host "Packaged portable archives, setup installer, Winget manifests & SHA256SUMS"
+
+      - name: Attest Build Provenance (SLSA)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            release_out/FreeCleaner.exe
+            dist/FreeCleaner-Portable-win-x64-*.zip
+            dist/FreeCleaner-Portable-USB-win-x64-*.zip
+            dist/FreeCleaner-Setup-win-x64-*.exe
+            dist/SHA256SUMS.txt
 
       - name: Upload Artifacts & Create GitHub Release
         uses: softprops/action-gh-release@v2

@@ -11,6 +11,7 @@ namespace FreeCleaner.Services;
 public static class CleanupHistoryService
 {
     private const int MaxStoredEntries = 500;
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
 
     private static string DefaultHistoryPath => Path.Combine(
         AppStoragePathsService.GetDataDirectory(),
@@ -60,7 +61,7 @@ public static class CleanupHistoryService
             if (!string.IsNullOrWhiteSpace(dir))
                 Directory.CreateDirectory(dir);
 
-            string json = JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true });
+            string json = JsonSerializer.Serialize(entries, IndentedJsonOptions);
             File.WriteAllText(path, json);
         }
         catch (Exception ex)

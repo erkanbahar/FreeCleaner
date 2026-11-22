@@ -9,6 +9,8 @@ namespace FreeCleaner.Services;
 
 public static class SystemBoosterAndReportService
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
+
     [DllImport("psapi.dll")]
     private static extern int EmptyWorkingSet(IntPtr hwProc);
 
@@ -51,10 +53,10 @@ public static class SystemBoosterAndReportService
 
     public static async Task<(long FreedRamBytes, int TrimmedProcessCount)> OptimizeRamWorkingSetAsync()
     {
-        return await Task.Run(() =>
+        var beforeSnap = SystemInfoService.GetMetrics();
+        int trimmedCount = await Task.Run(() =>
         {
-            var beforeSnap = SystemInfoService.GetMetrics();
-            int trimmedCount = 0;
+            int trimmed = 0;
 
             try
             {
@@ -69,7 +71,7 @@ public static class SystemBoosterAndReportService
                         int res = EmptyWorkingSet(proc.Handle);
                         if (res != 0)
                         {
-                            trimmedCount++;
+                            trimmed++;
                         }
                     }
                     catch
@@ -87,21 +89,23 @@ public static class SystemBoosterAndReportService
                 // Ignore
             }
 
-            Thread.Sleep(350);
-            var afterSnap = SystemInfoService.GetMetrics();
-            long freed = Math.Max(0, afterSnap.RamAvailableBytes - beforeSnap.RamAvailableBytes);
-            return (freed, trimmedCount);
-        });
+            return trimmed;
+        }).ConfigureAwait(false);
+
+        await Task.Delay(350).ConfigureAwait(false);
+        var afterSnap = SystemInfoService.GetMetrics();
+        long freed = Math.Max(0, afterSnap.RamAvailableBytes - beforeSnap.RamAvailableBytes);
+        return (freed, trimmedCount);
     }
 
     public static async Task<(bool Success, string OutputMessage)> FlushDnsCacheAsync()
     {
-        return await RunCommandToolAsync("ipconfig.exe", "/flushdns");
+        return await RunCommandToolAsync("ipconfig.exe", ["/flushdns"]);
     }
 
     public static async Task<(bool Success, string OutputMessage)> ShowArpAndNetStatsAsync()
     {
-        return await RunCommandToolAsync("netsh.exe", "interface ip delete destinationcache");
+        return await RunCommandToolAsync("netsh.exe", ["interface", "ip", "delete", "destinationcache"]);
     }
 
     public static void LaunchWindowsDiskCleanup()
@@ -136,38 +140,38 @@ public static class SystemBoosterAndReportService
         }
     }
 
-    private static async Task<(bool Success, string OutputMessage)> RunCommandToolAsync(string exeName, string args)
+    private static async Task<(bool Success, string OutputMessage)> RunCommandToolAsync(
+        string exeName,
+        IEnumerable<string> args)
     {
-        return await Task.Run(() =>
+        try
         {
-            try
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(exeName, args, redirectOutput: true);
+            ProcessRunResult result = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(8)).ConfigureAwait(false);
+            if (!result.Started)
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = exeName,
-                    Arguments = args,
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is null)
-                    return (false, "Komut başlatılamadı.");
-
-                string stdout = proc.StandardOutput.ReadToEnd();
-                string stderr = proc.StandardError.ReadToEnd();
-                proc.WaitForExit(8000);
-
-                string combined = (stdout + " " + stderr).Trim().Replace("\r\n", " ");
-                return (proc.ExitCode == 0, string.IsNullOrWhiteSpace(combined) ? "İşlem tamamlandı." : combined);
+                return (false, LocalizationService.GetText(
+                    "Komut başlatılamadı.",
+                    "Could not start command."));
             }
-            catch (Exception ex)
+
+            if (result.TimedOut)
             {
-                return (false, ex.Message);
+                return (false, LocalizationService.GetText(
+                    "Komut zaman aşımına uğradı.",
+                    "Command timed out."));
             }
-        });
+
+            string combined = (result.StandardOutput + " " + result.StandardError).Trim().Replace("\r\n", " ");
+            return (result.ExitCode == 0, string.IsNullOrWhiteSpace(combined)
+                ? LocalizationService.GetText("İşlem tamamlandı.", "Operation completed.")
+                : combined);
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log($"SystemBooster:{exeName}", ex);
+            return (false, ex.Message);
+        }
     }
 
     public static (string HtmlPath, string JsonPath) ExportDiagnosticReports(
@@ -220,7 +224,7 @@ public static class SystemBoosterAndReportService
             RecentLogs = logList
         };
 
-        File.WriteAllText(jsonPath, JsonSerializer.Serialize(jsonPayload, new JsonSerializerOptions { WriteIndented = true }), Encoding.UTF8);
+        File.WriteAllText(jsonPath, JsonSerializer.Serialize(jsonPayload, IndentedJsonOptions), Encoding.UTF8);
 
         // 2. Export Rich SVG HTML Report
         string htmlContent = BuildDiagnosticHtmlReport(

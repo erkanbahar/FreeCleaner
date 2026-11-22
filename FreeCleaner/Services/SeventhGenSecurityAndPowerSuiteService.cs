@@ -11,8 +11,20 @@ using FreeCleaner.Models;
 
 namespace FreeCleaner.Services;
 
-public static class SeventhGenSecurityAndPowerSuiteService
+public static partial class SeventhGenSecurityAndPowerSuiteService
 {
+    [GeneratedRegex(@"CN=([^,]+)", RegexOptions.None, 1000)]
+    private static partial Regex CommonNameRegex();
+
+    [GeneratedRegex(@"(Regular|Bold|Italic|Light|Medium|SemiBold|Black|Thin|-|_)+$", RegexOptions.IgnoreCase, 1000)]
+    private static partial Regex FontSuffixRegex();
+
+    [GeneratedRegex(@"(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z\-_]{30,}|eyJ[A-Za-z0-9_\-]{20,})", RegexOptions.None, 1000)]
+    private static partial Regex SecretTokenRegex();
+
+    [GeneratedRegex(@"TR\d{24}", RegexOptions.IgnoreCase, 1000)]
+    private static partial Regex TurkishIbanRegex();
+
     // ==================== 1. PROCESS SECURITY & UNSIGNED BINARY HUNTER ====================
 
     public static async Task<List<ProcessSecurityAuditItem>> ScanRunningProcessSecurityAsync(bool onlyUnsignedOrSuspicious = false)
@@ -124,7 +136,7 @@ public static class SeventhGenSecurityAndPowerSuiteService
     private static string ExtractCommonName(string subject)
     {
         if (string.IsNullOrWhiteSpace(subject)) return string.Empty;
-        var match = Regex.Match(subject, @"CN=([^,]+)");
+        var match = CommonNameRegex().Match(subject);
         return match.Success ? match.Groups[1].Value.Trim('"') : subject;
     }
 
@@ -324,45 +336,28 @@ public static class SeventhGenSecurityAndPowerSuiteService
 
     public static async Task<(bool Success, string Message)> RunNetworkRepairActionAsync(string actionKey)
     {
-        return await Task.Run(() =>
+        try
         {
-            try
+            bool needsAdmin = actionKey is "TCP_WINSOCK_RESET" or "ARP_FLUSH";
+            string script = SafeProcessRunner.BuildNetworkRepairScript(actionKey);
+            ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: needsAdmin);
+            ProcessRunResult result = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(20)).ConfigureAwait(false);
+            if (!result.Started)
+                return (false, "Ağ onarım komutu başlatılamadı.");
+
+            return actionKey switch
             {
-                string cmd = actionKey switch
-                {
-                    "ARP_FLUSH" => "ipconfig /flushdns & arp -d *",
-                    "TCP_WINSOCK_RESET" => "netsh winsock reset & netsh int ip reset",
-                    "DHCP_RENEW" => "ipconfig /release & ipconfig /renew",
-                    _ => "ipconfig /flushdns"
-                };
-
-                bool needsAdmin = actionKey is "TCP_WINSOCK_RESET" or "ARP_FLUSH";
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c \"{cmd}\"",
-                    UseShellExecute = needsAdmin,
-                    Verb = needsAdmin ? "runas" : "",
-                    CreateNoWindow = !needsAdmin,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
-
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(15000);
-
-                return actionKey switch
-                {
-                    "ARP_FLUSH" => (true, "DNS ve ARP Yönlendirme Önbelleği (arp -d * & flushdns) başarıyla sıfırlandı!"),
-                    "TCP_WINSOCK_RESET" => (true, "Winsock Kataloğu ve TCP/IP Yığını sıfırlandı! (Tam etki için yeniden başlatma önerilir)."),
-                    "DHCP_RENEW" => (true, "DHCP IP Adresi serbest bırakıldı ve yeniden alındı (ipconfig /release & /renew)."),
-                    _ => (true, "Ağ komutu uygulandı.")
-                };
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Ağ onarım komutu tamamlanamadı: {ex.Message}");
-            }
-        });
+                "ARP_FLUSH" => (true, "DNS ve ARP Yönlendirme Önbelleği (arp -d * & flushdns) başarıyla sıfırlandı!"),
+                "TCP_WINSOCK_RESET" => (true, "Winsock Kataloğu ve TCP/IP Yığını sıfırlandı! (Tam etki için yeniden başlatma önerilir)."),
+                "DHCP_RENEW" => (true, "DHCP IP Adresi serbest bırakıldı ve yeniden alındı (ipconfig /release & /renew)."),
+                _ => (true, "Ağ komutu uygulandı.")
+            };
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("NetworkRepair", ex);
+            return (false, $"Ağ onarım komutu tamamlanamadı: {ex.Message}");
+        }
     }
 
     // ==================== 4. SYSTEM & USER FONT MANAGER ====================
@@ -393,7 +388,7 @@ public static class SeventhGenSecurityAndPowerSuiteService
 
                         var fi = new FileInfo(file);
                         string baseName = Path.GetFileNameWithoutExtension(fi.Name);
-                        string familyGuess = Regex.Replace(baseName, @"(Regular|Bold|Italic|Light|Medium|SemiBold|Black|Thin|-|_)+$", "", RegexOptions.IgnoreCase).Trim();
+                        string familyGuess = FontSuffixRegex().Replace(baseName, "").Trim();
                         if (string.IsNullOrWhiteSpace(familyGuess))
                             familyGuess = baseName;
 
@@ -526,7 +521,7 @@ public static class SeventhGenSecurityAndPowerSuiteService
         }
 
         // 2. Check for API Keys / Secrets / Tokens
-        if (Regex.IsMatch(trimmed, @"(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}|AIza[0-9A-Za-z\-_]{30,}|eyJ[A-Za-z0-9_\-]{20,})"))
+        if (SecretTokenRegex().IsMatch(trimmed))
         {
             string masked = trimmed.Length > 10
                 ? $"{trimmed[..6]}••••••••••••{trimmed[^4..]}"
@@ -542,7 +537,7 @@ public static class SeventhGenSecurityAndPowerSuiteService
         }
 
         // 3. Check for Turkish IBAN or Credit Card pattern
-        if (Regex.IsMatch(trimmed.Replace(" ", ""), @"TR\d{24}", RegexOptions.IgnoreCase))
+        if (TurkishIbanRegex().IsMatch(trimmed.Replace(" ", "")))
         {
             return new ClipboardAuditEntryItem
             {

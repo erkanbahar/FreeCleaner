@@ -788,7 +788,7 @@ public class NextGenUpgradesTests
 
             string okFile = Path.Combine(tempDir, "FreeCleaner_ok.exe");
             UpdateDownloadResult okResult = await AppUpdateService.DownloadAndVerifyUpdateAsync(
-                "https://example.invalid/FreeCleaner.exe",
+                "https://github.com/erkanbahar/FreeCleaner/releases/download/v4.7.0/FreeCleaner.exe",
                 okFile,
                 validSha,
                 httpClient: client);
@@ -800,7 +800,7 @@ public class NextGenUpgradesTests
 
             string tamperedFile = Path.Combine(tempDir, "FreeCleaner_tampered.exe");
             UpdateDownloadResult badResult = await AppUpdateService.DownloadAndVerifyUpdateAsync(
-                "https://example.invalid/FreeCleaner.exe",
+                "https://github.com/erkanbahar/FreeCleaner/releases/download/v4.7.0/FreeCleaner.exe",
                 tamperedFile,
                 wrongSha,
                 httpClient: client);
@@ -886,12 +886,12 @@ public class NextGenUpgradesTests
     }
 
     [Fact]
-    public void AppUpdateService_CurrentVersionMatches460AndComparesCorrectly()
+    public void AppUpdateService_CurrentVersionMatches470AndComparesCorrectly()
     {
-        Assert.Equal("4.6.0", AppUpdateService.CurrentVersion);
-        Assert.True(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.7.0"));
+        Assert.Equal("4.7.0", AppUpdateService.CurrentVersion);
+        Assert.True(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.8.0"));
+        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.7.0"));
         Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.6.0"));
-        Assert.False(AppUpdateService.IsNewerVersion(AppUpdateService.CurrentVersion, "v4.5.0"));
     }
 
     [Fact]

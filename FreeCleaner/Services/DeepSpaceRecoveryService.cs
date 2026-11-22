@@ -99,7 +99,10 @@ public static partial class DeepSpaceRecoveryService
             string dismStatus = isAdmin ? "✅ DISM Temizliğe Hazır" : "🛡️ Yönetici Yetkisi Gerekir";
             if (isAdmin)
             {
-                var (_, stdout, _) = await RunCmdCaptureAsync("dism /Online /Cleanup-Image /AnalyzeComponentStore", ct);
+                var (_, stdout, _) = await RunToolCaptureAsync(
+                    "dism.exe",
+                    ["/Online", "/Cleanup-Image", "/AnalyzeComponentStore"],
+                    ct);
                 dismStatus = ParseDismReclaimableSummary(stdout);
             }
 
@@ -117,7 +120,7 @@ public static partial class DeepSpaceRecoveryService
             });
 
             // 3. CompactOS lossless OS binary compression
-            var (_, compactOut, _) = await RunCmdCaptureAsync("compact /compactos:query", ct);
+            var (_, compactOut, _) = await RunToolCaptureAsync("compact.exe", ["/compactos:query"], ct);
             bool isCompactActive = ParseCompactOsQueryOutput(compactOut);
 
             items.Add(new DeepSpaceItem
@@ -182,7 +185,7 @@ public static partial class DeepSpaceRecoveryService
             case "HIBERFIL_OFF":
             {
                 long before = SafeFileLength(@"C:\hiberfil.sys");
-                var (code, stdout, stderr) = await RunCmdCaptureAsync("powercfg /h off", ct);
+                var (code, stdout, stderr) = await RunToolCaptureAsync("powercfg.exe", ["/h", "off"], ct);
                 long after = SafeFileLength(@"C:\hiberfil.sys");
                 long freed = Math.Max(0, before - after);
                 if (code == 0)
@@ -193,7 +196,7 @@ public static partial class DeepSpaceRecoveryService
             case "HIBERFIL_REDUCED":
             {
                 long before = SafeFileLength(@"C:\hiberfil.sys");
-                var (code, stdout, stderr) = await RunCmdCaptureAsync("powercfg /h /type reduced", ct);
+                var (code, stdout, stderr) = await RunToolCaptureAsync("powercfg.exe", ["/h", "/type", "reduced"], ct);
                 long after = SafeFileLength(@"C:\hiberfil.sys");
                 long freed = Math.Max(0, before - after);
                 if (code == 0)
@@ -205,7 +208,10 @@ public static partial class DeepSpaceRecoveryService
             {
                 var sysDrive = new DriveInfo(@"C:\");
                 long freeBefore = sysDrive.AvailableFreeSpace;
-                var (code, stdout, stderr) = await RunCmdCaptureAsync("dism /Online /Cleanup-Image /StartComponentCleanup", ct);
+                var (code, stdout, stderr) = await RunToolCaptureAsync(
+                    "dism.exe",
+                    ["/Online", "/Cleanup-Image", "/StartComponentCleanup"],
+                    ct);
                 long freeAfter = new DriveInfo(@"C:\").AvailableFreeSpace;
                 long freed = Math.Max(0, freeAfter - freeBefore);
                 if (code == 0)
@@ -217,7 +223,7 @@ public static partial class DeepSpaceRecoveryService
             {
                 var sysDrive = new DriveInfo(@"C:\");
                 long freeBefore = sysDrive.AvailableFreeSpace;
-                var (code, stdout, stderr) = await RunCmdCaptureAsync("compact /compactos:always", ct);
+                var (code, stdout, stderr) = await RunToolCaptureAsync("compact.exe", ["/compactos:always"], ct);
                 long freeAfter = new DriveInfo(@"C:\").AvailableFreeSpace;
                 long freed = Math.Max(0, freeAfter - freeBefore);
                 if (code == 0)
@@ -327,27 +333,13 @@ public static partial class DeepSpaceRecoveryService
         protected override bool ContinueOnError(int error) => true;
     }
 
-    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunCmdCaptureAsync(string cmdLine, CancellationToken ct)
+    private static async Task<(int ExitCode, string StdOut, string StdErr)> RunToolCaptureAsync(
+        string exeName,
+        IEnumerable<string> args,
+        CancellationToken ct)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = $"/c \"chcp 65001 >nul && {cmdLine}\"",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        using var proc = Process.Start(psi);
-        if (proc is null)
-            return (-1, string.Empty, "İşlem başlatılamadı.");
-
-        Task<string> outTask = proc.StandardOutput.ReadToEndAsync(ct);
-        Task<string> errTask = proc.StandardError.ReadToEndAsync(ct);
-        await proc.WaitForExitAsync(ct);
-        return (proc.ExitCode, await outTask, await errTask);
+        ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(exeName, args, redirectOutput: true);
+        ProcessRunResult result = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromMinutes(3), ct).ConfigureAwait(false);
+        return (result.ExitCode, result.StandardOutput, result.StandardError);
     }
 }

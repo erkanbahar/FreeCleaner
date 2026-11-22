@@ -3,9 +3,17 @@ using System.Text;
 
 namespace FreeCleaner.Services;
 
+public sealed record ProcessRunResult(
+    int ExitCode,
+    string StandardOutput,
+    string StandardError,
+    bool TimedOut,
+    bool Started);
+
 /// <summary>
 /// Builds shell-injection-safe ProcessStartInfo configurations using ArgumentList
-/// or UTF-16LE Base64 -EncodedCommand payloads instead of interpolated cmd.exe / shell strings.
+/// or UTF-16LE Base64 -EncodedCommand payloads instead of interpolated cmd.exe / shell strings,
+/// and executes processes with concurrent stream draining to prevent pipe deadlocks.
 /// </summary>
 public static class SafeProcessRunner
 {
@@ -59,11 +67,12 @@ public static class SafeProcessRunner
             psi.RedirectStandardOutput = redirectOutput;
             psi.RedirectStandardError = redirectOutput;
             if (redirectOutput)
+            {
                 psi.StandardOutputEncoding = Encoding.UTF8;
+                psi.StandardErrorEncoding = Encoding.UTF8;
+            }
             psi.ArgumentList.Add("-NoProfile");
             psi.ArgumentList.Add("-NonInteractive");
-            psi.ArgumentList.Add("-WindowStyle");
-            psi.ArgumentList.Add("Hidden");
             psi.ArgumentList.Add("-EncodedCommand");
             psi.ArgumentList.Add(encoded);
         }
@@ -74,7 +83,9 @@ public static class SafeProcessRunner
     public static ProcessStartInfo BuildDirectProcessStartInfo(
         string fileName,
         IEnumerable<string> arguments,
-        bool redirectOutput = false)
+        bool redirectOutput = false,
+        string? workingDirectory = null,
+        IReadOnlyDictionary<string, string>? environmentVariables = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
         ArgumentNullException.ThrowIfNull(arguments);
@@ -89,12 +100,177 @@ public static class SafeProcessRunner
         };
 
         if (redirectOutput)
+        {
             psi.StandardOutputEncoding = Encoding.UTF8;
+            psi.StandardErrorEncoding = Encoding.UTF8;
+        }
+
+        if (!string.IsNullOrWhiteSpace(workingDirectory))
+            psi.WorkingDirectory = workingDirectory;
+
+        if (environmentVariables is not null)
+        {
+            foreach (KeyValuePair<string, string> kv in environmentVariables)
+                psi.Environment[kv.Key] = kv.Value;
+        }
 
         foreach (string arg in arguments)
             psi.ArgumentList.Add(SanitizeSingleLine(arg));
 
         return psi;
+    }
+
+    public static async Task<ProcessRunResult> RunAsync(
+        ProcessStartInfo psi,
+        TimeSpan timeout,
+        CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(psi);
+
+        try
+        {
+            using Process? proc = Process.Start(psi);
+            if (proc is null)
+            {
+                ErrorLogService.Log("SafeProcessRunner", $"Process.Start returned null for {psi.FileName}.");
+                return new ProcessRunResult(-1, string.Empty, $"Failed to start {psi.FileName}.", false, false);
+            }
+
+            Task<string> outTask = psi.RedirectStandardOutput
+                ? proc.StandardOutput.ReadToEndAsync(CancellationToken.None)
+                : Task.FromResult(string.Empty);
+            Task<string> errTask = psi.RedirectStandardError
+                ? proc.StandardError.ReadToEndAsync(CancellationToken.None)
+                : Task.FromResult(string.Empty);
+
+            bool timedOut = false;
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            if (timeout > TimeSpan.Zero && timeout != Timeout.InfiniteTimeSpan)
+                timeoutCts.CancelAfter(timeout);
+
+            try
+            {
+                await proc.WaitForExitAsync(timeoutCts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                try
+                {
+                    if (!proc.HasExited)
+                        proc.Kill(entireProcessTree: true);
+                }
+                catch (Exception killEx)
+                {
+                    ErrorLogService.Log("SafeProcessRunner:KillAsync", killEx);
+                }
+
+                if (ct.IsCancellationRequested)
+                    throw;
+
+                timedOut = true;
+            }
+
+            try
+            {
+                await Task.WhenAll(outTask, errTask)
+                    .WaitAsync(TimeSpan.FromSeconds(2), CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception drainEx)
+            {
+                ErrorLogService.Log("SafeProcessRunner:DrainAsync", drainEx);
+            }
+
+            string stdOut = outTask.IsCompletedSuccessfully ? outTask.Result : string.Empty;
+            string stdErr = errTask.IsCompletedSuccessfully ? errTask.Result : string.Empty;
+            int exitCode = !timedOut && proc.HasExited ? proc.ExitCode : -1;
+            return new ProcessRunResult(exitCode, stdOut, stdErr, timedOut, true);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log($"SafeProcessRunner:RunAsync:{psi.FileName}", ex);
+            return new ProcessRunResult(-1, string.Empty, ex.Message, false, false);
+        }
+    }
+
+    public static ProcessRunResult Run(ProcessStartInfo psi, TimeSpan timeout)
+    {
+        ArgumentNullException.ThrowIfNull(psi);
+
+        try
+        {
+            using Process? proc = Process.Start(psi);
+            if (proc is null)
+            {
+                ErrorLogService.Log("SafeProcessRunner", $"Process.Start returned null for {psi.FileName}.");
+                return new ProcessRunResult(-1, string.Empty, $"Failed to start {psi.FileName}.", false, false);
+            }
+
+            var outSb = new StringBuilder();
+            var errSb = new StringBuilder();
+            object outLock = new();
+            object errLock = new();
+
+            if (psi.RedirectStandardOutput)
+            {
+                proc.OutputDataReceived += (_, e) =>
+                {
+                    if (e.Data is null) return;
+                    lock (outLock) outSb.AppendLine(e.Data);
+                };
+                proc.BeginOutputReadLine();
+            }
+
+            if (psi.RedirectStandardError)
+            {
+                proc.ErrorDataReceived += (_, e) =>
+                {
+                    if (e.Data is null) return;
+                    lock (errLock) errSb.AppendLine(e.Data);
+                };
+                proc.BeginErrorReadLine();
+            }
+
+            int waitMs = timeout == Timeout.InfiniteTimeSpan
+                ? Timeout.Infinite
+                : (int)Math.Clamp(timeout.TotalMilliseconds, 100, int.MaxValue);
+
+            bool exited = proc.WaitForExit(waitMs);
+            if (!exited)
+            {
+                try
+                {
+                    proc.Kill(entireProcessTree: true);
+                }
+                catch (Exception killEx)
+                {
+                    ErrorLogService.Log("SafeProcessRunner:KillSync", killEx);
+                }
+
+                proc.WaitForExit(1000);
+            }
+            else
+            {
+                // Zero-argument WaitForExit guarantees async output handlers have flushed.
+                proc.WaitForExit();
+            }
+
+            string stdOut;
+            string stdErr;
+            lock (outLock) stdOut = outSb.ToString();
+            lock (errLock) stdErr = errSb.ToString();
+
+            return new ProcessRunResult(exited ? proc.ExitCode : -1, stdOut, stdErr, !exited, true);
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log($"SafeProcessRunner:Run:{psi.FileName}", ex);
+            return new ProcessRunResult(-1, string.Empty, ex.Message, false, false);
+        }
     }
 
     public static string BuildFirewallBlockScript(string ruleName, string exeFullPath)
@@ -142,4 +318,38 @@ public static class SafeProcessRunner
 
     public static string BuildRemoveAppxScript(string packageFullName)
         => $"Remove-AppxPackage -Package {QuotePowerShellSingle(SanitizeSingleLine(packageFullName))} -ErrorAction Stop";
+
+    public static string BuildNetworkRepairScript(string actionKey)
+        => actionKey switch
+        {
+            "ARP_FLUSH" => string.Join(Environment.NewLine,
+                "& ipconfig.exe /flushdns | Out-Null",
+                "& arp.exe -d * | Out-Null"),
+            "TCP_WINSOCK_RESET" => string.Join(Environment.NewLine,
+                "& netsh.exe winsock reset | Out-Null",
+                "& netsh.exe int ip reset | Out-Null"),
+            "DHCP_RENEW" => string.Join(Environment.NewLine,
+                "& ipconfig.exe /release | Out-Null",
+                "& ipconfig.exe /renew | Out-Null"),
+            _ => "& ipconfig.exe /flushdns | Out-Null"
+        };
+
+    public static string BuildDismCheckHealthElevatedScript(string outputFilePath)
+    {
+        string quotedOut = QuotePowerShellSingle(SanitizeSingleLine(outputFilePath));
+        return $"& dism.exe /Online /Cleanup-Image /CheckHealth 2>&1 | Out-File -FilePath {quotedOut} -Encoding utf8";
+    }
+
+    public static string BuildServiceControlElevatedScript(string action, string serviceName)
+    {
+        string safeAction = string.Equals(action, "start", StringComparison.OrdinalIgnoreCase) ? "start" : "stop";
+        string safeService = QuotePowerShellSingle(SanitizeSingleLine(serviceName));
+        return $"$svc = {safeService}; & sc.exe {safeAction} $svc | Out-Null";
+    }
+
+    public static string BuildRegImportScript(string backupPath)
+    {
+        string quotedPath = QuotePowerShellSingle(SanitizeSingleLine(backupPath));
+        return $"& reg.exe import {quotedPath}";
+    }
 }

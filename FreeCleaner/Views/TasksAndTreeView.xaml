@@ -106,38 +106,55 @@
                             Command="{Binding AnalyzeFolderSpaceTreeCommand}"/>
                 </Grid>
 
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding FolderSpaceItems}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Background="{DynamicResource BgCardBrush}"
-                                        BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="8"
-                                        Padding="10,8"
-                                        Margin="0,0,4,7">
-                                    <StackPanel>
-                                        <Grid>
-                                            <TextBlock Text="{Binding FolderName}" FontWeight="SemiBold" FontSize="12.5"/>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                                <TextBlock Text="{Binding FormattedSize}" FontWeight="Bold" Foreground="{DynamicResource AccentEmeraldBrush}" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{Binding PercentText}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11.5"/>
-                                            </StackPanel>
-                                        </Grid>
-                                        <ProgressBar Value="{Binding PercentageOfParent, Mode=OneWay}"
-                                                     Maximum="100"
-                                                     Height="6"
-                                                     Margin="0,6,0,2"
-                                                     Background="#222D40"
-                                                     Foreground="{DynamicResource AccentBlueBrush}"
-                                                     BorderThickness="0"/>
-                                        <TextBlock Text="{Binding FullPath}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis"/>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
+                <ItemsControl Grid.Row="1"
+                              ItemsSource="{Binding FolderSpaceItems}"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              ScrollViewer.CanContentScroll="True"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.Template>
+                        <ControlTemplate TargetType="ItemsControl">
+                            <ScrollViewer Focusable="False"
+                                          VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                          CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </ControlTemplate>
+                    </ItemsControl.Template>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{DynamicResource BgCardBrush}"
+                                    BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="10,8"
+                                    Margin="0,0,4,7">
+                                <StackPanel>
+                                    <Grid>
+                                        <TextBlock Text="{Binding FolderName}" FontWeight="SemiBold" FontSize="12.5"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding FormattedSize}" FontWeight="Bold" Foreground="{DynamicResource AccentEmeraldBrush}" Margin="0,0,8,0"/>
+                                            <TextBlock Text="{Binding PercentText}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11.5"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <ProgressBar Value="{Binding PercentageOfParent, Mode=OneWay}"
+                                                 Maximum="100"
+                                                 Height="6"
+                                                 Margin="0,6,0,2"
+                                                 Background="#222D40"
+                                                 Foreground="{DynamicResource AccentBlueBrush}"
+                                                 BorderThickness="0"/>
+                                    <TextBlock Text="{Binding FullPath}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </Grid>
         </Border>
     </Grid>

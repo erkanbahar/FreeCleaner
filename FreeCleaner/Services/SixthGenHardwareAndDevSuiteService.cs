@@ -152,21 +152,12 @@ public static class SixthGenHardwareAndDevSuiteService
             var results = new List<AppxBloatwareItem>();
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = "-NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-AppxPackage | Where-Object { $_.IsFramework -eq $false -and $_.NonRemovable -eq $false } | ForEach-Object { \\\"$($_.Name)|$($_.PackageFullName)|$($_.Version)|$($_.InstallLocation)\\\" }\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
+                const string appxScript = "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-AppxPackage | Where-Object { $_.IsFramework -eq $false -and $_.NonRemovable -eq $false } | ForEach-Object { \"$($_.Name)|$($_.PackageFullName)|$($_.Version)|$($_.InstallLocation)\" }";
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(appxScript, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(15));
+                if (!runResult.Started || runResult.TimedOut) return results;
 
-                using var proc = Process.Start(psi);
-                if (proc is null) return results;
-
-                string output = proc.StandardOutput.ReadToEnd();
-                proc.WaitForExit(12000);
+                string output = runResult.StandardOutput;
 
                 foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                 {
@@ -243,20 +234,11 @@ Get-Partition | Where-Object { $_.DriveLetter } | ForEach-Object {
         Write-Output ""$letter|$($disk.FriendlyName) ($($disk.MediaType))""
     }
 }";
-                var psi = new ProcessStartInfo
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(6));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{ps.Replace("\"", "\\\"")}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(5000);
+                    string output = runResult.StandardOutput;
                     foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
                         var parts = line.Split('|');
@@ -493,21 +475,11 @@ if ($sls -and $sls.OA3xOriginalProductKey) {
     Write-Output ""KEY|OEM|$($sls.OA3xOriginalProductKey)|OA3x""
 }
 ";
-                var psi = new ProcessStartInfo
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(psScript, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(10));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{psScript.Replace("\"", "\\\"")}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(8000);
+                    string output = runResult.StandardOutput;
 
                     foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {

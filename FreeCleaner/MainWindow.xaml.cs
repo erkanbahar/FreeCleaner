@@ -11,6 +11,7 @@ using FreeCleaner.Views;
 
 namespace FreeCleaner;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1001:Types that own disposable fields should be disposable", Justification = "Owned resources are disposed in WPF OnExit/Closed lifecycle handlers.")]
 public partial class MainWindow : Window
 {
     private static readonly CultureInfo TurkishCulture = CultureInfo.GetCultureInfo("tr-TR");

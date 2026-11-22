@@ -598,10 +598,13 @@ public partial class MainViewModel
         LoadWindowsTweaks();
     }
 
-    private void ExecuteRestartExplorerNow()
+    private async Task ExecuteRestartExplorerNowAsync()
     {
-        EighthGenAiAndSecuritySuiteService.RestartWindowsExplorer();
-        StatusMessage = "Windows Gezgini (explorer.exe) yeniden başlatıldı; tüm kabuk ve görev çubuğu ayarları etkinleştirildi.";
+        await EighthGenAiAndSecuritySuiteService.RestartWindowsExplorerAsync();
+        StatusMessage = LocalizationService.GetText(
+            "Windows Gezgini (explorer.exe) yeniden başlatıldı; tüm kabuk ve görev çubuğu ayarları etkinleştirildi.",
+            "Windows Explorer (explorer.exe) restarted; shell and taskbar tweaks are now active.",
+            _selectedLanguage);
         AddLog("[WIN11 TWEAKER] explorer.exe yeniden başlatıldı.");
     }
 

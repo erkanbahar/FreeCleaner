@@ -1,10 +1,10 @@
-# FreeCleaner Pro v4.6 (.NET 10 WPF)
+# FreeCleaner Pro v4.7 (.NET 10 WPF)
 
 [![FreeCleaner .NET 10 CI](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--windows-512BD4?logo=dotnet)
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011%20(x64)-0078D6?logo=windows)
 ![Modules](https://img.shields.io/badge/Modules-57%20Tools-10B981)
-![Tests](https://img.shields.io/badge/Tests-76%20Passing-22C55E)
+![Tests](https://img.shields.io/badge/Tests-83%20Passing-22C55E)
 ![Language](https://img.shields.io/badge/Language-English%20%7C%20T%C3%BCrk%C3%A7e-38BDF8)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
@@ -24,7 +24,7 @@
 - **🔗 Zero-Data-Loss NTFS Hardlink Deduplicator:** Merges byte-for-byte identical duplicate files (`CreateHardLinkW` + `GetFileInformationByHandle` inode checks + full SHA-256 verification + same-NTFS-volume safety guard + atomic swap/rollback) so disk space is reclaimed while keeping every file path accessible.
 - **📈 Disk Snapshot Diff ("Where Did My Disk Space Go?"):** Saves lightweight Treemap snapshots (`%LocalAppData%\FreeCleaner\snapshots`) and computes per-folder `+GB` growth deltas (`ComputeGrowthDiff`) between scans.
 - **🔒 Smart Browser / VM Process Lock Guard:** Detects active browsers (`Chrome`, `Edge`, `Brave`, `Firefox`, `Discord`, `Steam`, `VS Code`) before cleanup and `Claude Desktop` / `Docker` / `WSL2` before `.vhdx` compaction, offering a safe **Close & Continue / Skip / Cancel** prompt.
-- **⬇️ In-App GitHub Releases Updater with SHA-256 Verification & Daily Silent Check:** Runs an optional silent daily update check on launch (configurable in Settings), displays theme-adaptive in-app Toast notifications with quick actions, downloads portable `.exe`/`.zip` releases with live progress tracking, validates cryptographic `SHA-256` digests (`SHA256SUMS.txt` / GitHub asset digest), and runs an atomic backup/swap/relaunch script.
+- **⬇️ In-App GitHub Releases Updater with SHA-256 Verification & Daily Silent Check:** Runs an optional silent daily update check on launch (configurable in Settings), displays theme-adaptive in-app Toast notifications with quick actions, prioritizes `FreeCleaner.exe` / portable ZIPs while skipping `Setup` & `Winget` manifests (`SelectPortableReleaseAsset`), enforces trusted HTTPS GitHub hosts (`IsTrustedDownloadUri`), validates cryptographic `SHA-256` digests (`SHA256SUMS.txt` / GitHub asset digest with fail-closed `requireHash`), and runs an atomic backup/swap/relaunch script.
 - **🔔 Live System Tray Telemetry, Cooldown & Proactive Storage Forecast Alerts:** Displays real-time `CPU %`, `RAM %`, and `C:` free GB in the tray tooltip (63-char safe), supports minimize-to-tray, sends cooldown-protected critical alerts (`>= 90%` Disk / `>= 92%` RAM), and notifies proactively when predicted days to 90% disk usage fall below your configurable threshold (`7 / 15 / 30` days — click balloon to open Smart Cleaner).
 - **🛡️ Global Crash Guard (`CrashGuardService`):** Captures unhandled UI/AppDomain/Task exceptions cleanly, writes redacted `crashes/crash-*.log` reports (`%USERPROFILE%` + secret sanitization), and offers one-click redacted Desktop Support Bundle `.zip` export (`latest_crash_sanitized.log` included).
 - **📊 SVG Diagnostic HTML Report & Filterable Activity Console:** Exports rich HTML/JSON reports featuring an inline SVG health-score gauge and 14-day cleanup history bars, paired with live log search, clipboard copy, `.log` export, and clear buttons in the Activity Console.
@@ -36,7 +36,7 @@
 - **🖼️ Perceptual Similar Photo Finder (`dHash`), 📸 EXIF Scrubber & 🗂️ Smart Folder Organizer:** Clusters burst photos with 64-bit `dHash`, strips GPS/EXIF metadata pixel-safely, and organizes Downloads / Desktop folders with one-click Undo.
 - **📈 Live CPU / RAM & Network Sparkline Monitor:** 1-second Win32 `GetSystemTimes` + `NetworkInterface` telemetry with sparkline charts and top-10 memory consumers.
 - **⌨️ 100% Runtime Bilingual UI (`57/57` Views + `CleanerRule` + Tray), `SystemAuto` Theme & In-App Toasts:** Live switching across `SystemAuto` (synced dynamically with Windows Light/Dark mode via `AppsUseLightTheme`), `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix`, and `FluentLight` themes; full `en-US` / `tr-TR` translation across **all 57/57 Lazy Views**, all 20 default `CleanerRule` entries/risk labels, Command Palette, and System Tray (`Free` vs `Boş`); plus **Window Placement Memory**, Toast overlays, shortcuts (`Ctrl+K`, `Ctrl+F`, `Ctrl+,`, `Ctrl+1..6`, `F5`, `Esc`), and `AutomationProperties.Name` labels.
-- **📦 ReadyToRun Installer, Hardened Process Invocation & MIT Governance:** Uses `AsyncRelayCommand` + `IDisposable` timer/token lifecycle cleanup, `SafeProcessRunner` (`ArgumentList` & `-EncodedCommand` shell-injection protection), generic workspace auto-discovery, `installer/FreeCleaner.iss`, `PublishReadyToRun` builds, auto-hashed `FreeCleaner-Winget-Manifests-*.zip`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, **76 passing tests** (`30.99%` line / `21.98%` branch Cobertura coverage), and CI `-p:TreatWarningsAsErrors=true`.
+- **📦 ReadyToRun Installer, Supply-Chain Security & MIT Governance:** Uses Central Package Management (`Directory.Packages.props` + `Microsoft.Data.Sqlite` `10.0.0`), `AnalysisLevel=latest-recommended` `.NET Analyzers`, `NuGetAudit`, CodeQL analysis, SLSA `attest-build-provenance`, `AsyncRelayCommand` + `IDisposable` lifecycle cleanup, deadlock-free concurrent `SafeProcessRunner` (`ArgumentList` & `-EncodedCommand`), junction/system-path shredder guards, `[GeneratedRegex]`, XAML UI virtualization, rotating redacted `ErrorLogService`, generic workspace auto-discovery, `installer/FreeCleaner.iss`, `PublishReadyToRun` builds, auto-hashed `FreeCleaner-Winget-Manifests-*.zip`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, **83 passing tests** (`32.27%` line / `23.38%` branch Cobertura coverage), and CI `-p:TreatWarningsAsErrors=true`.
 
 ### All Modules (6 Categories • 57 Tools)
 
@@ -141,7 +141,7 @@
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### CLI Build & Unit Tests (76 Tests + Coverage)
+#### CLI Build & Unit Tests (83 Tests + Coverage)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
@@ -154,10 +154,10 @@ dotnet run --project FreeCleaner/FreeCleaner.csproj
 .\scripts\Publish-Portable.ps1
 # Optional ReadyToRun + pre-flagged USB portable + Winget manifest preview:
 .\scripts\Publish-Portable.ps1 -ReadyToRun -IncludePortableFlag -GenerateWingetManifests
-# Optional Inno Setup 6 Windows Installer (dist/FreeCleaner-Setup-win-x64-v4.6.0.exe):
-ISCC.exe /DMyAppVersion=4.6.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
+# Optional Inno Setup 6 Windows Installer (dist/FreeCleaner-Setup-win-x64-v4.7.0.exe):
+ISCC.exe /DMyAppVersion=4.7.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
 ```
-Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag v4.6.0 && git push origin v4.6.0`) triggers `.github/workflows/release.yml` to verify tests, build `PublishReadyToRun` with warnings-as-errors, and publish Standard Portable `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe` installer, pre-hashed `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe`, and `SHA256SUMS.txt` on GitHub Releases.
+Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag v4.7.0 && git push origin v4.7.0`) triggers `.github/workflows/release.yml` to verify tests, build `PublishReadyToRun` with warnings-as-errors, generate SLSA build provenance attestations, and publish Standard Portable `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe` installer, pre-hashed `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe`, and `SHA256SUMS.txt` on GitHub Releases.
 
 ---
 
@@ -175,7 +175,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **🔗 Sıfır Veri Kayıplı NTFS Hardlink Birleştirici:** Aynı NTFS sürücüsündeki birebir kopya dosyaları (`CreateHardLinkW` + `GetFileInformationByHandle` inode kontrolü + tam SHA-256 doğrulaması + atomik geri alma koruması) tek fiziksel bloğa bağlayarak disk alanı açarken tüm dosya yollarını yerinde korur.
 - **📈 Klasör Boyutu Anlık Görüntü Karşılaştırması (Disk Snapshot Diff):** Treemap taramalarını hafif anlık görüntüler (`%LocalAppData%\FreeCleaner\snapshots`) olarak kaydeder; önceki taramaya göre en çok büyüyen klasörleri (`+GB` artış) listeler.
 - **🔒 Akıllı Süreç Kilit Koruması (Process Lock Guard):** Temizlik öncesinde açık tarayıcı/uygulamaları (`Chrome`, `Edge`, `Brave`, `Firefox`, `Discord`, `Steam`, `VS Code`), `.vhdx` sıkıştırma öncesinde ise `Claude Desktop` / `Docker` / `WSL2` süreçlerini algılayıp güvenli kapatma seçeneği sunar.
-- **⬇️ Uygulama İçi SHA-256 Doğrulamalı Güncelleyici & Sessiz Başlangıç Kontrolü:** Açılışta günde bir kez sessiz sürüm denetimi yapar (Ayarlar'dan yönetilebilir), yeni sürümde uygulama içi Toast bildirimi sunar, `.exe`/`.zip` paketlerini indirip kriptografik `SHA-256` bütünlüğünü (`SHA256SUMS.txt` / asset digest) doğrular ve atomik yedekleme/yeniden başlatma uygular.
+- **⬇️ Uygulama İçi SHA-256 Doğrulamalı Güncelleyici & Sessiz Başlangıç Kontrolü:** Açılışta günde bir kez sessiz sürüm denetimi yapar (Ayarlar'dan yönetilebilir), yeni sürümde uygulama içi Toast bildirimi sunar, `Setup`/`Winget` paketlerini eleyip öncelikli olarak `FreeCleaner.exe`/taşınabilir `.zip` dosyasını seçer (`SelectPortableReleaseAsset`), yalnızca güvenilir HTTPS GitHub host'larından (`IsTrustedDownloadUri`) indirir, fail-closed `SHA-256` bütünlüğünü (`SHA256SUMS.txt` / asset digest) doğrular ve atomik yedekleme/yeniden başlatma uygular.
 - **🔔 Canlı Sistem Tepsisi Telemetrisi, Bekleme Süreli & Proaktif Depolama Tahmin Uyarıları:** Tepsi ikonu üzerine gelince anlık `CPU %`, `RAM %` ve `C:` boş alanı (63 karakter sınırına uygun) gösterir; Disk (`>= %90`) veya RAM (`>= %92`) kritik eşiğe ulaştığında 30 dakikalık cooldown ile uyarır; disk doluluk tahmini belirlenen kalan gün eşiğinin (`7 / 15 / 30` gün) altına düştüğünde proaktif bildirim üretir (bildirime tıklayınca Akıllı Temizlik açılır).
 - **🛡️ Global Çökme Koruması (`CrashGuardService`):** Beklenmedik UI, `AppDomain` ve arka plan `Task` hatalarını yakalar; `%USERPROFILE%` ve gizli anahtarlardan arındırılmış dökümleri `crashes/crash-*.log` altına yazar (en fazla 20 log saklar) ve Masaüstüne `latest_crash_sanitized.log` içeren Teşhis Destek Paketi `.zip` oluşturulmasını önerir.
 - **📊 SVG Sağlık Göstergeli HTML Rapor & Filtrelenebilir Konsol:** Inline SVG sağlık puanı kadranı ve 14 günlük geçmiş çubukları içeren HTML/JSON rapor üretir; işlem konsolunda canlı arama, panoya kopyalama, `.log` dışa aktarma ve temizleme araçları sunar.
@@ -187,7 +187,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **🖼️ Benzer Fotoğraf Bulucu (`dHash`), 📸 EXIF Temizleyici & 🗂️ Akıllı Klasör Düzenleyici:** 64-bit `dHash` ile seri fotoğrafları kümeleyip en kalitelisini korur, EXIF/GPS metaverilerini siler ve İndirilenler / Masaüstü klasörlerini önizleme + tek tıkla Geri Al (Undo) ile düzenler.
 - **📈 Canlı CPU / RAM & Ağ Hızı Sparkline Monitörü:** Win32 `GetSystemTimes` + `NetworkInterface` üzerinden saniyede bir güncellenen gerçek zamanlı sparkline grafikler ve en çok bellek kullanan ilk 10 işlem tablosu.
 - **⌨️ %100 Çalışma Zamanı Çift Dilli Arayüz (`57/57` Ekran + `CleanerRule` + Tepsi), `SystemAuto` Tema & Toast Bildirimleri:** `SystemAuto` (Windows Açık/Koyu modu ile canlı senkronize), `ObsidianNeon`, `MidnightViolet`, `EmeraldMatrix` ve `FluentLight` temalarıyla **57/57 modüler Lazy View**, tüm 20 varsayılan `CleanerRule` temizlik kuralı/risk etiketi, Komut Paleti ve Sistem Tepsisi (`Boş` / `Free`) `tr-TR` ve `en-US` arasında anında çevrilir; çoklu monitör güvenli **Pencere Konum Belleği**, Toast bildirimleri, kısayollar (`Ctrl+K`, `Ctrl+F`, `Ctrl+,`, `Ctrl+1..6`, `F5`, `Esc`) ve `AutomationProperties.Name` etiketleri içerir.
-- **📦 ReadyToRun Kurulum, Sertleştirilmiş Süreç Çağrıları & Açık Kaynak Standartları:** `AsyncRelayCommand` + `IDisposable` zamanlayıcı/belirteç temizliği, `SafeProcessRunner` (`ArgumentList` ve `-EncodedCommand` komut enjeksiyonu koruması), otomatik kullanıcı çalışma dizini keşfi, `installer/FreeCleaner.iss`, `PublishReadyToRun` derlemesi, otomatik hash'li `FreeCleaner-Winget-Manifests-*.zip`, `LICENSE` (MIT), `SECURITY.md`, `CONTRIBUTING.md`, **76 başarılı birim testi** (`%30.99` satır / `%21.98` dal Cobertura kapsamı) ve CI `-p:TreatWarningsAsErrors=true` ile korunur.
+- **📦 ReadyToRun Kurulum, Tedarik Zinciri Güvenliği & Açık Kaynak Standartları:** Merkezi Paket Yönetimi (`Directory.Packages.props` + `Microsoft.Data.Sqlite` `10.0.0`), `AnalysisLevel=latest-recommended` `.NET Analyzers`, `NuGetAudit`, CodeQL analizi, SLSA `attest-build-provenance`, `AsyncRelayCommand` + `IDisposable` yaşam döngüsü temizliği, kilitlenmesiz eşzamanlı `SafeProcessRunner`, junction/sistem yolu korumalı öğütücü, `[GeneratedRegex]`, XAML UI sanallaştırması, rotasyonlu/maskeli `ErrorLogService`, otomatik çalışma dizini keşfi, `installer/FreeCleaner.iss`, `PublishReadyToRun` derlemesi, otomatik hash'li `FreeCleaner-Winget-Manifests-*.zip`, `LICENSE` (MIT), `SECURITY.md`, `CONTRIBUTING.md`, **83 başarılı birim testi** (`%32.27` satır / `%23.38` dal Cobertura kapsamı) ve CI `-p:TreatWarningsAsErrors=true` ile korunur.
 
 ### Tüm Modüller (6 Kategori • 57 Araç)
 
@@ -292,7 +292,7 @@ Outputs `artifacts/portable/FreeCleaner.exe`. Pushing a `v*` tag (e.g., `git tag
 - **.NET 10 SDK** (`net10.0-windows`)
 - **Windows 10 / Windows 11 (x64)**
 
-#### Komut Satırı ile Derleme & Test (76 Test + Kapsam)
+#### Komut Satırı ile Derleme & Test (83 Test + Kapsam)
 ```powershell
 dotnet restore FreeCleaner.slnx
 dotnet build FreeCleaner.slnx --configuration Release --no-restore -p:TreatWarningsAsErrors=true
@@ -305,7 +305,7 @@ dotnet run --project FreeCleaner/FreeCleaner.csproj
 .\scripts\Publish-Portable.ps1
 # İsteğe bağlı ReadyToRun + USB taşınabilir (portable.flag) + Winget manifest önizlemesi:
 .\scripts\Publish-Portable.ps1 -ReadyToRun -IncludePortableFlag -GenerateWingetManifests
-# İsteğe bağlı Inno Setup 6 Windows Kurulum Dosyası (dist/FreeCleaner-Setup-win-x64-v4.6.0.exe):
-ISCC.exe /DMyAppVersion=4.6.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
+# İsteğe bağlı Inno Setup 6 Windows Kurulum Dosyası (dist/FreeCleaner-Setup-win-x64-v4.7.0.exe):
+ISCC.exe /DMyAppVersion=4.7.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
 ```
-Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.6.0 && git push origin v4.6.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp `PublishReadyToRun` derlemesiyle Standart Taşınabilir `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe`, gerçek hash'li `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe` ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar.
+Çıktı dosyası `artifacts/portable/FreeCleaner.exe` konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.7.0 && git push origin v4.7.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp `PublishReadyToRun` derlemesi ve SLSA attestation ile Standart Taşınabilir `.zip`, USB (`portable.flag`) `.zip`, Windows Setup `.exe`, gerçek hash'li `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe` ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar.

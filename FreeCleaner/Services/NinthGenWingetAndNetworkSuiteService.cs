@@ -5,43 +5,39 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.RegularExpressions;
 using FreeCleaner.Models;
 using Microsoft.Data.Sqlite;
 
 namespace FreeCleaner.Services;
 
-public static class NinthGenWingetAndNetworkSuiteService
+public static partial class NinthGenWingetAndNetworkSuiteService
 {
+    [GeneratedRegex(@"\s{2,}", RegexOptions.None, 1000)]
+    private static partial Regex WingetColumnSplitRegex();
+
     // ==================== 1. WINGET SOFTWARE UPDATER ====================
 
     public static async Task<List<WingetUpgradeItem>> ScanWingetUpgradesAsync()
     {
-        return await Task.Run(() =>
+        var results = new List<WingetUpgradeItem>();
+        try
         {
-            var results = new List<WingetUpgradeItem>();
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = "/c \"chcp 65001 >nul && winget upgrade --include-unknown --accept-source-agreements\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "winget.exe",
+                ["upgrade", "--include-unknown", "--accept-source-agreements"],
+                redirectOutput: true);
 
-                using var proc = Process.Start(psi);
-                if (proc is null) return results;
+            ProcessRunResult runResult = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(25)).ConfigureAwait(false);
+            if (runResult.Started && !runResult.TimedOut)
+                results = ParseWingetUpgradeOutput(runResult.StandardOutput);
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("Winget:Scan", ex);
+        }
 
-                string output = proc.StandardOutput.ReadToEnd();
-                proc.WaitForExit(20000);
-                results = ParseWingetUpgradeOutput(output);
-            }
-            catch { }
-
-            return results;
-        });
+        return results;
     }
 
     public static List<WingetUpgradeItem> ParseWingetUpgradeOutput(string? output)
@@ -71,7 +67,7 @@ public static class NinthGenWingetAndNetworkSuiteService
             }
 
             // Split by 2 or more spaces to reliably parse winget columns regardless of localization
-            var cols = System.Text.RegularExpressions.Regex.Split(row, @"\s{2,}")
+            var cols = WingetColumnSplitRegex().Split(row)
                 .Where(c => !string.IsNullOrWhiteSpace(c))
                 .ToArray();
 
@@ -110,61 +106,55 @@ public static class NinthGenWingetAndNetworkSuiteService
         IProgress<(int Completed, int Total, WingetUpgradeItem Item, bool IsStarting, bool Success)>? progress,
         CancellationToken cancellationToken = default)
     {
-        return await Task.Run(() =>
+        int total = targets.Count;
+        int updated = 0;
+        int failed = 0;
+
+        for (int i = 0; i < total; i++)
         {
-            int total = targets.Count;
-            int updated = 0;
-            int failed = 0;
+            if (cancellationToken.IsCancellationRequested)
+                break;
 
-            for (int i = 0; i < total; i++)
+            var pkg = targets[i];
+            progress?.Report((i, total, pkg, true, false));
+
+            bool success = false;
+            try
             {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
+                ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "winget.exe",
+                    [
+                        "upgrade",
+                        "--id",
+                        pkg.PackageId,
+                        "--exact",
+                        "--silent",
+                        "--accept-package-agreements",
+                        "--accept-source-agreements",
+                        "--disable-interactivity"
+                    ],
+                    redirectOutput: true);
 
-                var pkg = targets[i];
-                progress?.Report((i, total, pkg, true, false));
-
-                bool success = false;
-                try
-                {
-                    var psi = new ProcessStartInfo
-                    {
-                        FileName = "winget.exe",
-                        Arguments = $"upgrade --id \"{pkg.PackageId}\" --exact --silent --accept-package-agreements --accept-source-agreements --disable-interactivity",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        RedirectStandardError = true,
-                        CreateNoWindow = true,
-                        StandardOutputEncoding = Encoding.UTF8
-                    };
-                    using var p = Process.Start(psi);
-                    if (p is not null)
-                    {
-                        // Drain output asynchronously to avoid pipe deadlock
-                        p.OutputDataReceived += (_, _) => { };
-                        p.ErrorDataReceived += (_, _) => { };
-                        p.BeginOutputReadLine();
-                        p.BeginErrorReadLine();
-
-                        if (!p.WaitForExit(600000))
-                        {
-                            try { p.Kill(entireProcessTree: true); } catch { }
-                        }
-                        else
-                        {
-                            success = p.ExitCode == 0;
-                        }
-                    }
-                }
-                catch { }
-
-                if (success) updated++; else failed++;
-                progress?.Report((i + 1, total, pkg, false, success));
+                ProcessRunResult runResult = await SafeProcessRunner
+                    .RunAsync(psi, TimeSpan.FromMinutes(10), cancellationToken)
+                    .ConfigureAwait(false);
+                success = runResult.Started && !runResult.TimedOut && runResult.ExitCode == 0;
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                ErrorLogService.Log($"Winget:Upgrade:{pkg.PackageId}", ex);
             }
 
-            string msg = $"Winget güncelleme tamamlandı: {updated} başarılı, {failed} başarısız (Toplam {total} program).";
-            return (updated, failed, msg);
-        }, cancellationToken);
+            if (success) updated++; else failed++;
+            progress?.Report((i + 1, total, pkg, false, success));
+        }
+
+        string msg = $"Winget güncelleme tamamlandı: {updated} başarılı, {failed} başarısız (Toplam {total} program).";
+        return (updated, failed, msg);
     }
 
     // ==================== 2. LOCAL NETWORK (LAN / WI-FI) DEVICE RADAR ====================
@@ -247,21 +237,15 @@ public static class NinthGenWingetAndNetworkSuiteService
             // Parse ARP table (arp -a)
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = "/c \"chcp 65001 >nul && arp -a\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
+                ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "arp.exe",
+                    ["-a"],
+                    redirectOutput: true);
 
-                using var proc = Process.Start(psi);
-                if (proc is not null)
+                ProcessRunResult arpResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(5));
+                if (arpResult.Started && !arpResult.TimedOut)
                 {
-                    string arpOut = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(4000);
+                    string arpOut = arpResult.StandardOutput;
 
                     var seenIps = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { localIp };
 
@@ -617,21 +601,15 @@ public static class NinthGenWingetAndNetworkSuiteService
             // 2. Scan Windows Credential Manager via cmdkey /list
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = "/c \"chcp 65001 >nul && cmdkey /list\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
+                ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "cmdkey.exe",
+                    ["/list"],
+                    redirectOutput: true);
 
-                using var proc = Process.Start(psi);
-                if (proc is not null)
+                ProcessRunResult cmdkeyResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(5));
+                if (cmdkeyResult.Started && !cmdkeyResult.TimedOut)
                 {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(5000);
+                    string output = cmdkeyResult.StandardOutput;
 
                     string currentTarget = string.Empty;
                     string currentType = string.Empty;
@@ -706,19 +684,17 @@ public static class NinthGenWingetAndNetworkSuiteService
         {
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmdkey.exe",
-                    Arguments = $"/delete:\"{item.TargetOrKeyName}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(3000);
-                if (proc?.ExitCode == 0)
+                ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "cmdkey.exe",
+                    [$"/delete:{SafeProcessRunner.SanitizeSingleLine(item.TargetOrKeyName)}"]);
+                ProcessRunResult delResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(5));
+                if (delResult.Started && !delResult.TimedOut && delResult.ExitCode == 0)
                     deleted++;
             }
-            catch { }
+            catch (Exception ex)
+            {
+                ErrorLogService.Log("CredentialVault:Delete", ex);
+            }
         }
         return deleted;
     }
@@ -771,7 +747,7 @@ public static class NinthGenWingetAndNetworkSuiteService
             }
 
             return list
-                .OrderByDescending(x => x.PriorityBadge.StartsWith("⚡") || x.PriorityBadge.StartsWith("🍃"))
+                .OrderByDescending(x => x.PriorityBadge.StartsWith('⚡') || x.PriorityBadge.StartsWith("🍃"))
                 .ThenByDescending(x => x.ThreadCount)
                 .Take(120)
                 .ToList();

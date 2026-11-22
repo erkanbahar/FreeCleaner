@@ -298,20 +298,15 @@ public static class PrivacyAndNetworkShieldService
 
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "netstat.exe",
-                    Arguments = "-ano",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true
-                };
+                ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "netstat.exe",
+                    ["-ano"],
+                    redirectOutput: true);
 
-                using var proc = Process.Start(psi);
-                if (proc is not null)
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(5));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(4000);
+                    string output = runResult.StandardOutput;
 
                     foreach (string line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
@@ -630,26 +625,18 @@ public static class PrivacyAndNetworkShieldService
 
     public static async Task<List<ScheduledTaskItem>> GetScheduledTasksAsync()
     {
-        return await Task.Run(() =>
+        var list = new List<ScheduledTaskItem>();
+        try
         {
-            var list = new List<ScheduledTaskItem>();
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = "/c \"chcp 65001 >nul && schtasks.exe /Query /FO CSV /NH\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    StandardOutputEncoding = System.Text.Encoding.UTF8
-                };
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "schtasks.exe",
+                ["/Query", "/FO", "CSV", "/NH"],
+                redirectOutput: true);
 
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(6000);
+            ProcessRunResult runResult = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(8)).ConfigureAwait(false);
+            if (runResult.Started && !runResult.TimedOut)
+            {
+                string output = runResult.StandardOutput;
 
                     foreach (string line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
@@ -675,10 +662,12 @@ public static class PrivacyAndNetworkShieldService
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                ErrorLogService.Log("ScheduledTasks:Query", ex);
+            }
 
             return list.OrderBy(x => x.TaskName).Take(200).ToList();
-        });
     }
 
     public static async Task<List<FolderSpaceBarItem>> AnalyzeFolderSpaceBreakdownAsync(string parentFolder)

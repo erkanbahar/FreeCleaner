@@ -125,6 +125,7 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private string? _latestDownloadAssetUrl;
     private string? _latestDownloadAssetName;
     private string? _latestExpectedSha256;
+    private string? _latestChecksumsAssetUrl;
     private bool _isDownloadingUpdate;
     private int _updateDownloadPercent;
     private bool _hasTreemapDiffResults;
@@ -988,7 +989,7 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
             if (param is WindowsTweakItem tweak)
                 ExecuteToggleWindowsTweak(tweak);
         }, _ => !IsBusy);
-        RestartExplorerNowCommand = new RelayCommand(_ => ExecuteRestartExplorerNow(), _ => !IsBusy);
+        RestartExplorerNowCommand = CreateAsyncCommand(async _ => await ExecuteRestartExplorerNowAsync(), _ => !IsBusy);
         RefreshVolumesAndBitLockerCommand = CreateAsyncCommand(async _ => await LoadVolumeSecurityAndMountsAsync(), _ => !IsBusy);
         BrowseAndMountDiskImageCommand = CreateAsyncCommand(async _ => await BrowseAndMountIsoOrVhdAsync(), _ => !IsBusy);
         DismountVolumeItemCommand = CreateAsyncCommand(async param =>

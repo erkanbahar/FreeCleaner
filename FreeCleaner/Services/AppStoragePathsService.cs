@@ -1,6 +1,8 @@
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using FreeCleaner.Models;
 
@@ -13,6 +15,7 @@ namespace FreeCleaner.Services;
 public static partial class AppStoragePathsService
 {
     public const string PortableFlagFileName = "portable.flag";
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
 
     public static string GetBaseAppDirectory(string? baseDirOverride = null)
         => string.IsNullOrWhiteSpace(baseDirOverride) ? AppContext.BaseDirectory : baseDirOverride;
@@ -195,7 +198,10 @@ public static partial class AppStoragePathsService
             lifetimeFreedBytes,
             recentHistory);
 
-        string jsonSummary = System.Text.Json.JsonSerializer.Serialize(new
+        string dataDir = string.IsNullOrWhiteSpace(dataDirOverride) ? GetDataDirectory() : dataDirOverride;
+        IReadOnlyList<string> recentErrorLines = ErrorLogService.ReadRecentEntries(maxLines: 200, dataDirOverride: dataDir);
+
+        string jsonSummary = JsonSerializer.Serialize(new
         {
             GeneratedUtc = DateTime.UtcNow,
             Version = AppUpdateService.CurrentVersion,
@@ -206,8 +212,16 @@ public static partial class AppStoragePathsService
             System = metrics,
             SessionFreedBytes = totalFreedBytes,
             SessionDeletedFiles = totalDeletedFiles,
-            RuleCount = ruleList.Count
-        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            RuleCount = ruleList.Count,
+            RuntimeDiagnostics = new
+            {
+                OsDescription = RuntimeInformation.OSDescription,
+                ProcessArchitecture = RuntimeInformation.ProcessArchitecture.ToString(),
+                DotNetVersion = Environment.Version.ToString(),
+                DataDirectoryMode = IsPortableModeEnabled() ? "Portable" : "StandardAppData",
+                RecentErrorLineCount = recentErrorLines.Count
+            }
+        }, IndentedJsonOptions);
 
         using FileStream fs = new(fullZipPath, FileMode.Create, FileAccess.Write, FileShare.None);
         using ZipArchive archive = new(fs, ZipArchiveMode.Create);
@@ -216,8 +230,8 @@ public static partial class AppStoragePathsService
         WriteTextEntry(archive, "system_summary.json", jsonSummary);
         WriteTextEntry(archive, "activity_sanitized.log", string.Join(Environment.NewLine, sanitizedLogs));
 
-        string dataDir = string.IsNullOrWhiteSpace(dataDirOverride) ? GetDataDirectory() : dataDirOverride;
         IncludeRedactedFileIfExists(archive, Path.Combine(dataDir, "errors.log"), "errors_sanitized.log");
+        IncludeRedactedFileIfExists(archive, Path.Combine(dataDir, "errors.log.1"), "errors_previous_sanitized.log");
         IncludeRedactedFileIfExists(archive, Path.Combine(dataDir, "settings.json"), "settings.json");
 
         string? latestCrashPath = CrashGuardService.GetLatestCrashLogPath(dataDir);

@@ -285,23 +285,15 @@ public static class EnterprisePowerToolsService
         {
             var items = new List<DriverOrHotfixItem>();
 
-            // 1. Query installed Windows Hotfixes (KB updates) via wmic / powershell
+            // 1. Query installed Windows Hotfixes (KB updates) via EncodedCommand PowerShell
             try
             {
-                var psi = new ProcessStartInfo
+                const string hotfixScript = "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-HotFix | Select-Object HotFixID,Description,InstalledBy,InstalledOn | ConvertTo-Json -Compress";
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(hotfixScript, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(6));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = "-NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-HotFix | Select-Object HotFixID,Description,InstalledBy,InstalledOn | ConvertTo-Json -Compress\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string json = proc.StandardOutput.ReadToEnd().Trim();
-                    proc.WaitForExit(5000);
+                    string json = runResult.StandardOutput.Trim();
                     if (!string.IsNullOrWhiteSpace(json))
                     {
                         using var doc = JsonDocument.Parse(json);
@@ -317,25 +309,22 @@ public static class EnterprisePowerToolsService
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                ErrorLogService.Log("EnterpriseTools:GetHotFix", ex);
+            }
 
             // 2. Enumerate third-party OEM DriverStore packages via pnputil /enum-drivers
             try
             {
-                var psi = new ProcessStartInfo
+                ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "pnputil.exe",
+                    ["/enum-drivers"],
+                    redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(6));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "cmd.exe",
-                    Arguments = "/c \"chcp 65001 >nul && pnputil.exe /enum-drivers\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(5000);
+                    string output = runResult.StandardOutput;
 
                     string currentOem = string.Empty;
                     string currentProvider = string.Empty;
@@ -622,43 +611,33 @@ public static class EnterprisePowerToolsService
 
     public static async Task<(bool Success, string ReportPath, string Message)> GenerateBatteryHealthReportAsync()
     {
-        return await Task.Run(() =>
+        try
         {
-            try
+            string reportDir = AppStoragePathsService.GetReportsDirectory();
+            Directory.CreateDirectory(reportDir);
+
+            string reportFile = Path.Combine(reportDir, $"Pil_Saglik_Raporu_{DateTime.Now:yyyyMMdd_HHmmss}.html");
+
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "powercfg.exe",
+                ["/batteryreport", "/output", reportFile],
+                redirectOutput: true);
+
+            ProcessRunResult result = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+            if (!result.Started)
+                return (false, string.Empty, "powercfg başlatılamadı.");
+
+            if (File.Exists(reportFile))
             {
-                string reportDir = AppStoragePathsService.GetReportsDirectory();
-                Directory.CreateDirectory(reportDir);
-
-                string reportFile = Path.Combine(reportDir, $"Pil_Saglik_Raporu_{DateTime.Now:yyyyMMdd_HHmmss}.html");
-
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powercfg.exe",
-                    Arguments = $"/batteryreport /output \"{reportFile}\"",
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is null)
-                    return (false, string.Empty, "powercfg başlatılamadı.");
-
-                string output = proc.StandardOutput.ReadToEnd() + " " + proc.StandardError.ReadToEnd();
-                proc.WaitForExit(6000);
-
-                if (File.Exists(reportFile))
-                {
-                    return (true, reportFile, $"Pil sağlık raporu oluşturuldu: {reportFile}");
-                }
-
-                return (false, string.Empty, "Bu sistemde pil algılanmadı (Masaüstü bilgisayar) veya rapor desteklenmiyor.");
+                return (true, reportFile, $"Pil sağlık raporu oluşturuldu: {reportFile}");
             }
-            catch (Exception ex)
-            {
-                return (false, string.Empty, ex.Message);
-            }
-        });
+
+            return (false, string.Empty, "Bu sistemde pil algılanmadı (Masaüstü bilgisayar) veya rapor desteklenmiyor.");
+        }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("BatteryReport", ex);
+            return (false, string.Empty, ex.Message);
+        }
     }
 }

@@ -470,8 +470,14 @@ public partial class MainViewModel
         if (IsBusy) return;
 
         IsBusy = true;
-        UpdateStatusText = "GitHub Releases kontrol ediliyor...";
-        StatusMessage = "GitHub üzerinden yeni sürüm kontrol ediliyor...";
+        UpdateStatusText = LocalizationService.GetText(
+            "GitHub Releases kontrol ediliyor...",
+            "Checking GitHub Releases...",
+            _selectedLanguage);
+        StatusMessage = LocalizationService.GetText(
+            "GitHub üzerinden yeni sürüm kontrol ediliyor...",
+            "Checking for a new version on GitHub...",
+            _selectedLanguage);
 
         try
         {
@@ -480,6 +486,7 @@ public partial class MainViewModel
             _latestDownloadAssetUrl = result.DownloadAssetUrl;
             _latestDownloadAssetName = result.DownloadAssetName;
             _latestExpectedSha256 = result.ExpectedSha256;
+            _latestChecksumsAssetUrl = result.ChecksumsAssetUrl;
 
             UpdateStatusText = result.StatusMessage;
             StatusMessage = result.StatusMessage;
@@ -489,12 +496,21 @@ public partial class MainViewModel
             if (result.IsUpdateAvailable)
             {
                 HasPendingUpdate = true;
-                TrayNotificationRequested?.Invoke("FreeCleaner Pro — Güncelleme Mevcut", result.StatusMessage, false);
+                TrayNotificationRequested?.Invoke(
+                    LocalizationService.GetText(
+                        "FreeCleaner Pro — Güncelleme Mevcut",
+                        "FreeCleaner Pro — Update Available",
+                        _selectedLanguage),
+                    result.StatusMessage,
+                    false);
                 if (!string.IsNullOrWhiteSpace(_latestDownloadAssetUrl))
                 {
                     var ask = MessageBox.Show(
-                        $"{result.StatusMessage}\n\nDosya: {_latestDownloadAssetName}\nDoğrudan uygulama içinden SHA-256 doğrulamalı indirme ve güncelleme başlatılsın mı?",
-                        "Yeni Sürüm Mevcut",
+                        LocalizationService.GetText(
+                            $"{result.StatusMessage}\n\nDosya: {_latestDownloadAssetName}\nDoğrudan uygulama içinden SHA-256 doğrulamalı indirme ve güncelleme başlatılsın mı?",
+                            $"{result.StatusMessage}\n\nFile: {_latestDownloadAssetName}\nStart SHA-256 verified in-app download and update now?",
+                            _selectedLanguage),
+                        LocalizationService.GetText("Yeni Sürüm Mevcut", "New Release Available", _selectedLanguage),
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Information);
                     if (ask == MessageBoxResult.Yes)
@@ -506,8 +522,11 @@ public partial class MainViewModel
                 else
                 {
                     var ask = MessageBox.Show(
-                        $"{result.StatusMessage}\n\nGitHub Releases indirme sayfasını tarayıcıda açmak ister misiniz?",
-                        "Yeni Sürüm Mevcut",
+                        LocalizationService.GetText(
+                            $"{result.StatusMessage}\n\nGitHub Releases indirme sayfasını tarayıcıda açmak ister misiniz?",
+                            $"{result.StatusMessage}\n\nOpen the GitHub Releases page in your browser?",
+                            _selectedLanguage),
+                        LocalizationService.GetText("Yeni Sürüm Mevcut", "New Release Available", _selectedLanguage),
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Information);
                     if (ask == MessageBoxResult.Yes)
@@ -544,7 +563,10 @@ public partial class MainViewModel
         IsDownloadingUpdate = true;
         UpdateDownloadPercent = 0;
         ProgressPercent = 0;
-        UpdateStatusText = $"Güncelleme paketi indiriliyor: {fileName}...";
+        UpdateStatusText = LocalizationService.GetText(
+            $"Güncelleme paketi indiriliyor: {fileName}...",
+            $"Downloading update package: {fileName}...",
+            _selectedLanguage);
         StatusMessage = UpdateStatusText;
 
         try
@@ -559,7 +581,8 @@ public partial class MainViewModel
                 _latestDownloadAssetUrl,
                 destPath,
                 _latestExpectedSha256,
-                progress);
+                progress,
+                requireHash: !string.IsNullOrWhiteSpace(_latestChecksumsAssetUrl));
 
             UpdateStatusText = dl.Message;
             StatusMessage = dl.Message;
@@ -567,7 +590,11 @@ public partial class MainViewModel
 
             if (!dl.Success || string.IsNullOrEmpty(dl.FilePath))
             {
-                MessageBox.Show(dl.Message, "Güncelleme Hatası", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    dl.Message,
+                    LocalizationService.GetText("Güncelleme Hatası", "Update Error", _selectedLanguage),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
 
@@ -579,8 +606,11 @@ public partial class MainViewModel
             if (!canSelfReplace)
             {
                 MessageBox.Show(
-                    $"{dl.Message}\n\nDoğrulanan dosya indirildi:\n{dl.FilePath}\n\nGeliştirme ortamında çalışıldığı için klasör Gezgin'de açılacak.",
-                    "Güncelleme Hazır",
+                    LocalizationService.GetText(
+                        $"{dl.Message}\n\nDoğrulanan dosya indirildi:\n{dl.FilePath}\n\nGeliştirme ortamında çalışıldığı için klasör Gezgin'de açılacak.",
+                        $"{dl.Message}\n\nVerified package downloaded to:\n{dl.FilePath}\n\nOpening folder in Explorer.",
+                        _selectedLanguage),
+                    LocalizationService.GetText("Güncelleme Hazır", "Update Ready", _selectedLanguage),
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
                 OpenExplorerPath(dl.FilePath);
@@ -588,12 +618,21 @@ public partial class MainViewModel
             }
 
             string verifyNote = dl.HashVerified
-                ? $"SHA-256 doğrulandı: {dl.ComputedSha256?[..16]}..."
-                : "Not: Yayında SHA-256 dosyası bulunamadı, kullanıcı onayıyla devam ediliyor.";
+                ? LocalizationService.GetText(
+                    $"SHA-256 doğrulandı: {dl.ComputedSha256?[..16]}...",
+                    $"SHA-256 verified: {dl.ComputedSha256?[..16]}...",
+                    _selectedLanguage)
+                : LocalizationService.GetText(
+                    "Not: Yayında SHA-256 dosyası bulunamadı, kullanıcı onayıyla devam ediliyor.",
+                    "Note: No SHA-256 checksum provided in release; continuing with user confirmation.",
+                    _selectedLanguage);
 
             var installAsk = MessageBox.Show(
-                $"Yeni sürüm hazır!\n{verifyNote}\n\nUygulama kapatılıp yeni sürüm otomatik kurulup yeniden başlatılsın mı?",
-                "Güncellemeyi Uygula",
+                LocalizationService.GetText(
+                    $"Yeni sürüm hazır!\n{verifyNote}\n\nUygulama kapatılıp yeni sürüm otomatik kurulup yeniden başlatılsın mı?",
+                    $"New version ready!\n{verifyNote}\n\nClose app now, install update automatically, and restart?",
+                    _selectedLanguage),
+                LocalizationService.GetText("Güncellemeyi Uygula", "Apply Update", _selectedLanguage),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
 
@@ -604,13 +643,10 @@ public partial class MainViewModel
             string scriptBody = AppUpdateService.BuildSafeSelfUpdateScript(Environment.ProcessId, currentExe!, dl.FilePath);
             await File.WriteAllTextAsync(scriptPath, scriptBody);
 
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = "powershell.exe",
-                Arguments = $"-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{scriptPath}\"",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            });
+            ProcessStartInfo updatePsi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "powershell.exe",
+                ["-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", scriptPath]);
+            Process.Start(updatePsi);
 
             Application.Current?.Shutdown();
         }

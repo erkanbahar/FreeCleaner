@@ -6,6 +6,137 @@ namespace FreeCleaner.Services;
 
 public static class FileShredderAndWiperService
 {
+    public static bool IsProtectedSystemPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return true;
+
+        string normalized;
+        try
+        {
+            normalized = Path.GetFullPath(path)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+        catch
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(normalized))
+            return true;
+
+        string? root = Path.GetPathRoot(normalized)?
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        if (!string.IsNullOrEmpty(root) &&
+            string.Equals(normalized, root, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!string.IsNullOrEmpty(userProfile))
+        {
+            if (string.Equals(normalized, userProfile, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            string? usersRoot = Path.GetDirectoryName(userProfile)?
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (!string.IsNullOrEmpty(usersRoot) &&
+                string.Equals(normalized, usersRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        Environment.SpecialFolder[] systemSubtrees =
+        [
+            Environment.SpecialFolder.Windows,
+            Environment.SpecialFolder.System,
+            Environment.SpecialFolder.SystemX86,
+            Environment.SpecialFolder.ProgramFiles,
+            Environment.SpecialFolder.ProgramFilesX86,
+            Environment.SpecialFolder.CommonApplicationData
+        ];
+
+        foreach (Environment.SpecialFolder folder in systemSubtrees)
+        {
+            string sysPath = Environment.GetFolderPath(folder)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.IsNullOrWhiteSpace(sysPath))
+                continue;
+
+            if (string.Equals(normalized, sysPath, StringComparison.OrdinalIgnoreCase) ||
+                normalized.StartsWith(sysPath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        string appBase = AppContext.BaseDirectory
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!string.IsNullOrWhiteSpace(appBase) &&
+            (string.Equals(normalized, appBase, StringComparison.OrdinalIgnoreCase) ||
+             appBase.StartsWith(normalized + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        string? procPath = Environment.ProcessPath?
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (!string.IsNullOrWhiteSpace(procPath) &&
+            string.Equals(normalized, procPath, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static bool IsReparsePoint(string path)
+    {
+        try
+        {
+            FileAttributes attrs = File.GetAttributes(path);
+            return (attrs & FileAttributes.ReparsePoint) != 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool HasReparsePointAncestor(string entryPath, string boundaryRoot)
+    {
+        try
+        {
+            string boundaryFull = Path.GetFullPath(boundaryRoot)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            DirectoryInfo? current = Directory.GetParent(entryPath);
+
+            while (current is not null)
+            {
+                string currentFull = current.FullName
+                    .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+                if (string.Equals(currentFull, boundaryFull, StringComparison.OrdinalIgnoreCase))
+                    break;
+
+                if (IsReparsePoint(current.FullName))
+                    return true;
+
+                current = current.Parent;
+            }
+        }
+        catch
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     public static async Task<(int ShreddedCount, long TotalBytes)> ShredItemsAsync(
         IEnumerable<ShredTargetItem> items,
         int passes,
@@ -27,54 +158,147 @@ public static class FileShredderAndWiperService
                 int pct = (int)((i / (double)list.Count) * 100);
                 progress?.Report((pct, item.Name));
 
+                if (IsProtectedSystemPath(item.FullPath))
+                {
+                    ErrorLogService.Log("FileShredder", $"Blocked protected system path: {item.FullPath}");
+                    item.Status = LocalizationService.GetText(
+                        "Korunan Sistem Yolu (Engellendi)",
+                        "Protected System Path (Blocked)");
+                    continue;
+                }
+
                 try
                 {
                     if (item.IsDirectory && Directory.Exists(item.FullPath))
                     {
-                        var allFiles = Directory.GetFiles(item.FullPath, "*", SearchOption.AllDirectories);
-                        foreach (string file in allFiles)
+                        if (IsReparsePoint(item.FullPath))
+                        {
+                            // Remove only the directory junction/symlink without touching target contents.
+                            Directory.Delete(item.FullPath, recursive: false);
+                            item.Status = LocalizationService.GetText(
+                                "Bağlantı Kaldırıldı (Hedef Korundu)",
+                                "Link Removed (Target Preserved)");
+                            continue;
+                        }
+
+                        var enumOpts = new EnumerationOptions
+                        {
+                            RecurseSubdirectories = true,
+                            IgnoreInaccessible = true,
+                            AttributesToSkip = FileAttributes.ReparsePoint
+                        };
+
+                        foreach (string file in Directory.EnumerateFiles(item.FullPath, "*", enumOpts))
                         {
                             cancellationToken.ThrowIfCancellationRequested();
+                            if (IsReparsePoint(file) || HasReparsePointAncestor(file, item.FullPath))
+                                continue;
+
                             if (ShredSingleFile(file, passes))
                                 shreddedCount++;
                         }
-                        Directory.Delete(item.FullPath, recursive: true);
+
+                        DeleteDirectoryTreeWithoutFollowingReparsePoints(item.FullPath);
                         totalShreddedBytes += item.SizeBytes;
-                        item.Status = "İmha Edildi (DoD)";
+                        item.Status = LocalizationService.GetText(
+                            "İmha Edildi (DoD)",
+                            "Shredded (DoD)");
                     }
                     else if (File.Exists(item.FullPath))
                     {
+                        if (IsReparsePoint(item.FullPath))
+                        {
+                            File.Delete(item.FullPath);
+                            item.Status = LocalizationService.GetText(
+                                "Bağlantı Kaldırıldı (Hedef Korundu)",
+                                "Link Removed (Target Preserved)");
+                            continue;
+                        }
+
                         if (ShredSingleFile(item.FullPath, passes))
                         {
                             shreddedCount++;
                             totalShreddedBytes += item.SizeBytes;
-                            item.Status = $"İmha Edildi ({passes} Geçiş)";
+                            item.Status = LocalizationService.GetText(
+                                $"İmha Edildi ({passes} Geçiş)",
+                                $"Shredded ({passes} Passes)");
                         }
                         else
                         {
-                            item.Status = "Kilitli / Hata";
+                            item.Status = LocalizationService.GetText(
+                                "Kilitli / Hata",
+                                "Locked / Error");
                         }
                     }
                     else
                     {
-                        item.Status = "Bulunamadı";
+                        item.Status = LocalizationService.GetText("Bulunamadı", "Not Found");
                     }
                 }
-                catch
+                catch (OperationCanceledException)
                 {
-                    item.Status = "Hata / İzin Yok";
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    ErrorLogService.Log("FileShredder", ex);
+                    item.Status = LocalizationService.GetText("Hata / İzin Yok", "Error / Access Denied");
                 }
             }
         }, cancellationToken);
 
-        progress?.Report((100, "Tamamlandı"));
+        progress?.Report((100, LocalizationService.GetText("Tamamlandı", "Completed")));
         return (shreddedCount, totalShreddedBytes);
+    }
+
+    private static void DeleteDirectoryTreeWithoutFollowingReparsePoints(string dirPath)
+    {
+        if (!Directory.Exists(dirPath))
+            return;
+
+        if (IsReparsePoint(dirPath))
+        {
+            Directory.Delete(dirPath, recursive: false);
+            return;
+        }
+
+        foreach (string entry in Directory.EnumerateFileSystemEntries(dirPath))
+        {
+            if (IsReparsePoint(entry))
+            {
+                if (Directory.Exists(entry))
+                    Directory.Delete(entry, recursive: false);
+                else if (File.Exists(entry))
+                    File.Delete(entry);
+                continue;
+            }
+
+            if (Directory.Exists(entry))
+            {
+                DeleteDirectoryTreeWithoutFollowingReparsePoints(entry);
+            }
+            else if (File.Exists(entry))
+            {
+                FileAttributes attrs = File.GetAttributes(entry);
+                if ((attrs & FileAttributes.ReadOnly) != 0)
+                    File.SetAttributes(entry, FileAttributes.Normal);
+                File.Delete(entry);
+            }
+        }
+
+        Directory.Delete(dirPath, recursive: false);
     }
 
     private static bool ShredSingleFile(string filePath, int passes)
     {
         try
         {
+            if (IsReparsePoint(filePath))
+            {
+                File.Delete(filePath);
+                return true;
+            }
+
             var attrs = File.GetAttributes(filePath);
             if ((attrs & FileAttributes.ReadOnly) != 0)
             {
@@ -132,8 +356,9 @@ public static class FileShredderAndWiperService
 
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            ErrorLogService.Log("FileShredder:SingleFile", ex);
             return false;
         }
     }
@@ -148,7 +373,6 @@ public static class FileShredderAndWiperService
         {
             string tempWipeFile = Path.Combine(Path.GetTempPath(), $"FreeCleaner_FreeSpaceWipe_{Guid.NewGuid():N}.bin");
             long writtenBytes = 0;
-            long targetBytes = wipeSizeMb * 1024L * 1024L;
 
             try
             {
@@ -163,7 +387,9 @@ public static class FileShredderAndWiperService
                         writtenBytes += buffer.Length;
 
                         int pct = (int)(((mb + 1) / (double)wipeSizeMb) * 100);
-                        progress?.Report((pct, $"Boş disk sektörleri sıfırlanıyor: {mb + 1} / {wipeSizeMb} MB"));
+                        progress?.Report((pct, LocalizationService.GetText(
+                            $"Boş disk sektörleri sıfırlanıyor: {mb + 1} / {wipeSizeMb} MB",
+                            $"Overwriting free disk space: {mb + 1} / {wipeSizeMb} MB")));
                     }
                     fs.Flush(flushToDisk: true);
                 }

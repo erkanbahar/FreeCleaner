@@ -26,7 +26,7 @@ public record SystemMetricsSnapshot(
 public static class SystemInfoService
 {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
-    private class MEMORYSTATUSEX
+    private sealed class MEMORYSTATUSEX
     {
         public uint dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>();
         public uint dwMemoryLoad;

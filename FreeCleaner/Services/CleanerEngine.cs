@@ -463,7 +463,9 @@ public class CleanerEngine
         {
             rule.DetectedSizeBytes = 0;
             rule.DetectedFileCount = 0;
-            rule.StatusText = rule.IsSelected ? "Bekliyor..." : "Atlandı";
+            rule.StatusText = rule.IsSelected
+                ? LocalizationService.GetText("Bekliyor...", "Pending...")
+                : LocalizationService.GetText("Atlandı", "Skipped");
         }
 
         if (activeRules.Count == 0)
@@ -485,7 +487,7 @@ public class CleanerEngine
             Parallel.ForEach(activeRules, options, rule =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                rule.StatusText = "Taranıyor...";
+                rule.StatusText = LocalizationService.GetText("Taranıyor...", "Scanning...");
 
                 long ruleBytes = 0;
                 int ruleCount = 0;
@@ -495,19 +497,22 @@ public class CleanerEngine
                     var (rbSize, rbCount) = RecycleBinHelper.QueryRecycleBin();
                     if (rbCount > 0 || rbSize > 0)
                     {
+                        string rbLabel = LocalizationService.GetText(
+                            $"Geri Dönüşüm Kutusu ({rbCount:N0} öğe)",
+                            $"Recycle Bin ({rbCount:N0} items)");
                         var rbItem = new ScannedFileItem
                         {
                             RuleId = rule.Id,
                             RuleName = rule.Name,
                             Category = rule.Category,
-                            FullPath = $"Geri Dönüşüm Kutusu ({rbCount:N0} öğe)",
-                            FileName = $"Geri Dönüşüm Kutusu ({rbCount:N0} öğe)",
+                            FullPath = rbLabel,
+                            FileName = rbLabel,
                             SizeBytes = rbSize,
                             LastModified = DateTime.Now,
                             RiskLevel = rule.RiskLevel,
                             IsRecycleBinItem = true,
                             Risk = rule.Risk,
-                            Status = "Analiz Edildi"
+                            Status = LocalizationService.GetText("Analiz Edildi", "Analyzed")
                         };
                         lock (itemsLock)
                             allDiscoveredItems.Add(rbItem);
@@ -558,7 +563,7 @@ public class CleanerEngine
                                 SizeBytes = fileLen,
                                 LastModified = lastWrite,
                                 Risk = rule.Risk,
-                                Status = "Analiz Edildi"
+                                Status = LocalizationService.GetText("Analiz Edildi", "Analyzed")
                             };
 
                             lock (itemsLock)
@@ -573,7 +578,11 @@ public class CleanerEngine
 
                 rule.DetectedSizeBytes = ruleBytes;
                 rule.DetectedFileCount = ruleCount;
-                rule.StatusText = ruleCount > 0 ? $"{ruleCount:N0} dosya ({CleanerRule.FormatBytes(ruleBytes)})" : "Temiz";
+                rule.StatusText = ruleCount > 0
+                    ? LocalizationService.GetText(
+                        $"{ruleCount:N0} dosya ({CleanerRule.FormatBytes(ruleBytes)})",
+                        $"{ruleCount:N0} files ({CleanerRule.FormatBytes(ruleBytes)})")
+                    : LocalizationService.GetText("Temiz", "Clean");
 
                 int donePct = (int)(Interlocked.Increment(ref completedRules) * 100.0 / activeRules.Count);
                 progress?.Report((
@@ -624,13 +633,17 @@ public class CleanerEngine
                     deleted = RecycleBinHelper.EmptyRecycleBin();
                     if (deleted)
                     {
-                        item.Status = "Boşaltıldı";
-                        summary.Logs.Add($"[BAŞARILI] Geri Dönüşüm Kutusu boşaltıldı ({item.FormattedSize})");
+                        item.Status = LocalizationService.GetText("Boşaltıldı", "Emptied");
+                        summary.Logs.Add(LocalizationService.GetText(
+                            $"[BAŞARILI] Geri Dönüşüm Kutusu boşaltıldı ({item.FormattedSize})",
+                            $"[OK] Recycle Bin emptied ({item.FormattedSize})"));
                     }
                     else
                     {
-                        item.Status = "Atlandı / Hata";
-                        summary.Logs.Add("[ATLANDI] Geri Dönüşüm Kutusu boşaltılamadı veya zaten boş.");
+                        item.Status = LocalizationService.GetText("Atlandı / Hata", "Skipped / Error");
+                        summary.Logs.Add(LocalizationService.GetText(
+                            "[ATLANDI] Geri Dönüşüm Kutusu boşaltılamadı veya zaten boş.",
+                            "[SKIPPED] Recycle Bin could not be emptied or was already empty."));
                     }
                 }
                 else
@@ -640,14 +653,20 @@ public class CleanerEngine
                         if (!File.Exists(item.FullPath))
                         {
                             deleted = true;
-                            item.Status = "Zaten Silinmiş";
+                            item.Status = LocalizationService.GetText("Zaten Silinmiş", "Already Deleted");
                         }
                         else if (moveToRecycleBinInsteadOfPermanentDelete)
                         {
                             deleted = RecycleBinHelper.MoveFileToRecycleBin(item.FullPath);
-                            item.Status = deleted ? "Geri Dönüşüm'e Taşındı" : "Kilitli / Kullanımda";
+                            item.Status = deleted
+                                ? LocalizationService.GetText("Geri Dönüşüm'e Taşındı", "Moved to Recycle Bin")
+                                : LocalizationService.GetText("Kilitli / Kullanımda", "Locked / In Use");
                             if (!deleted)
-                                summary.Logs.Add($"[ATLANDI] {item.FullPath}: Geri Dönüşüm Kutusu'na taşınamadı.");
+                            {
+                                summary.Logs.Add(LocalizationService.GetText(
+                                    $"[ATLANDI] {item.FullPath}: Geri Dönüşüm Kutusu'na taşınamadı.",
+                                    $"[SKIPPED] {item.FullPath}: Could not move to Recycle Bin."));
+                            }
                         }
                         else
                         {
@@ -659,20 +678,20 @@ public class CleanerEngine
                             }
                             File.Delete(item.FullPath);
                             deleted = true;
-                            item.Status = "Silindi";
+                            item.Status = LocalizationService.GetText("Silindi", "Deleted");
                         }
                     }
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                     {
                         deleted = false;
-                        item.Status = "Kilitli (Kullanımda)";
+                        item.Status = LocalizationService.GetText("Kilitli (Kullanımda)", "Locked (In Use)");
                         summary.Logs.Add($"[ATLANDI] {item.FullPath}: {ex.Message}");
                     }
                     catch (Exception ex)
                     {
                         deleted = false;
-                        item.Status = "Atlandı";
-                        summary.Logs.Add($"[ATLANDI] {item.FullPath}: Beklenmeyen hata: {ex.Message}");
+                        item.Status = LocalizationService.GetText("Atlandı", "Skipped");
+                        summary.Logs.Add($"[ATLANDI] {item.FullPath}: {ex.Message}");
                     }
                 }
 
@@ -713,7 +732,9 @@ public class CleanerEngine
             {
                 rule.DetectedSizeBytes = Math.Max(0, rule.DetectedSizeBytes - freedBytes);
                 rule.DetectedFileCount = Math.Max(0, rule.DetectedFileCount - deletedCount);
-                rule.StatusText = $"Temizlendi ({CleanerRule.FormatBytes(freedBytes)})";
+                rule.StatusText = LocalizationService.GetText(
+                    $"Temizlendi ({CleanerRule.FormatBytes(freedBytes)})",
+                    $"Cleaned ({CleanerRule.FormatBytes(freedBytes)})");
             }
         }
 

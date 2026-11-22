@@ -68,21 +68,11 @@ foreach ($e in $deg) {
     }
 }
 ";
-                var psi = new ProcessStartInfo
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(8));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{ps.Replace("\"", "\\\"")}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(7000);
+                    string output = runResult.StandardOutput;
 
                     foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
@@ -143,21 +133,16 @@ foreach ($e in $deg) {
             // 1. Scan WSL2 Distros (WSL_UTF8=1 forces wsl.exe to output UTF-8 instead of UTF-16LE)
             try
             {
-                var psiWsl = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = "/c \"set WSL_UTF8=1 && chcp 65001 >nul && wsl.exe --list --verbose\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
+                ProcessStartInfo psiWsl = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "wsl.exe",
+                    ["--list", "--verbose"],
+                    redirectOutput: true,
+                    environmentVariables: new Dictionary<string, string> { ["WSL_UTF8"] = "1" });
 
-                using var proc = Process.Start(psiWsl);
-                if (proc is not null)
+                ProcessRunResult wslResult = SafeProcessRunner.Run(psiWsl, TimeSpan.FromSeconds(6));
+                if (wslResult.Started && !wslResult.TimedOut)
                 {
-                    string outWsl = proc.StandardOutput.ReadToEnd().Replace("\0", "");
-                    proc.WaitForExit(5000);
+                    string outWsl = wslResult.StandardOutput.Replace("\0", "");
 
                     foreach (var rawLine in outWsl.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
@@ -198,21 +183,15 @@ foreach ($e in $deg) {
             // 2. Scan Docker Containers & Images if Docker CLI is installed
             try
             {
-                var psiDocker = new ProcessStartInfo
-                {
-                    FileName = "docker.exe",
-                    Arguments = "ps -a --format \"{{.Names}}|{{.Image}}|{{.Status}}|{{.Size}}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
+                ProcessStartInfo psiDocker = SafeProcessRunner.BuildDirectProcessStartInfo(
+                    "docker.exe",
+                    ["ps", "-a", "--format", "{{.Names}}|{{.Image}}|{{.Status}}|{{.Size}}"],
+                    redirectOutput: true);
 
-                using var proc = Process.Start(psiDocker);
-                if (proc is not null)
+                ProcessRunResult dockerResult = SafeProcessRunner.Run(psiDocker, TimeSpan.FromSeconds(5));
+                if (dockerResult.Started && !dockerResult.TimedOut)
                 {
-                    string outDocker = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(4000);
+                    string outDocker = dockerResult.StandardOutput;
 
                     foreach (var line in outDocker.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
@@ -251,60 +230,40 @@ foreach ($e in $deg) {
 
     public static async Task<(bool Success, string Message)> ShutdownWslAndFreeRamAsync()
     {
-        return await Task.Run(() =>
+        try
         {
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "wsl.exe",
-                    Arguments = "--shutdown",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(8000);
-                return (true, "Tüm WSL2 Linux dağıtımları ve VmmemWSL sanal makinesi kapatıldı; kullanılan RAM belleği serbest bırakıldı!");
-            }
-            catch (Exception ex)
-            {
-                return (false, $"WSL kapatılamadı: {ex.Message}");
-            }
-        });
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo("wsl.exe", ["--shutdown"]);
+            await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(8)).ConfigureAwait(false);
+            return (true, "Tüm WSL2 Linux dağıtımları ve VmmemWSL sanal makinesi kapatıldı; kullanılan RAM belleği serbest bırakıldı!");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"WSL kapatılamadı: {ex.Message}");
+        }
     }
 
     public static async Task<(bool Success, string Message)> PruneDockerSystemAsync()
     {
-        return await Task.Run(() =>
+        try
         {
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "docker.exe",
-                    Arguments = "system prune -f",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-                using var proc = Process.Start(psi);
-                if (proc is null)
-                    return (false, "Docker CLI bulunamadı.");
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "docker.exe",
+                ["system", "prune", "-f"],
+                redirectOutput: true);
+            ProcessRunResult result = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(25)).ConfigureAwait(false);
+            if (!result.Started)
+                return (false, "Docker CLI bulunamadı.");
 
-                string output = proc.StandardOutput.ReadToEnd();
-                proc.WaitForExit(20000);
-                string reclaimedLine = output
-                    .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
-                    .LastOrDefault(l => l.Contains("reclaimed", StringComparison.OrdinalIgnoreCase)) ?? "Tamamlandı";
+            string reclaimedLine = result.StandardOutput
+                .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                .LastOrDefault(l => l.Contains("reclaimed", StringComparison.OrdinalIgnoreCase)) ?? "Tamamlandı";
 
-                return (true, $"Atıl Docker konteyner, ağ ve önbellekleri temizlendi ({reclaimedLine}).");
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Docker temizliği çalıştırılamadı (Docker Desktop açık olmalı): {ex.Message}");
-            }
-        });
+            return (true, $"Atıl Docker konteyner, ağ ve önbellekleri temizlendi ({reclaimedLine}).");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Docker temizliği çalıştırılamadı (Docker Desktop açık olmalı): {ex.Message}");
+        }
     }
 
     // ==================== 3. WINDOWS DEFENDER SECURITY & EXCLUSION AUDITOR ====================
@@ -339,21 +298,11 @@ if ($pref) {
     }
 }
 ";
-                var psi = new ProcessStartInfo
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(10));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{ps.Replace("\"", "\\\"")}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(8000);
+                    string output = runResult.StandardOutput;
 
                     foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
@@ -403,33 +352,23 @@ if ($pref) {
 
     public static async Task<(bool Success, string Message)> RunDefenderActionAsync(bool quickScan)
     {
-        return await Task.Run(() =>
+        try
         {
-            try
-            {
-                string cmd = quickScan
-                    ? "Start-MpScan -ScanType QuickScan"
-                    : "Update-MpSignature";
+            string cmd = quickScan
+                ? "Start-MpScan -ScanType QuickScan"
+                : "Update-MpSignature";
 
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{cmd}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                };
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(25000);
+            ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(cmd, runAsAdmin: false);
+            await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(25)).ConfigureAwait(false);
 
-                return quickScan
-                    ? (true, "Windows Defender Hızlı Zararlı Yazılım Taraması (QuickScan) tamamlandı!")
-                    : (true, "Windows Defender Antivirüs imza veritabanı en güncel sürüme yükseltildi!");
-            }
-            catch (Exception ex)
-            {
-                return (false, $"Defender işlemi başarısız: {ex.Message}");
-            }
-        });
+            return quickScan
+                ? (true, "Windows Defender Hızlı Zararlı Yazılım Taraması (QuickScan) tamamlandı!")
+                : (true, "Windows Defender Antivirüs imza veritabanı en güncel sürüme yükseltildi!");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"Defender işlemi başarısız: {ex.Message}");
+        }
     }
 
     // ==================== 4. MONITOR EDID, REFRESH RATE (HZ) & GPU RESET DOCTOR ====================
@@ -459,29 +398,19 @@ foreach ($m in $mons) {
     Write-Output ""MON|$mfg - $name|EDID Donanım Paneli|Seri No: $ser|Üretim: $($m.WeekOfManufacture)/$($m.YearOfManufacture)""
 }
 ";
-                var psi = new ProcessStartInfo
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(8));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{ps.Replace("\"", "\\\"")}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(7000);
+                    string output = runResult.StandardOutput;
 
                     foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
                         var parts = line.Split('|');
                         if (parts[0] == "GPU" && parts.Length >= 6)
                         {
-                            int.TryParse(parts[3].Trim(), out int curHz);
-                            int.TryParse(parts[4].Trim(), out int maxHz);
+                            int curHz = int.TryParse(parts[3].Trim(), out int parsedCurHz) ? parsedCurHz : 0;
+                            int maxHz = int.TryParse(parts[4].Trim(), out int parsedMaxHz) ? parsedMaxHz : 0;
 
                             string badge = (curHz > 0 && maxHz > curHz && maxHz <= 500 && curHz <= 60 && maxHz >= 100)
                                 ? $"⚠️ {curHz} Hz'de Çalışıyor! (Panel {maxHz} Hz Destekliyor)"
@@ -518,31 +447,20 @@ foreach ($m in $mons) {
 
     public static async Task<(bool Success, string Message)> RestartGpuDisplayDriverAsync()
     {
-        return await Task.Run(() =>
+        try
         {
-            try
-            {
-                string ps = @"
+            const string ps = @"
 Get-PnpDevice -Class Display -Status OK -ErrorAction SilentlyContinue | ForEach-Object {
     pnputil.exe /restart-device ""$($_.InstanceId)""
 }";
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{ps.Replace("\"", "\\\"")}\"",
-                    UseShellExecute = true,
-                    Verb = "runas",
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(10000);
-                return (true, "Ekran Kartı (GPU) görüntü sürücüsü başarıyla yeniden başlatıldı!");
-            }
-            catch (Exception ex)
-            {
-                return (false, $"GPU sürücüsü yeniden başlatılamadı: {ex.Message}");
-            }
-        });
+            ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps, runAsAdmin: true);
+            await SafeProcessRunner.RunAsync(psi, TimeSpan.FromSeconds(12)).ConfigureAwait(false);
+            return (true, "Ekran Kartı (GPU) görüntü sürücüsü başarıyla yeniden başlatıldı!");
+        }
+        catch (Exception ex)
+        {
+            return (false, $"GPU sürücüsü yeniden başlatılamadı: {ex.Message}");
+        }
     }
 
     // ==================== 5. GIT REPOSITORY (.GIT) COMPRESSOR (GIT GC) & STATUS RADAR ====================
@@ -584,11 +502,11 @@ Get-PnpDevice -Class Display -Status OK -ErrorAction SilentlyContinue | ForEach-
                     string repoName = Path.GetFileName(repoRoot);
                     long gitSize = CalculateDirBytes(gitDir);
 
-                    string branch = RunGitCommandQuick(repoRoot, "rev-parse --abbrev-ref HEAD");
+                    string branch = RunGitCommandQuick(repoRoot, ["rev-parse", "--abbrev-ref", "HEAD"]);
                     if (string.IsNullOrWhiteSpace(branch))
                         branch = "main";
 
-                    string statusOut = RunGitCommandQuick(repoRoot, "status -s");
+                    string statusOut = RunGitCommandQuick(repoRoot, ["status", "-s"]);
                     int changedCount = statusOut.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries).Length;
                     string statusText = changedCount == 0
                         ? "✅ Temiz Çalışma Ağacı (Clean)"
@@ -626,7 +544,7 @@ Get-PnpDevice -Class Display -Status OK -ErrorAction SilentlyContinue | ForEach-
                     if (!Directory.Exists(gitDir)) continue;
 
                     long before = CalculateDirBytes(gitDir);
-                    _ = RunGitCommandQuick(repo.RepoRootPath, "gc --prune=now --quiet", timeoutMs: 30000);
+                    _ = RunGitCommandQuick(repo.RepoRootPath, ["gc", "--prune=now", "--quiet"], timeoutMs: 30000);
                     long after = CalculateDirBytes(gitDir);
 
                     if (before > after)
@@ -642,25 +560,17 @@ Get-PnpDevice -Class Display -Status OK -ErrorAction SilentlyContinue | ForEach-
         });
     }
 
-    private static string RunGitCommandQuick(string workingDir, string args, int timeoutMs = 4000)
+    private static string RunGitCommandQuick(string workingDir, IReadOnlyList<string> args, int timeoutMs = 4000)
     {
         try
         {
-            var psi = new ProcessStartInfo
-            {
-                FileName = "git.exe",
-                Arguments = args,
-                WorkingDirectory = workingDir,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true,
-                StandardOutputEncoding = Encoding.UTF8
-            };
-            using var proc = Process.Start(psi);
-            if (proc is null) return string.Empty;
-            string output = proc.StandardOutput.ReadToEnd().Trim();
-            proc.WaitForExit(timeoutMs);
-            return output;
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "git.exe",
+                args,
+                redirectOutput: true,
+                workingDirectory: workingDir);
+            ProcessRunResult result = SafeProcessRunner.Run(psi, TimeSpan.FromMilliseconds(timeoutMs));
+            return result.Started && !result.TimedOut ? result.StandardOutput.Trim() : string.Empty;
         }
         catch
         {

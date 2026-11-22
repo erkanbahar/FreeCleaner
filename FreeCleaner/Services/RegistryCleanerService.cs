@@ -275,30 +275,43 @@ public static class RegistryCleanerService
     public static (bool Success, string Message) RestoreBackupFile(string backupPath)
     {
         if (!File.Exists(backupPath))
-            return (false, "Registry yedek dosyası bulunamadı.");
+        {
+            return (false, LocalizationService.GetText(
+                "Registry yedek dosyası bulunamadı.",
+                "Registry backup file was not found."));
+        }
 
         try
         {
-            using var process = Process.Start(new ProcessStartInfo
+            string script = SafeProcessRunner.BuildRegImportScript(backupPath);
+            ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(script, runAsAdmin: true);
+            ProcessRunResult result = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(20));
+
+            if (!result.TimedOut && result.Started && result.ExitCode == 0)
             {
-                FileName = "reg.exe",
-                Arguments = $"import \"{backupPath}\"",
-                UseShellExecute = true,
-                Verb = "runas",
-                WindowStyle = ProcessWindowStyle.Hidden
-            });
-            process?.WaitForExit();
-            return process?.ExitCode == 0
-                ? (true, $"Registry yedeği geri yüklendi: {backupPath}")
-                : (false, "Registry yedeği geri yüklenemedi.");
+                return (true, LocalizationService.GetText(
+                    $"Registry yedeği geri yüklendi: {backupPath}",
+                    $"Registry backup restored: {backupPath}"));
+            }
+
+            ErrorLogService.Log("Registry:Restore", $"Exit={result.ExitCode}, TimedOut={result.TimedOut}");
+            return (false, LocalizationService.GetText(
+                "Registry yedeği geri yüklenemedi.",
+                "Failed to restore registry backup."));
         }
-        catch (Win32Exception)
+        catch (Win32Exception ex)
         {
-            return (false, "Yönetici izni verilmedi veya registry geri yükleme iptal edildi.");
+            ErrorLogService.Log("Registry:RestoreUAC", ex);
+            return (false, LocalizationService.GetText(
+                "Yönetici izni verilmedi veya registry geri yükleme iptal edildi.",
+                "Administrator elevation was declined or registry restore was cancelled."));
         }
         catch (Exception ex)
         {
-            return (false, $"Registry geri yükleme hatası: {ex.Message}");
+            ErrorLogService.Log("Registry:Restore", ex);
+            return (false, LocalizationService.GetText(
+                $"Registry geri yükleme hatası: {ex.Message}",
+                $"Registry restore error: {ex.Message}"));
         }
     }
 

@@ -226,21 +226,11 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
     if (-not $app) { $app = 'Tüm Programlar / Port Kuralı' }
     Write-Output ""$($_.DisplayName)|$($_.Direction)|$($_.Enabled)|$app|$($_.Profile)""
 }";
-                var psi = new ProcessStartInfo
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(10));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{ps.Replace("\"", "\\\"")}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(9000);
+                    string output = runResult.StandardOutput;
 
                     foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
@@ -353,7 +343,10 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
             try
             {
                 using var fs1 = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                // Multi-hash verifier intentionally outputs legacy digests alongside SHA-256/SHA-512 for external checksum matching.
+#pragma warning disable CA5351
                 string md5 = Convert.ToHexString(MD5.HashData(fs1));
+#pragma warning restore CA5351
                 results.Add(new FileHashAndVaultResultItem
                 {
                     AlgorithmOrOperation = "MD5 (128-bit)",
@@ -363,7 +356,9 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
                 });
 
                 fs1.Position = 0;
+#pragma warning disable CA5350
                 string sha1 = Convert.ToHexString(SHA1.HashData(fs1));
+#pragma warning restore CA5350
                 results.Add(new FileHashAndVaultResultItem
                 {
                     AlgorithmOrOperation = "SHA-1 (160-bit)",
@@ -666,7 +661,7 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
         }
     }
 
-    public static void RestartWindowsExplorer()
+    public static async Task RestartWindowsExplorerAsync()
     {
         try
         {
@@ -676,7 +671,7 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
                 finally { p.Dispose(); }
             }
 
-            Thread.Sleep(400);
+            await Task.Delay(400).ConfigureAwait(false);
             if (Process.GetProcessesByName("explorer").Length == 0)
             {
                 Process.Start(new ProcessStartInfo
@@ -686,7 +681,10 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
                 });
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            ErrorLogService.Log("Explorer:Restart", ex);
+        }
     }
 
     private static int ReadHkcuDword(string subKey, string name, int defaultVal)
@@ -729,21 +727,11 @@ Get-Volume | Where-Object { $_.DriveLetter } | ForEach-Object {
         Write-Output ""VHD|$($_.DriveLetter):\|Sanal Disk ($($img.FriendlyName))|$($img.Location)""
     }
 }";
-                var psi = new ProcessStartInfo
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(ps, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(8));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"{ps.Replace("\"", "\\\"")}\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(6000);
+                    string output = runResult.StandardOutput;
 
                     foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {

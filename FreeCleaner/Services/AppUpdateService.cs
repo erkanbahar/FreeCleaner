@@ -37,13 +37,34 @@ public static class AppUpdateService
     public const string ReleasesApiUrl = "https://api.github.com/repos/erkanbahar/FreeCleaner/releases/latest";
     public const string ReleasesPageUrl = "https://github.com/erkanbahar/FreeCleaner/releases";
 
+    private static readonly HashSet<string> TrustedReleaseHosts = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "github.com",
+        "api.github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com",
+        "raw.githubusercontent.com"
+    };
+
     private static string ResolveAssemblyVersion()
     {
         Version? v = typeof(AppUpdateService).Assembly.GetName().Version;
         if (v is null)
-            return "4.6.0";
+            return "4.7.0";
 
         return $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build)}";
+    }
+
+    public static bool IsTrustedDownloadUri(string? rawUrl)
+    {
+        if (string.IsNullOrWhiteSpace(rawUrl))
+            return false;
+
+        if (!Uri.TryCreate(rawUrl.Trim(), UriKind.Absolute, out Uri? uri))
+            return false;
+
+        return uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
+               TrustedReleaseHosts.Contains(uri.Host);
     }
 
     private static readonly HttpClient SharedHttpClient = CreateHttpClient();
@@ -111,7 +132,9 @@ public static class AppUpdateService
                     LatestVersion: CurrentVersion,
                     ReleaseUrl: ReleasesPageUrl,
                     ReleaseNotes: string.Empty,
-                    StatusMessage: $"Güncelsiniz (v{CurrentVersion}) — Henüz yayınlanmış GitHub Release bulunamadı.");
+                    StatusMessage: LocalizationService.GetText(
+                        $"Güncelsiniz (v{CurrentVersion}) — Henüz yayınlanmış GitHub Release bulunamadı.",
+                        $"You are up to date (v{CurrentVersion}) — No published GitHub Release found yet."));
             }
 
             if (!response.IsSuccessStatusCode)
@@ -123,7 +146,9 @@ public static class AppUpdateService
                     LatestVersion: CurrentVersion,
                     ReleaseUrl: ReleasesPageUrl,
                     ReleaseNotes: string.Empty,
-                    StatusMessage: $"Güncelleme sunucusu yanıt vermedi (HTTP {(int)response.StatusCode}).");
+                    StatusMessage: LocalizationService.GetText(
+                        $"Güncelleme sunucusu yanıt vermedi (HTTP {(int)response.StatusCode}).",
+                        $"Update server did not respond (HTTP {(int)response.StatusCode})."));
             }
 
             string json = await response.Content.ReadAsStringAsync(ct);
@@ -147,8 +172,12 @@ public static class AppUpdateService
 
             bool hasUpdate = IsNewerVersion(CurrentVersion, latestTag);
             string msg = hasUpdate
-                ? $"🚀 Yeni sürüm mevcut: {latestTag} (Mevcut: v{CurrentVersion})"
-                : $"✅ En güncel sürümü kullanıyorsunuz (v{CurrentVersion}).";
+                ? LocalizationService.GetText(
+                    $"🚀 Yeni sürüm mevcut: {latestTag} (Mevcut: v{CurrentVersion})",
+                    $"🚀 New release available: {latestTag} (Current: v{CurrentVersion})")
+                : LocalizationService.GetText(
+                    $"✅ En güncel sürümü kullanıyorsunuz (v{CurrentVersion}).",
+                    $"✅ You are running the latest version (v{CurrentVersion}).");
 
             return new UpdateCheckResult(
                 Success: true,
@@ -172,10 +201,13 @@ public static class AppUpdateService
                 LatestVersion: CurrentVersion,
                 ReleaseUrl: ReleasesPageUrl,
                 ReleaseNotes: string.Empty,
-                StatusMessage: "Güncelleme kontrolü iptal edildi.");
+                StatusMessage: LocalizationService.GetText(
+                    "Güncelleme kontrolü iptal edildi.",
+                    "Update check cancelled."));
         }
         catch (Exception ex)
         {
+            ErrorLogService.Log("AppUpdate:Check", ex);
             return new UpdateCheckResult(
                 Success: false,
                 IsUpdateAvailable: false,
@@ -183,18 +215,23 @@ public static class AppUpdateService
                 LatestVersion: CurrentVersion,
                 ReleaseUrl: ReleasesPageUrl,
                 ReleaseNotes: string.Empty,
-                StatusMessage: $"Bağlantı hatası: {ex.Message}");
+                StatusMessage: LocalizationService.GetText(
+                    $"Bağlantı hatası: {ex.Message}",
+                    $"Connection error: {ex.Message}"));
         }
     }
 
-    private static async Task<(string? AssetUrl, string? AssetName, string? ExpectedSha, string? ChecksumsUrl)>
-        ExtractPortableAssetInfoAsync(JsonElement root, CancellationToken ct)
+    public static (string? AssetUrl, string? AssetName, string? ExpectedSha, string? ChecksumsUrl)
+        SelectPortableReleaseAsset(JsonElement root, bool preferUsbPortable = false)
     {
         if (!root.TryGetProperty("assets", out JsonElement assets) || assets.ValueKind != JsonValueKind.Array)
             return (null, null, null, null);
 
-        string? exeUrl = null, exeName = null, exeSha = null;
-        string? zipUrl = null, zipName = null, zipSha = null;
+        string? tier1ExeUrl = null, tier1ExeName = null, tier1ExeSha = null;
+        string? portableUsbZipUrl = null, portableUsbZipName = null, portableUsbZipSha = null;
+        string? portableStdZipUrl = null, portableStdZipName = null, portableStdZipSha = null;
+        string? fallbackExeUrl = null, fallbackExeName = null, fallbackExeSha = null;
+        string? fallbackZipUrl = null, fallbackZipName = null, fallbackZipSha = null;
         string? sumsUrl = null;
 
         foreach (JsonElement asset in assets.EnumerateArray())
@@ -204,41 +241,104 @@ public static class AppUpdateService
             string? digest = asset.TryGetProperty("digest", out var dProp) ? dProp.GetString() : null;
             string? parsedDigest = NormalizeDigest(digest);
 
-            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(url))
+            if (string.IsNullOrWhiteSpace(name) || !IsTrustedDownloadUri(url))
                 continue;
 
             if (name.Equals("SHA256SUMS.txt", StringComparison.OrdinalIgnoreCase))
             {
-                sumsUrl = url;
+                sumsUrl ??= url;
+                continue;
+            }
+
+            if (name.Contains("Setup", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("Winget", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("Manifest", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (name.Equals("FreeCleaner.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                if (tier1ExeUrl is null)
+                {
+                    tier1ExeUrl = url;
+                    tier1ExeName = name;
+                    tier1ExeSha = parsedDigest;
+                }
+            }
+            else if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) &&
+                     name.Contains("Portable", StringComparison.OrdinalIgnoreCase))
+            {
+                if (name.Contains("-USB-", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (portableUsbZipUrl is null)
+                    {
+                        portableUsbZipUrl = url;
+                        portableUsbZipName = name;
+                        portableUsbZipSha = parsedDigest;
+                    }
+                }
+                else if (portableStdZipUrl is null)
+                {
+                    portableStdZipUrl = url;
+                    portableStdZipName = name;
+                    portableStdZipSha = parsedDigest;
+                }
             }
             else if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
             {
-                exeUrl = url;
-                exeName = name;
-                exeSha = parsedDigest;
+                if (fallbackExeUrl is null)
+                {
+                    fallbackExeUrl = url;
+                    fallbackExeName = name;
+                    fallbackExeSha = parsedDigest;
+                }
             }
             else if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
-                zipUrl = url;
-                zipName = name;
-                zipSha = parsedDigest;
+                if (fallbackZipUrl is null)
+                {
+                    fallbackZipUrl = url;
+                    fallbackZipName = name;
+                    fallbackZipSha = parsedDigest;
+                }
             }
         }
 
-        string? chosenUrl = exeUrl ?? zipUrl;
-        string? chosenName = exeName ?? zipName;
-        string? chosenSha = exeUrl is not null ? exeSha : zipSha;
+        if (tier1ExeUrl is not null)
+            return (tier1ExeUrl, tier1ExeName, tier1ExeSha, sumsUrl);
 
-        if (chosenSha is null && chosenName is not null && !string.IsNullOrWhiteSpace(sumsUrl))
+        if (preferUsbPortable && portableUsbZipUrl is not null)
+            return (portableUsbZipUrl, portableUsbZipName, portableUsbZipSha, sumsUrl);
+
+        if (portableStdZipUrl is not null)
+            return (portableStdZipUrl, portableStdZipName, portableStdZipSha, sumsUrl);
+
+        if (portableUsbZipUrl is not null)
+            return (portableUsbZipUrl, portableUsbZipName, portableUsbZipSha, sumsUrl);
+
+        if (fallbackExeUrl is not null)
+            return (fallbackExeUrl, fallbackExeName, fallbackExeSha, sumsUrl);
+
+        return (fallbackZipUrl, fallbackZipName, fallbackZipSha, sumsUrl);
+    }
+
+    private static async Task<(string? AssetUrl, string? AssetName, string? ExpectedSha, string? ChecksumsUrl)>
+        ExtractPortableAssetInfoAsync(JsonElement root, CancellationToken ct)
+    {
+        (string? chosenUrl, string? chosenName, string? chosenSha, string? sumsUrl) =
+            SelectPortableReleaseAsset(root, AppStoragePathsService.IsPortableModeEnabled());
+
+        if (chosenSha is null && chosenName is not null && IsTrustedDownloadUri(sumsUrl))
         {
             try
             {
                 string sumsText = await SharedHttpClient.GetStringAsync(sumsUrl, ct);
                 chosenSha = ParseSha256SumsText(sumsText, chosenName);
             }
-            catch
+            catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // Optional checksum download failure leaves hash null.
+                ErrorLogService.Log("AppUpdate:Checksums", ex);
             }
         }
 
@@ -313,10 +413,35 @@ public static class AppUpdateService
         string? expectedSha256,
         IProgress<int>? progress = null,
         CancellationToken ct = default,
-        HttpClient? httpClient = null)
+        HttpClient? httpClient = null,
+        bool requireHash = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(downloadUrl);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
+
+        if (!IsTrustedDownloadUri(downloadUrl))
+        {
+            return new UpdateDownloadResult(
+                false,
+                null,
+                null,
+                false,
+                LocalizationService.GetText(
+                    "Güvenlik uyarısı: İndirme bağlantısı güvenilir GitHub HTTPS alan adı dışında olduğu için reddedildi.",
+                    "Security warning: Download URL was rejected because it is not an HTTPS GitHub release host."));
+        }
+
+        if (requireHash && string.IsNullOrWhiteSpace(expectedSha256))
+        {
+            return new UpdateDownloadResult(
+                false,
+                null,
+                null,
+                false,
+                LocalizationService.GetText(
+                    "Güvenlik uyarısı: Bu yayında SHA-256 doğrulama özeti zorunludur ancak alınamadı. İndirme iptal edildi.",
+                    "Security warning: A SHA-256 checksum is required for this release but could not be retrieved. Download aborted."));
+        }
 
         HttpClient client = httpClient ?? SharedHttpClient;
         string? parent = Path.GetDirectoryName(Path.GetFullPath(destinationPath));
@@ -337,7 +462,9 @@ public static class AppUpdateService
                     null,
                     null,
                     false,
-                    $"Güncelleme dosyası indirilemedi (HTTP {(int)response.StatusCode}).");
+                    LocalizationService.GetText(
+                        $"Güncelleme dosyası indirilemedi (HTTP {(int)response.StatusCode}).",
+                        $"Failed to download update package (HTTP {(int)response.StatusCode})."));
             }
 
             long? totalBytes = response.Content.Headers.ContentLength;
@@ -382,23 +509,54 @@ public static class AppUpdateService
                         null,
                         computed,
                         false,
-                        $"Güvenlik uyarısı: SHA-256 doğrulaması başarısız oldu (beklenen: {expectedSha256[..12]}..., indirilen: {computed[..12]}...). İndirilen dosya silindi.");
+                        LocalizationService.GetText(
+                            $"Güvenlik uyarısı: SHA-256 doğrulaması başarısız oldu (beklenen: {expectedSha256[..12]}..., indirilen: {computed[..12]}...). İndirilen dosya silindi.",
+                            $"Security warning: SHA-256 verification failed (expected: {expectedSha256[..12]}..., downloaded: {computed[..12]}...). Downloaded file deleted."));
                 }
 
-                return new UpdateDownloadResult(true, destinationPath, computed, true, "Güncelleme indirildi ve SHA-256 doğrulaması başarılı.");
+                return new UpdateDownloadResult(
+                    true,
+                    destinationPath,
+                    computed,
+                    true,
+                    LocalizationService.GetText(
+                        "Güncelleme indirildi ve SHA-256 doğrulaması başarılı.",
+                        "Update downloaded and SHA-256 verification succeeded."));
             }
 
-            return new UpdateDownloadResult(true, destinationPath, null, false, "Güncelleme dosyası indirildi (yayında SHA-256 özeti yer almadığı için hash atlandı).");
+            return new UpdateDownloadResult(
+                true,
+                destinationPath,
+                null,
+                false,
+                LocalizationService.GetText(
+                    "Güncelleme dosyası indirildi (yayında SHA-256 özeti yer almadığı için hash atlandı).",
+                    "Update file downloaded (SHA-256 hash skipped because release did not include a digest)."));
         }
         catch (OperationCanceledException)
         {
             try { if (File.Exists(destinationPath)) File.Delete(destinationPath); } catch { }
-            return new UpdateDownloadResult(false, null, null, false, "Güncelleme indirme işlemi iptal edildi.");
+            return new UpdateDownloadResult(
+                false,
+                null,
+                null,
+                false,
+                LocalizationService.GetText(
+                    "Güncelleme indirme işlemi iptal edildi.",
+                    "Update download was cancelled."));
         }
         catch (Exception ex)
         {
+            ErrorLogService.Log("AppUpdate:Download", ex);
             try { if (File.Exists(destinationPath)) File.Delete(destinationPath); } catch { }
-            return new UpdateDownloadResult(false, null, null, false, $"İndirme hatası: {ex.Message}");
+            return new UpdateDownloadResult(
+                false,
+                null,
+                null,
+                false,
+                LocalizationService.GetText(
+                    $"İndirme hatası: {ex.Message}",
+                    $"Download error: {ex.Message}"));
         }
     }
 

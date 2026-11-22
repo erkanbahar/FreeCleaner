@@ -436,30 +436,22 @@ public static class NextGenForensicsAndRescueService
         {
             await File.WriteAllTextAsync(scriptPath, BuildDiskpartCompactScript(vhdxPath), Encoding.ASCII);
 
-            var psi = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                Arguments = $"/c \"chcp 65001 >nul && diskpart /s \"\"{scriptPath}\"\"\"",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+            ProcessStartInfo psi = SafeProcessRunner.BuildDirectProcessStartInfo(
+                "diskpart.exe",
+                ["/s", scriptPath],
+                redirectOutput: true);
 
-            using var proc = Process.Start(psi);
-            if (proc is null)
+            ProcessRunResult runResult = await SafeProcessRunner.RunAsync(psi, TimeSpan.FromMinutes(5)).ConfigureAwait(false);
+            if (!runResult.Started)
                 return (false, 0, "DiskPart işlemi başlatılamadı.");
 
-            string stdout = await proc.StandardOutput.ReadToEndAsync();
-            string stderr = await proc.StandardError.ReadToEndAsync();
-            await proc.WaitForExitAsync();
+            string stdout = runResult.StandardOutput;
+            string stderr = runResult.StandardError;
 
             long afterBytes = File.Exists(vhdxPath) ? new FileInfo(vhdxPath).Length : beforeBytes;
             long freed = Math.Max(0, beforeBytes - afterBytes);
 
-            if (proc.ExitCode == 0)
+            if (!runResult.TimedOut && runResult.ExitCode == 0)
             {
                 string msg = freed > 0
                     ? $"VHDX sıkıştırıldı! {CleanerRule.FormatBytes(beforeBytes)} → {CleanerRule.FormatBytes(afterBytes)} ({CleanerRule.FormatBytes(freed)} yer açıldı)."
@@ -468,7 +460,7 @@ public static class NextGenForensicsAndRescueService
             }
 
             string errDetail = string.IsNullOrWhiteSpace(stderr) ? stdout : stderr;
-            return (false, 0, $"DiskPart hatası (Kod {proc.ExitCode}): {errDetail.Trim()}");
+            return (false, 0, $"DiskPart hatası (Kod {runResult.ExitCode}): {errDetail.Trim()}");
         }
         catch (Exception ex)
         {
@@ -537,20 +529,12 @@ public static class NextGenForensicsAndRescueService
             var list = new List<RestorePointItem>();
             try
             {
-                var psi = new ProcessStartInfo
+                const string restoreQueryPs = "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ComputerRestorePoint | ForEach-Object { \"$($_.SequenceNumber)|$($_.Description)|$($_.CreationTime)|$($_.RestorePointType)\" }";
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(restoreQueryPs, runAsAdmin: false, redirectOutput: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(8));
+                if (runResult.Started && !runResult.TimedOut)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = "-NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ComputerRestorePoint | ForEach-Object { \\\"$($_.SequenceNumber)|$($_.Description)|$($_.CreationTime)|$($_.RestorePointType)\\\" }\"",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    StandardOutputEncoding = Encoding.UTF8
-                };
-                using var proc = Process.Start(psi);
-                if (proc is not null)
-                {
-                    string output = proc.StandardOutput.ReadToEnd();
-                    proc.WaitForExit(6000);
+                    string output = runResult.StandardOutput;
                     foreach (var line in output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
                     {
                         var parts = line.Split('|');
@@ -592,18 +576,14 @@ public static class NextGenForensicsAndRescueService
             {
                 string safeDesc = string.IsNullOrWhiteSpace(description)
                     ? $"FreeCleaner Pro Guvenlik Noktasi ({DateTime.Now:dd.MM.yyyy HH:mm})"
-                    : description.Replace("\"", "");
+                    : SafeProcessRunner.SanitizeSingleLine(description);
 
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -Command \"Enable-ComputerRestore -Drive 'C:\\' -ErrorAction SilentlyContinue; Checkpoint-Computer -Description '{safeDesc}' -RestorePointType 'MODIFY_SETTINGS'\"",
-                    UseShellExecute = true,
-                    Verb = "runas",
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
-                using var proc = Process.Start(psi);
-                proc?.WaitForExit(20000);
+                string restoreScript = $"Enable-ComputerRestore -Drive 'C:\\' -ErrorAction SilentlyContinue; Checkpoint-Computer -Description {SafeProcessRunner.QuotePowerShellSingle(safeDesc)} -RestorePointType 'MODIFY_SETTINGS'";
+                ProcessStartInfo psi = SafeProcessRunner.BuildEncodedPowerShellStartInfo(restoreScript, runAsAdmin: true);
+                ProcessRunResult runResult = SafeProcessRunner.Run(psi, TimeSpan.FromSeconds(20));
+                if (!runResult.Started)
+                    return (false, "Geri yükleme noktası işlemi başlatılamadı.");
+
                 return (true, $"Sistem Geri Yükleme Noktası oluşturuldu: '{safeDesc}' (Windows 24 saat içinde tek nokta sınırı uygulayabilir).");
             }
             catch (Exception ex)

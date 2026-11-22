@@ -64,13 +64,13 @@ public static class BackupManagerService
                     freed += len;
                 }
             }
-            catch (IOException)
+            catch (IOException ex)
             {
-                // Ignore locked backup files
+                ErrorLogService.Log("BackupManager:Delete", ex);
             }
-            catch (UnauthorizedAccessException)
+            catch (UnauthorizedAccessException ex)
             {
-                // Ignore protected backup files
+                ErrorLogService.Log("BackupManager:Delete", ex);
             }
         }
 
@@ -120,13 +120,13 @@ public static class BackupManagerService
                         freed += len;
                     }
                 }
-                catch (IOException)
+                catch (IOException ex)
                 {
-                    // Ignore locked backup files
+                    ErrorLogService.Log("BackupManager:Prune", ex);
                 }
-                catch (UnauthorizedAccessException)
+                catch (UnauthorizedAccessException ex)
                 {
-                    // Ignore inaccessible backup files
+                    ErrorLogService.Log("BackupManager:Prune", ex);
                 }
             }
         }

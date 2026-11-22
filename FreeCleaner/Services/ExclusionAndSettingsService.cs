@@ -46,6 +46,7 @@ public class CleanerConfigData
 
 public static class ExclusionAndSettingsService
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
     private static string ConfigFolder => AppStoragePathsService.GetDataDirectory();
 
     private static string ConfigFilePath => Path.Combine(ConfigFolder, "settings.json");
@@ -80,7 +81,7 @@ public static class ExclusionAndSettingsService
         try
         {
             Directory.CreateDirectory(ConfigFolder);
-            string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
+            string json = JsonSerializer.Serialize(config, IndentedJsonOptions);
             File.WriteAllText(ConfigFilePath, json);
         }
         catch (Exception ex)

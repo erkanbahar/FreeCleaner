@@ -31,7 +31,7 @@ public class V43UpgradesTests
         Assert.NotNull(asmVer);
         string expected = $"{asmVer.Major}.{asmVer.Minor}.{Math.Max(0, asmVer.Build)}";
         Assert.Equal(expected, AppUpdateService.CurrentVersion);
-        Assert.Equal("4.6.0", AppUpdateService.CurrentVersion);
+        Assert.Equal("4.7.0", AppUpdateService.CurrentVersion);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class V43UpgradesTests
             {
                 CrashReportResult r = CrashGuardService.WriteCrashReport(
                     $"TestCrash_{i}",
-                    new Exception($"Crash sample #{i} token=secretVal{i}"),
+                    new InvalidOperationException($"Crash sample #{i} token=secretVal{i}"),
                     dataDirOverride: dataDir);
                 Assert.True(File.Exists(r.ReportPath));
             }
