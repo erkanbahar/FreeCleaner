@@ -27,6 +27,7 @@ public class CleanerConfigData
     public int ScheduledMaintenanceIntervalHours { get; set; } = 168;
     public List<string> SelectedRuleIds { get; set; } = [];
     public List<string> FavoriteSections { get; set; } = ["Dashboard", "All", "LiveMonitor", "DiskBench", "WingetUpdater"];
+    public List<string> ExpandedNavGroups { get; set; } = ["FavoritesExpander", "NavCatCleaningExpander"];
     public string SelectedTheme { get; set; } = "ObsidianNeon";
     public string SelectedLanguage { get; set; } = "tr-TR";
     public bool ProactiveStorageAlertsEnabled { get; set; } = true;
@@ -66,6 +67,7 @@ public static class ExclusionAndSettingsService
                     data.HasCompletedOnboarding = true;
 
                 data.CustomProfiles ??= [];
+                data.ExpandedNavGroups ??= ["FavoritesExpander", "NavCatCleaningExpander"];
                 return data;
             }
         }

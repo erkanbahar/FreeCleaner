@@ -1,9 +1,9 @@
 ; FreeCleaner Pro - Inno Setup 6 Installer Script
 ; Build locally after publishing portable exe:
-;   ISCC.exe /DMyAppVersion=5.0.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe FreeCleaner.iss
+;   ISCC.exe /DMyAppVersion=5.1.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe FreeCleaner.iss
 
 #ifndef MyAppVersion
-  #define MyAppVersion "5.0.0"
+  #define MyAppVersion "5.1.0"
 #endif
 
 #ifndef SourceExe

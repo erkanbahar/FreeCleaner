@@ -1,5 +1,5 @@
 PackageIdentifier: ErkanBahar.FreeCleanerPro
-PackageVersion: 5.0.0
+PackageVersion: 5.1.0
 PackageLocale: en-US
 Publisher: Erkan Bahar
 PublisherUrl: https://github.com/erkanbahar/FreeCleaner
@@ -16,6 +16,6 @@ Tags:
   - privacy
   - system-utility
   - windows
-ReleaseNotesUrl: https://github.com/erkanbahar/FreeCleaner/releases/tag/v5.0.0
+ReleaseNotesUrl: https://github.com/erkanbahar/FreeCleaner/releases/tag/v5.1.0
 ManifestType: defaultLocale
 ManifestVersion: 1.6.0

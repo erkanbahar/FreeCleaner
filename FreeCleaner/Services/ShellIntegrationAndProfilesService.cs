@@ -454,6 +454,7 @@ public static class ShellIntegrationAndProfilesService
         config.ExcludedPaths ??= [];
         config.SelectedRuleIds ??= [];
         config.FavoriteSections ??= ["Dashboard", "All", "LiveMonitor", "DiskBench", "WingetUpdater"];
+        config.ExpandedNavGroups ??= ["FavoritesExpander", "NavCatCleaningExpander"];
         config.CustomProfiles ??= [];
         config.SelectedLanguage = LocalizationService.NormalizeLanguageCode(config.SelectedLanguage);
         if (string.IsNullOrWhiteSpace(config.SelectedTheme))

@@ -28,7 +28,9 @@ public class NavigationMenuTests
 
     private static List<string> ReadViewModelSectionKeys(string repoRoot)
     {
-        string vmCs = File.ReadAllText(Path.Combine(repoRoot, "FreeCleaner", "ViewModels", "MainViewModel.cs"), Encoding.UTF8);
+        string vmCs = string.Concat(
+            Directory.GetFiles(Path.Combine(repoRoot, "FreeCleaner", "ViewModels"), "MainViewModel*.cs")
+                .Select(path => File.ReadAllText(path, Encoding.UTF8)));
         return Regex.Matches(vmCs, @"public bool Is([A-Za-z0-9]+)Section\s*=>")
             .Select(m => m.Groups[1].Value)
             .Distinct(StringComparer.Ordinal)

@@ -372,6 +372,7 @@ public partial class MainViewModel
             ScheduledMaintenanceIntervalHours = ScheduledMaintenanceIntervalHours,
             SelectedRuleIds = AllRules.Where(rule => rule.IsSelected).Select(rule => rule.Id).ToList(),
             FavoriteSections = _favoriteSectionKeys.ToList(),
+            ExpandedNavGroups = _expandedNavGroups.ToList(),
             SelectedTheme = SelectedTheme,
             SelectedLanguage = SelectedLanguage,
             ProactiveStorageAlertsEnabled = ProactiveStorageAlertsEnabled,
@@ -495,6 +496,12 @@ public partial class MainViewModel
                     _favoriteSectionKeys.Add(fav);
             }
             RebuildFavoriteNavItems();
+            _expandedNavGroups = (imported.ExpandedNavGroups is { Count: > 0 }
+                    ? imported.ExpandedNavGroups
+                    : ["FavoritesExpander", "NavCatCleaningExpander"])
+                .Where(g => !string.IsNullOrWhiteSpace(g))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
             OnPropertyChanged(nameof(IsCurrentSectionFavorite));
             OnPropertyChanged(nameof(FavoriteButtonText));
 

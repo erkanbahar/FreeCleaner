@@ -50,7 +50,7 @@ if (Test-Path $exePath) {
 if ($GenerateWingetManifests) {
     [xml]$csprojXml = Get-Content -Path $projPath -Encoding UTF8
     $ver = $csprojXml.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
-    if ([string]::IsNullOrWhiteSpace($ver)) { $ver = '4.8.0' }
+    if ([string]::IsNullOrWhiteSpace($ver)) { $ver = '5.1.0' }
     $tag = "v$ver"
     $wingetSourceDir = Join-Path $repoRoot 'installer\winget'
     $wingetOutDir = Join-Path $outDir 'winget'
@@ -60,8 +60,9 @@ if ($GenerateWingetManifests) {
     foreach ($manifest in Get-ChildItem -Path $wingetSourceDir -Filter '*.yaml') {
         $content = (Get-Content -Path $manifest.FullName -Raw -Encoding UTF8) `
             -replace 'REPLACE_WITH_RELEASE_SHA256', $shaUpper `
-            -replace '4\.8\.0', $ver `
-            -replace 'v4\.8\.0', $tag
+            -replace '(?m)^PackageVersion:\s*\d+\.\d+\.\d+', "PackageVersion: $ver" `
+            -replace '/releases/download/v\d+\.\d+\.\d+/', "/releases/download/$tag/" `
+            -replace '/releases/tag/v\d+\.\d+\.\d+', "/releases/tag/$tag"
         Set-Content -Path (Join-Path $wingetOutDir $manifest.Name) -Value $content -Encoding UTF8 -NoNewline
     }
     Write-Host "Generated Winget manifests ($ver) -> $wingetOutDir" -ForegroundColor Yellow

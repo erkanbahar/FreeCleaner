@@ -31,7 +31,7 @@ public class V43UpgradesTests
         Assert.NotNull(asmVer);
         string expected = $"{asmVer.Major}.{asmVer.Minor}.{Math.Max(0, asmVer.Build)}";
         Assert.Equal(expected, AppUpdateService.CurrentVersion);
-        Assert.Equal("5.0.0", AppUpdateService.CurrentVersion);
+        Assert.Equal("5.1.0", AppUpdateService.CurrentVersion);
     }
 
     [Fact]
@@ -190,7 +190,9 @@ public class V43UpgradesTests
         string repoRoot = FindRepoRoot();
         string mainXaml = File.ReadAllText(Path.Combine(repoRoot, "FreeCleaner", "MainWindow.xaml"));
         string mainXamlCs = File.ReadAllText(Path.Combine(repoRoot, "FreeCleaner", "MainWindow.xaml.cs"));
-        string vmCs = File.ReadAllText(Path.Combine(repoRoot, "FreeCleaner", "ViewModels", "MainViewModel.cs"));
+        string vmCs = string.Concat(
+            Directory.GetFiles(Path.Combine(repoRoot, "FreeCleaner", "ViewModels"), "MainViewModel*.cs")
+                .Select(File.ReadAllText));
 
         // MainWindow.xaml must contain zero inline Is*Section visibility panels
         Assert.DoesNotMatch(@"Visibility=""\{Binding Is[A-Za-z0-9]+Section", mainXaml);

@@ -62,7 +62,7 @@ jobs:
         shell: pwsh
         run: |
           $tag = $env:GITHUB_REF_NAME
-          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v5.0.0" }
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v5.1.0" }
           $ver = $tag.TrimStart('v', 'V')
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           New-Item -ItemType Directory -Force -Path release_usb | Out-Null
@@ -112,8 +112,9 @@ jobs:
           foreach ($manifest in Get-ChildItem "installer/winget/*.yaml") {
             $content = (Get-Content -Path $manifest.FullName -Raw -Encoding UTF8) `
               -replace 'REPLACE_WITH_RELEASE_SHA256', $exeHashUpper `
-              -replace '4\.8\.0', $ver `
-              -replace 'v4\.8\.0', $tag
+              -replace '(?m)^PackageVersion:\s*\d+\.\d+\.\d+', "PackageVersion: $ver" `
+              -replace '/releases/download/v\d+\.\d+\.\d+/', "/releases/download/$tag/" `
+              -replace '/releases/tag/v\d+\.\d+\.\d+', "/releases/tag/$tag"
             Set-Content -Path (Join-Path $wingetStage $manifest.Name) -Value $content -Encoding UTF8 -NoNewline
           }
           $wingetZipPath = "dist/FreeCleaner-Winget-Manifests-$tag.zip"
@@ -121,7 +122,7 @@ jobs:
           Write-Host "Packaged portable archives (win-x64 & win-arm64), setup installer, Winget manifests & SHA256SUMS"
 
       - name: Attest Build Provenance (SLSA)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             release_out/FreeCleaner.exe

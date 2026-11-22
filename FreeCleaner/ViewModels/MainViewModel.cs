@@ -119,7 +119,6 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private ToastNotificationItem? _activeToast;
     private bool _hasPendingUpdate;
 
-    private string _activeSection = "Dashboard";
     private string _selectedTheme = "ObsidianNeon";
     private string _selectedLanguage = "tr-TR";
     private string _updateStatusText = $"Mevcut sürüm: v{AppUpdateService.CurrentVersion} (Güncelleme kontrolü hazır)";
@@ -335,6 +334,9 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand CleanCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand SelectSectionCommand { get; }
+    public ICommand NavigateBackCommand { get; }
+    public ICommand NavigateForwardCommand { get; }
+    public ICommand RemoveFavoriteCommand { get; }
     public ICommand SelectAllRulesCommand { get; }
     public ICommand DeselectAllRulesCommand { get; }
     public ICommand OpenFileLocationCommand { get; }
@@ -680,6 +682,12 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
             : ["Dashboard", "All", "LiveMonitor", "DiskBench", "WingetUpdater"];
         _favoriteSectionKeys.AddRange(initialFavs.Distinct(StringComparer.OrdinalIgnoreCase));
         RebuildFavoriteNavItems();
+        _expandedNavGroups = (savedConfig.ExpandedNavGroups is not null
+                ? savedConfig.ExpandedNavGroups
+                : ["FavoritesExpander", "NavCatCleaningExpander"])
+            .Where(g => !string.IsNullOrWhiteSpace(g))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
 
         foreach (var rule in CleanerEngine.GetDefaultRules())
         {
@@ -711,6 +719,9 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
             if (param is string section)
                 ActiveSection = section;
         });
+        NavigateBackCommand = new RelayCommand(_ => NavigateBack(), _ => CanNavigateBack);
+        NavigateForwardCommand = new RelayCommand(_ => NavigateForward(), _ => CanNavigateForward);
+        RemoveFavoriteCommand = new RelayCommand(param => RemoveFavoriteSection(param as string));
         SelectAllRulesCommand = new RelayCommand(_ => SetVisibleRulesSelection(true), _ => !IsBusy);
         DeselectAllRulesCommand = new RelayCommand(_ => SetVisibleRulesSelection(false), _ => !IsBusy);
         OpenFileLocationCommand = new RelayCommand(OpenFileLocation);
@@ -1253,264 +1264,6 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
             OnPropertyChanged();
         }
     }
-
-    public string ActiveSection
-    {
-        get => _activeSection;
-        set
-        {
-            if (_activeSection != value)
-            {
-                _activeSection = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsDashboardSection));
-                OnPropertyChanged(nameof(IsLiveMonitorSection));
-                OnPropertyChanged(nameof(IsAllSection));
-                OnPropertyChanged(nameof(IsSystemSection));
-                OnPropertyChanged(nameof(IsBrowsersSection));
-                OnPropertyChanged(nameof(IsAppsSection));
-                OnPropertyChanged(nameof(IsCleanerViewVisible));
-                OnPropertyChanged(nameof(IsCurrentSectionFavorite));
-                OnPropertyChanged(nameof(FavoriteButtonText));
-                OnPropertyChanged(nameof(IsStartupSection));
-                OnPropertyChanged(nameof(IsRegistrySection));
-                OnPropertyChanged(nameof(IsDiskAnalyzerSection));
-                OnPropertyChanged(nameof(IsUninstallerSection));
-                OnPropertyChanged(nameof(IsBoosterSection));
-                OnPropertyChanged(nameof(IsDevCleanerSection));
-                OnPropertyChanged(nameof(IsShredderSection));
-                OnPropertyChanged(nameof(IsPrivacySection));
-                OnPropertyChanged(nameof(IsNetworkSection));
-                OnPropertyChanged(nameof(IsTasksAndTreeSection));
-                OnPropertyChanged(nameof(IsDownloadsSection));
-                OnPropertyChanged(nameof(IsContextMenuSection));
-                OnPropertyChanged(nameof(IsServicesSection));
-                OnPropertyChanged(nameof(IsSmartPowerSection));
-                OnPropertyChanged(nameof(IsRepairCenterSection));
-                OnPropertyChanged(nameof(IsUnlockerSection));
-                OnPropertyChanged(nameof(IsBrowserExtensionsSection));
-                OnPropertyChanged(nameof(IsDriversUpdatesSection));
-                OnPropertyChanged(nameof(IsPathDoctorSection));
-                OnPropertyChanged(nameof(IsCrashLogsSection));
-                OnPropertyChanged(nameof(IsWifiDnsSection));
-                OnPropertyChanged(nameof(IsPackageCachesSection));
-                OnPropertyChanged(nameof(IsRestoreGodModeSection));
-                OnPropertyChanged(nameof(IsFileAssocSection));
-                OnPropertyChanged(nameof(IsPortHunterSection));
-                OnPropertyChanged(nameof(IsBloatwareSection));
-                OnPropertyChanged(nameof(IsDiskBenchSection));
-                OnPropertyChanged(nameof(IsHardwareSpecsSection));
-                OnPropertyChanged(nameof(IsUsbForensicsSection));
-                OnPropertyChanged(nameof(IsProcessSecuritySection));
-                OnPropertyChanged(nameof(IsBatchRenamerSection));
-                OnPropertyChanged(nameof(IsNetworkAdapterDoctorSection));
-                OnPropertyChanged(nameof(IsFontManagerSection));
-                OnPropertyChanged(nameof(IsClipboardShieldSection));
-                OnPropertyChanged(nameof(IsAiModelCleanerSection));
-                OnPropertyChanged(nameof(IsFirewallBlockerSection));
-                OnPropertyChanged(nameof(IsCryptoVaultSection));
-                OnPropertyChanged(nameof(IsWin11TweakerSection));
-                OnPropertyChanged(nameof(IsBitLockerSection));
-                OnPropertyChanged(nameof(IsWingetUpdaterSection));
-                OnPropertyChanged(nameof(IsLanScannerSection));
-                OnPropertyChanged(nameof(IsSqliteOptimizerSection));
-                OnPropertyChanged(nameof(IsCredentialSshSection));
-                OnPropertyChanged(nameof(IsProcessPrioritySection));
-                OnPropertyChanged(nameof(IsBootPerformanceSection));
-                OnPropertyChanged(nameof(IsDockerWslSection));
-                OnPropertyChanged(nameof(IsDefenderAuditorSection));
-                OnPropertyChanged(nameof(IsMonitorGpuSection));
-                OnPropertyChanged(nameof(IsGitRepoCompressorSection));
-                OnPropertyChanged(nameof(IsDiskTreemapSection));
-                OnPropertyChanged(nameof(IsDeepSpaceRecoverySection));
-                OnPropertyChanged(nameof(IsSimilarPhotosSection));
-                OnPropertyChanged(nameof(IsExifScrubberSection));
-                OnPropertyChanged(nameof(IsSettingsSection));
-                OnPropertyChanged(nameof(SectionTitle));
-
-                FilteredRulesView.Refresh();
-                FilteredFilesView.Refresh();
-
-                // Lazy-load data when switching into specialized tabs
-                if (_activeSection == "Startup" && StartupItems.Count == 0)
-                    LoadStartupItems();
-                else if (_activeSection == "Uninstaller" && InstalledApps.Count == 0)
-                    _ = LoadInstalledAppsAsync();
-                else if (_activeSection == "Booster")
-                    LoadTopMemoryProcesses();
-                else if (_activeSection == "Privacy")
-                    _ = RunScanPrivacyTracesAsync();
-                else if (_activeSection == "Network")
-                {
-                    _ = LoadActiveConnectionsAsync();
-                    LoadHostsEntries();
-                }
-                else if (_activeSection == "TasksAndTree")
-                {
-                    if (ScheduledTasks.Count == 0) _ = LoadScheduledTasksAsync();
-                    if (FolderSpaceItems.Count == 0) _ = RunAnalyzeFolderSpaceTreeAsync();
-                }
-                else if (_activeSection == "Downloads" && DownloadsAndEmptyItems.Count == 0)
-                    _ = RunScanOldInstallersAsync();
-                else if (_activeSection == "ContextMenu" && ContextMenuEntries.Count == 0)
-                    LoadContextMenuEntries();
-                else if (_activeSection == "Services" && OptimizableServices.Count == 0)
-                    _ = LoadOptimizableServicesAsync();
-                else if (_activeSection == "SmartPower" && PhysicalDisks.Count == 0)
-                    _ = LoadDiskAndPowerAsync();
-                else if (_activeSection == "BrowserExtensions" && BrowserExtensions.Count == 0)
-                    _ = LoadBrowserExtensionsAsync();
-                else if (_activeSection == "DriversUpdates" && DriversAndHotfixes.Count == 0)
-                    _ = LoadDriversAndHotfixesAsync();
-                else if (_activeSection == "PathDoctor" && PathAndShortcutIssues.Count == 0)
-                    _ = LoadPathAndShortcutIssuesAsync();
-                else if (_activeSection == "CrashLogs" && CrashAndEventLogs.Count == 0)
-                    _ = LoadCrashAndEventLogsAsync();
-                else if (_activeSection == "WifiDns" && WifiAndDnsItems.Count == 0)
-                    _ = LoadWifiAndDnsAsync();
-                else if (_activeSection == "PackageCaches" && GlobalPackageCaches.Count == 0)
-                    _ = LoadGlobalPackageCachesAsync();
-                else if (_activeSection == "RestoreGodMode" && RestorePoints.Count == 0)
-                    _ = LoadRestorePointsAsync();
-                else if (_activeSection == "FileAssoc" && FileAssociations.Count == 0)
-                    _ = LoadFileAssociationsAsync();
-                else if (_activeSection == "PortHunter" && ListeningPorts.Count == 0)
-                    _ = LoadListeningPortsAsync();
-                else if (_activeSection == "Bloatware" && AppxBloatwareItems.Count == 0)
-                    _ = LoadAppxBloatwareAsync();
-                else if (_activeSection == "DiskBench" && AvailableBenchmarkDrives.Count == 0)
-                    _ = LoadBenchmarkDrivesAsync();
-                else if (_activeSection == "HardwareSpecs" && HardwareSpecs.Count == 0)
-                    _ = LoadHardwareSpecsAsync();
-                else if (_activeSection == "UsbForensics" && UsbHistoryItems.Count == 0)
-                    _ = LoadUsbHistoryAsync();
-                else if (_activeSection == "ProcessSecurity" && ProcessSecurityItems.Count == 0)
-                    _ = LoadProcessSecurityItemsAsync();
-                else if (_activeSection == "BatchRenamer" && BatchRenameItems.Count == 0)
-                    GenerateBatchRenamePreview();
-                else if (_activeSection == "NetworkAdapterDoctor" && NetworkAdapters.Count == 0)
-                    _ = LoadNetworkAdaptersAsync();
-                else if (_activeSection == "FontManager" && InstalledFonts.Count == 0)
-                    _ = LoadInstalledFontsAsync();
-                else if (_activeSection == "ClipboardShield" && ClipboardAuditItems.Count == 0)
-                    ExecuteInspectClipboardNow();
-                else if (_activeSection == "AiModelCleaner" && AiModelCaches.Count == 0)
-                    _ = LoadAiModelCachesAsync();
-                else if (_activeSection == "FirewallBlocker" && FirewallBlockRules.Count == 0)
-                    _ = LoadFirewallBlockRulesAsync();
-                else if (_activeSection == "Win11Tweaker" && WindowsTweaks.Count == 0)
-                    LoadWindowsTweaks();
-                else if (_activeSection == "BitLocker" && VolumeSecurityItems.Count == 0)
-                    _ = LoadVolumeSecurityAndMountsAsync();
-                else if (_activeSection == "WingetUpdater" && WingetUpgrades.Count == 0)
-                    _ = LoadWingetUpgradesAsync();
-                else if (_activeSection == "LanScanner" && LanDevices.Count == 0)
-                    _ = LoadLanDevicesAsync();
-                else if (_activeSection == "SqliteOptimizer" && SqliteDatabases.Count == 0)
-                    _ = LoadSqliteDatabasesAsync();
-                else if (_activeSection == "CredentialSsh" && CredentialsAndSshItems.Count == 0)
-                    _ = LoadCredentialsAndSshAsync();
-                else if (_activeSection == "ProcessPriority" && ProcessPriorityItems.Count == 0)
-                    _ = LoadProcessPriorityItemsAsync();
-                else if (_activeSection == "BootPerformance" && BootPerformanceItems.Count == 0)
-                    _ = LoadBootPerformanceAsync();
-                else if (_activeSection == "DockerWsl" && DockerAndWslItems.Count == 0)
-                    _ = LoadDockerAndWslItemsAsync();
-                else if (_activeSection == "DefenderAuditor" && DefenderAuditItems.Count == 0)
-                    _ = LoadDefenderAuditAsync();
-                else if (_activeSection == "MonitorGpu" && MonitorAndDisplayItems.Count == 0)
-                    _ = LoadMonitorsAndGpuAsync();
-                else if (_activeSection == "GitRepoCompressor" && GitRepoItems.Count == 0)
-                    _ = LoadGitReposAsync();
-                else if (_activeSection == "DiskTreemap" && TreemapNodes.Count == 0)
-                    _ = LoadTreemapAsync();
-                else if (_activeSection == "DeepSpaceRecovery" && DeepSpaceItems.Count == 0)
-                    _ = LoadDeepSpaceAsync();
-
-                if (_activeSection == "LiveMonitor")
-                {
-                    _ = TickLiveTelemetryAsync();
-                    if (!_liveTelemetryTimer.IsEnabled)
-                        _liveTelemetryTimer.Start();
-                }
-                else if (_liveTelemetryTimer.IsEnabled)
-                {
-                    _liveTelemetryTimer.Stop();
-                }
-
-                if (_activeSection == "Dashboard")
-                {
-                    RefreshCleanupHistorySummary();
-                    UpdateHealthScoreSummary(TotalDetectedBytes, StartupItems.Count);
-                }
-            }
-        }
-    }
-
-    public bool IsDashboardSection => ActiveSection == "Dashboard";
-    public bool IsLiveMonitorSection => ActiveSection == "LiveMonitor";
-    public bool IsDiskTreemapSection => ActiveSection == "DiskTreemap";
-    public bool IsDeepSpaceRecoverySection => ActiveSection == "DeepSpaceRecovery";
-    public bool IsSimilarPhotosSection => ActiveSection == "SimilarPhotos";
-    public bool IsExifScrubberSection => ActiveSection == "ExifScrubber";
-    public bool IsAllSection => ActiveSection == "All";
-    public bool IsSystemSection => ActiveSection == "System";
-    public bool IsBrowsersSection => ActiveSection == "Browsers";
-    public bool IsAppsSection => ActiveSection == "Apps";
-    public bool IsCleanerViewVisible => ActiveSection is "All" or "System" or "Browsers" or "Apps";
-
-    public bool IsStartupSection => ActiveSection == "Startup";
-    public bool IsRegistrySection => ActiveSection == "Registry";
-    public bool IsDiskAnalyzerSection => ActiveSection == "DiskAnalyzer";
-    public bool IsUninstallerSection => ActiveSection == "Uninstaller";
-    public bool IsBoosterSection => ActiveSection == "Booster";
-    public bool IsDevCleanerSection => ActiveSection == "DevCleaner";
-    public bool IsShredderSection => ActiveSection == "Shredder";
-    public bool IsPrivacySection => ActiveSection == "Privacy";
-    public bool IsNetworkSection => ActiveSection == "Network";
-    public bool IsTasksAndTreeSection => ActiveSection == "TasksAndTree";
-    public bool IsDownloadsSection => ActiveSection == "Downloads";
-    public bool IsContextMenuSection => ActiveSection == "ContextMenu";
-    public bool IsServicesSection => ActiveSection == "Services";
-    public bool IsSmartPowerSection => ActiveSection == "SmartPower";
-    public bool IsRepairCenterSection => ActiveSection == "RepairCenter";
-    public bool IsUnlockerSection => ActiveSection == "Unlocker";
-    public bool IsBrowserExtensionsSection => ActiveSection == "BrowserExtensions";
-    public bool IsDriversUpdatesSection => ActiveSection == "DriversUpdates";
-    public bool IsPathDoctorSection => ActiveSection == "PathDoctor";
-    public bool IsCrashLogsSection => ActiveSection == "CrashLogs";
-    public bool IsWifiDnsSection => ActiveSection == "WifiDns";
-    public bool IsPackageCachesSection => ActiveSection == "PackageCaches";
-    public bool IsRestoreGodModeSection => ActiveSection == "RestoreGodMode";
-    public bool IsFileAssocSection => ActiveSection == "FileAssoc";
-    public bool IsPortHunterSection => ActiveSection == "PortHunter";
-    public bool IsBloatwareSection => ActiveSection == "Bloatware";
-    public bool IsDiskBenchSection => ActiveSection == "DiskBench";
-    public bool IsHardwareSpecsSection => ActiveSection == "HardwareSpecs";
-    public bool IsUsbForensicsSection => ActiveSection == "UsbForensics";
-    public bool IsProcessSecuritySection => ActiveSection == "ProcessSecurity";
-    public bool IsBatchRenamerSection => ActiveSection == "BatchRenamer";
-    public bool IsNetworkAdapterDoctorSection => ActiveSection == "NetworkAdapterDoctor";
-    public bool IsFontManagerSection => ActiveSection == "FontManager";
-    public bool IsClipboardShieldSection => ActiveSection == "ClipboardShield";
-    public bool IsAiModelCleanerSection => ActiveSection == "AiModelCleaner";
-    public bool IsFirewallBlockerSection => ActiveSection == "FirewallBlocker";
-    public bool IsCryptoVaultSection => ActiveSection == "CryptoVault";
-    public bool IsWin11TweakerSection => ActiveSection == "Win11Tweaker";
-    public bool IsBitLockerSection => ActiveSection == "BitLocker";
-    public bool IsWingetUpdaterSection => ActiveSection == "WingetUpdater";
-    public bool IsLanScannerSection => ActiveSection == "LanScanner";
-    public bool IsSqliteOptimizerSection => ActiveSection == "SqliteOptimizer";
-    public bool IsCredentialSshSection => ActiveSection == "CredentialSsh";
-    public bool IsProcessPrioritySection => ActiveSection == "ProcessPriority";
-    public bool IsBootPerformanceSection => ActiveSection == "BootPerformance";
-    public bool IsDockerWslSection => ActiveSection == "DockerWsl";
-    public bool IsDefenderAuditorSection => ActiveSection == "DefenderAuditor";
-    public bool IsMonitorGpuSection => ActiveSection == "MonitorGpu";
-    public bool IsGitRepoCompressorSection => ActiveSection == "GitRepoCompressor";
-    public bool IsSettingsSection => ActiveSection == "Settings";
-
-    public string SectionTitle => LocalizationService.GetSectionTitle(ActiveSection, _selectedLanguage);
 
     public string SearchFilter
     {

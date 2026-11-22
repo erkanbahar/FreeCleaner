@@ -177,6 +177,7 @@ public partial class MainWindow : Window
         {
             ApplyDwmThemePolish();
             _trayService.RefreshLanguage(viewModel.SelectedLanguage);
+            ApplySavedExpandedNavGroups(viewModel.ExpandedNavGroups);
             SyncLazyModuleHost(viewModel.ActiveSection);
             RevealActiveNavSection(viewModel.ActiveSection);
             viewModel.PropertyChanged += (_, args) =>
@@ -240,6 +241,7 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm)
         {
             vm.SaveWindowBounds(WindowPlacementService.CaptureBounds(this));
+            vm.SaveExpandedNavGroups(CaptureExpandedNavGroupNames());
 
             if (!_forceExit && vm.MinimizeToTrayOnClose)
             {
@@ -342,6 +344,27 @@ public partial class MainWindow : Window
             {
                 CloseCommandPalette();
                 quickVm.ActiveSection = quickSection;
+                e.Handled = true;
+                return;
+            }
+        }
+
+        if (Keyboard.Modifiers == ModifierKeys.Alt &&
+            CommandPaletteOverlay.Visibility != Visibility.Visible &&
+            ShortcutsOverlay.Visibility != Visibility.Visible &&
+            DataContext is MainViewModel navVm)
+        {
+            Key effectiveKey = e.Key == Key.System ? e.SystemKey : e.Key;
+            if (effectiveKey == Key.Left)
+            {
+                navVm.NavigateBack();
+                e.Handled = true;
+                return;
+            }
+
+            if (effectiveKey == Key.Right)
+            {
+                navVm.NavigateForward();
                 e.Handled = true;
                 return;
             }
@@ -593,6 +616,8 @@ public partial class MainWindow : Window
                 if (_preSearchExpanderStates is not null && _preSearchExpanderStates.TryGetValue(exp, out bool wasExpanded))
                     exp.IsExpanded = wasExpanded;
             }
+            if (NavNoSearchResultsHint is not null)
+                NavNoSearchResultsHint.Visibility = Visibility.Collapsed;
             _preSearchExpanderStates = null;
             return;
         }
@@ -604,8 +629,11 @@ public partial class MainWindow : Window
                 _preSearchExpanderStates[exp] = exp.IsExpanded;
         }
 
-        UpdatePinnedAnchorSearchVisibility(PinnedDashboardContainer, PinnedDashboardNavBtn, query, showAll: false);
-        UpdatePinnedAnchorSearchVisibility(PinnedSettingsContainer, PinnedSettingsNavBtn, query, showAll: false);
+        int totalMatches = 0;
+        if (UpdatePinnedAnchorSearchVisibility(PinnedDashboardContainer, PinnedDashboardNavBtn, query, showAll: false))
+            totalMatches++;
+        if (UpdatePinnedAnchorSearchVisibility(PinnedSettingsContainer, PinnedSettingsNavBtn, query, showAll: false))
+            totalMatches++;
 
         foreach (Expander exp in NavMenuStackPanel.Children.OfType<Expander>())
         {
@@ -622,27 +650,68 @@ public partial class MainWindow : Window
             {
                 exp.Visibility = Visibility.Visible;
                 exp.IsExpanded = true;
+                totalMatches += visibleMatches;
             }
             else
             {
                 exp.Visibility = Visibility.Collapsed;
             }
         }
+
+        if (NavNoSearchResultsHint is not null)
+            NavNoSearchResultsHint.Visibility = totalMatches == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    private static void UpdatePinnedAnchorSearchVisibility(
+    private static bool UpdatePinnedAnchorSearchVisibility(
         FrameworkElement? container,
         RadioButton? button,
         string query,
         bool showAll)
     {
         if (container is null || button is null)
-            return;
+            return false;
 
         bool visible = showAll || IsNavButtonMatch(button, query);
         Visibility state = visible ? Visibility.Visible : Visibility.Collapsed;
         container.Visibility = state;
         button.Visibility = state;
+        return visible;
+    }
+
+    private List<string> CaptureExpandedNavGroupNames()
+    {
+        if (NavMenuStackPanel is null)
+            return [];
+
+        var expanded = new List<string>();
+        foreach (Expander exp in NavMenuStackPanel.Children.OfType<Expander>())
+        {
+            if (string.IsNullOrWhiteSpace(exp.Name))
+                continue;
+
+            bool isExpanded = _preSearchExpanderStates is not null &&
+                              _preSearchExpanderStates.TryGetValue(exp, out bool savedState)
+                ? savedState
+                : exp.IsExpanded;
+
+            if (isExpanded)
+                expanded.Add(exp.Name);
+        }
+
+        return expanded;
+    }
+
+    private void ApplySavedExpandedNavGroups(IReadOnlyList<string>? savedNames)
+    {
+        if (NavMenuStackPanel is null || savedNames is null)
+            return;
+
+        var expandedSet = savedNames.ToHashSet(StringComparer.Ordinal);
+        foreach (Expander exp in NavMenuStackPanel.Children.OfType<Expander>())
+        {
+            if (!string.IsNullOrWhiteSpace(exp.Name))
+                exp.IsExpanded = expandedSet.Contains(exp.Name);
+        }
     }
 
     private static bool IsNavButtonMatch(RadioButton rb, string query)
