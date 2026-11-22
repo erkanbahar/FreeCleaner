@@ -25,19 +25,19 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_BloatScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_BloatScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanAppxBloatwareCommand}"/>
-                    <Button Style="{StaticResource DangerButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_BloatRemoveBtn}" Style="{StaticResource DangerButtonStyle}"
                             Content="{DynamicResource Loc_BloatRemoveBtn}"
                             Padding="12,7"
                             Command="{Binding RemoveSelectedAppxCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_BloatTitle}" Grid.Row="1"
                       ItemsSource="{Binding AppxBloatwareItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

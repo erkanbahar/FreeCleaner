@@ -30,7 +30,7 @@
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,4,0,10"/>
-                        <Button Style="{StaticResource CleanButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_BoostRamBtn}" Style="{StaticResource CleanButtonStyle}"
                                 Content="{DynamicResource Loc_BoostRamBtn}"
                                 Command="{Binding OptimizeRamCommand}"/>
                     </StackPanel>
@@ -50,11 +50,11 @@
                                 <ColumnDefinition Width="8"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0"
+                            <Button AutomationProperties.Name="{DynamicResource Loc_BoostFlushDnsBtn}" Grid.Column="0"
                                     Style="{StaticResource PrimaryButtonStyle}"
                                     Content="{DynamicResource Loc_BoostFlushDnsBtn}"
                                     Command="{Binding FlushDnsCommand}"/>
-                            <Button Grid.Column="2"
+                            <Button AutomationProperties.Name="{DynamicResource Loc_BoostResetNetBtn}" Grid.Column="2"
                                     Style="{StaticResource SubtleButtonStyle}"
                                     Content="{DynamicResource Loc_BoostResetNetBtn}"
                                     Command="{Binding ResetNetCacheCommand}"/>
@@ -65,11 +65,11 @@
                 <Border Background="{DynamicResource BgCardBrush}" CornerRadius="10" Padding="14">
                     <StackPanel>
                         <TextBlock Text="{DynamicResource Loc_BoostShortcutsTitle}" FontWeight="SemiBold" FontSize="13.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
-                        <Button Style="{StaticResource SubtleButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_BoostCleanMgrBtn}" Style="{StaticResource SubtleButtonStyle}"
                                 Content="{DynamicResource Loc_BoostCleanMgrBtn}"
                                 Command="{Binding LaunchCleanMgrCommand}"
                                 Margin="0,0,0,8"/>
-                        <Button Style="{StaticResource SubtleButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_BoostSysRestoreBtn}" Style="{StaticResource SubtleButtonStyle}"
                                 Content="{DynamicResource Loc_BoostSysRestoreBtn}"
                                 Command="{Binding LaunchSystemRestoreCommand}"/>
                     </StackPanel>
@@ -95,12 +95,12 @@
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
-                    <Button Style="{StaticResource SubtleButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_StartupRefreshBtn}" Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_StartupRefreshBtn}"
                             HorizontalAlignment="Right"
                             Command="{Binding RefreshTopProcessesCommand}"/>
                 </Grid>
-                <DataGrid Grid.Row="1"
+                <DataGrid AutomationProperties.Name="{DynamicResource Loc_BoostSectionTitle}" Grid.Row="1"
                           ItemsSource="{Binding TopMemoryProcesses}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"

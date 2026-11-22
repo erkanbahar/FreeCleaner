@@ -44,14 +44,14 @@
                                    FontWeight="SemiBold"
                                    Foreground="{DynamicResource AccentEmeraldBrush}"/>
                     </Border>
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_DeepSpaceScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_DeepSpaceScanBtn}"
                             Command="{Binding ScanDeepSpaceCommand}"/>
                 </StackPanel>
             </Grid>
 
             <!-- Deep System Storage Opportunities DataGrid -->
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_DeepSpaceTitle}" Grid.Row="1"
                       ItemsSource="{Binding DeepSpaceItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -94,7 +94,7 @@
                     <DataGridTemplateColumn Width="175">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource CleanButtonStyle}"
+                                <Button AutomationProperties.Name="{Binding ActionLabel}" Style="{StaticResource CleanButtonStyle}"
                                         Content="{Binding ActionLabel}"
                                         Padding="10,4"
                                         FontSize="11"

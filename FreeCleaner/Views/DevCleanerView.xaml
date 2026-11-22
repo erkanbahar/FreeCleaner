@@ -58,11 +58,11 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
-                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_DevVsScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_DevVsScanBtn}"
                                 Command="{Binding ScanVsDebugRetailCommand}"
                                 Margin="0,0,8,0"/>
-                        <Button Style="{StaticResource CleanButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_DevVsAutoCleanBtn}" Style="{StaticResource CleanButtonStyle}"
                                 Content="{DynamicResource Loc_DevVsAutoCleanBtn}"
                                 Command="{Binding AutoCleanVsDebugRetailCommand}"/>
                     </StackPanel>
@@ -78,7 +78,7 @@
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{DynamicResource Loc_DevWorkspaceLabel}" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
-                    <TextBox Text="{Binding DevWorkspacePath, UpdateSourceTrigger=PropertyChanged}"
+                    <TextBox AutomationProperties.Name="{DynamicResource Loc_DevVsTitle}" Text="{Binding DevWorkspacePath, UpdateSourceTrigger=PropertyChanged}"
                              Width="260"
                              Background="{DynamicResource BgCardBrush}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
@@ -86,27 +86,27 @@
                              Padding="8,6"
                              VerticalContentAlignment="Center"
                              Margin="0,0,6,0"/>
-                    <Button Style="{StaticResource SubtleButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_SettingsBrowseBtn}" Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_SettingsBrowseBtn}"
                             Command="{Binding BrowseDevWorkspaceCommand}"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Style="{StaticResource SubtleButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_DevScanAllBtn}" Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_DevScanAllBtn}"
                             Command="{Binding ScanDevProjectsCommand}"
                             Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource SubtleButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_DevScanGamerBtn}" Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_DevScanGamerBtn}"
                             Command="{Binding ScanGamerCachesCommand}"
                             Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_DevCleanSelBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_DevCleanSelBtn}"
                             Command="{Binding CleanDevArtifactsCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="2"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_DevVsTitle}" Grid.Row="2"
                       ItemsSource="{Binding DevArtifactItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

@@ -11,9 +11,9 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>4.9.0</Version>
-    <AssemblyVersion>4.9.0.0</AssemblyVersion>
-    <FileVersion>4.9.0.0</FileVersion>
+    <Version>5.0.0</Version>
+    <AssemblyVersion>5.0.0.0</AssemblyVersion>
+    <FileVersion>5.0.0.0</FileVersion>
     <Product>FreeCleaner Pro</Product>
     <AssemblyTitle>FreeCleaner Pro (.NET 10)</AssemblyTitle>
     <Company>FreeCleaner Open Source</Company>

@@ -25,19 +25,19 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_PkgScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_PkgScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanPackageCachesCommand}"/>
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_PkgCleanBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_PkgCleanBtn}"
                             Padding="12,7"
                             Command="{Binding CleanPackageCachesCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_PkgTitle}" Grid.Row="1"
                       ItemsSource="{Binding GlobalPackageCaches}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -88,7 +88,7 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_PkgCompactTip}" Style="{StaticResource PrimaryButtonStyle}"
                                             Content="{DynamicResource Loc_PkgCompactBtn}"
                                             Padding="8,4"
                                             FontSize="11"
@@ -97,7 +97,7 @@
                                             ToolTip="{DynamicResource Loc_PkgCompactTip}"
                                             Command="{Binding DataContext.CompactVhdxCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
-                                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_PkgOpenFolderBtn}" Style="{StaticResource SecondaryButtonStyle}"
                                             Content="{DynamicResource Loc_PkgOpenFolderBtn}"
                                             Padding="8,4"
                                             Command="{Binding DataContext.OpenPackageCacheFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

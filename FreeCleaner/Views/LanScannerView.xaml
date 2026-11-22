@@ -25,7 +25,7 @@
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
-                <Button Style="{StaticResource PrimaryButtonStyle}"
+                <Button AutomationProperties.Name="{DynamicResource Loc_M_LanScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_M_LanScanBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
@@ -33,7 +33,7 @@
                         Command="{Binding ScanLanDevicesCommand}"/>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_LanTitle}" Grid.Row="1"
                       ItemsSource="{Binding LanDevices}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

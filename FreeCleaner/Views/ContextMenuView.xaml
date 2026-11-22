@@ -24,17 +24,17 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_CtxRefreshBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_CtxRefreshBtn}"
                             Command="{Binding RefreshContextMenuCommand}"
                             Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_CtxRemoveBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_M_CtxRemoveBtn}"
                             Command="{Binding DeleteContextMenuCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_CtxTitle}" Grid.Row="1"
                       ItemsSource="{Binding ContextMenuEntries}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

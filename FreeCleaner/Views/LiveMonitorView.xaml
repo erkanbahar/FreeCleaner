@@ -106,7 +106,7 @@
             </UniformGrid>
 
             <!-- Live Top Processes Grid -->
-            <DataGrid Grid.Row="2"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_LiveTitle}" Grid.Row="2"
                       ItemsSource="{Binding LiveTopProcesses}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

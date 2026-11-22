@@ -20,7 +20,7 @@
 
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{DynamicResource Loc_DiskTargetFolder}" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,8,0"/>
-                    <TextBox Text="{Binding DiskScanTargetFolder, UpdateSourceTrigger=PropertyChanged}"
+                    <TextBox AutomationProperties.Name="{DynamicResource Loc_DiskTargetFolder}" Text="{Binding DiskScanTargetFolder, UpdateSourceTrigger=PropertyChanged}"
                              Width="250"
                              Background="{DynamicResource BgCardBrush}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
@@ -28,39 +28,39 @@
                              Padding="8,6"
                              VerticalContentAlignment="Center"
                              Margin="0,0,6,0"/>
-                    <Button Style="{StaticResource SubtleButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_DiskBrowseBtn}" Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_DiskBrowseBtn}"
                             Command="{Binding BrowseDiskFolderCommand}"
                             Margin="0,0,12,0"/>
 
                     <TextBlock Text="{DynamicResource Loc_DiskMinSize}" VerticalAlignment="Center" FontSize="12.5" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,6,0"/>
-                    <ComboBox ItemsSource="{Binding AvailableSizeThresholdsMb}"
+                    <ComboBox AutomationProperties.Name="{DynamicResource Loc_DiskTargetFolder}" ItemsSource="{Binding AvailableSizeThresholdsMb}"
                               SelectedItem="{Binding SelectedMinSizeMb}"
                               Width="72"
                               VerticalContentAlignment="Center"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_DiskFindLargeBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_DiskFindLargeBtn}"
                             Command="{Binding ScanLargeFilesCommand}"
                             Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_DiskFindDupBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_DiskFindDupBtn}"
                             Command="{Binding ScanDuplicatesCommand}"
                             Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource SubtleButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_DiskHardlinkTip}" Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_HardlinkMergeBtn}"
                             ToolTip="{DynamicResource Loc_DiskHardlinkTip}"
                             Command="{Binding MergeDuplicatesWithHardlinksCommand}"
                             Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_DiskDeleteSelBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_DiskDeleteSelBtn}"
                             Command="{Binding DeleteSelectedDiskFilesCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_DiskTargetFolder}" Grid.Row="1"
                       ItemsSource="{Binding DiskAnalyzerItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

@@ -25,7 +25,7 @@
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
-                <Button Style="{StaticResource PrimaryButtonStyle}"
+                <Button AutomationProperties.Name="{DynamicResource Loc_M_PrioRefreshBtn}" Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_M_PrioRefreshBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
@@ -33,7 +33,7 @@
                         Command="{Binding RefreshProcessPriorityListCommand}"/>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_PrioTitle}" Grid.Row="1"
                       ItemsSource="{Binding ProcessPriorityItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -85,21 +85,21 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_M_PrioHighBtn}" Style="{StaticResource PrimaryButtonStyle}"
                                             Content="{DynamicResource Loc_M_PrioHighBtn}"
                                             Padding="8,3"
                                             FontSize="11"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.SetProcessHighPriorityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
-                                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_M_PrioNormBtn}" Style="{StaticResource SecondaryButtonStyle}"
                                             Content="{DynamicResource Loc_M_PrioNormBtn}"
                                             Padding="8,3"
                                             FontSize="11"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.SetProcessNormalPriorityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
-                                    <Button Style="{StaticResource CleanButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_M_PrioEcoBtn}" Style="{StaticResource CleanButtonStyle}"
                                             Content="{DynamicResource Loc_M_PrioEcoBtn}"
                                             Padding="8,3"
                                             FontSize="11"

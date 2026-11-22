@@ -434,6 +434,102 @@ public static partial class NinthGenWingetAndNetworkSuiteService
         }
     }
 
+    public static (bool IsHealthy, string Details) VerifySqliteIntegrity(SqliteConnection connection)
+    {
+        ArgumentNullException.ThrowIfNull(connection);
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA quick_check(1);";
+        command.CommandTimeout = 30;
+        object? raw = command.ExecuteScalar();
+        string result = Convert.ToString(raw)?.Trim() ?? string.Empty;
+        bool isHealthy = string.Equals(result, "ok", StringComparison.OrdinalIgnoreCase);
+        return (isHealthy, string.IsNullOrEmpty(result) ? "unknown" : result);
+    }
+
+    public static (bool Success, long FreedBytes, string Message) OptimizeSingleSqliteDatabase(
+        string databasePath,
+        string? backupDirOverride = null)
+    {
+        if (string.IsNullOrWhiteSpace(databasePath) || !File.Exists(databasePath))
+        {
+            return (false, 0, LocalizationService.GetText(
+                "Hedef SQLite veritabanı bulunamadı.",
+                "Target SQLite database was not found."));
+        }
+
+        List<(string Source, string Backup)>? backupFiles = null;
+        try
+        {
+            long beforeSize = GetDatabaseFootprint(databasePath);
+            backupFiles = BackupSqliteDatabase(databasePath, backupDirOverride);
+
+            var connectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = databasePath,
+                Mode = SqliteOpenMode.ReadWrite,
+                Cache = SqliteCacheMode.Private,
+                Pooling = false,
+                DefaultTimeout = 10
+            }.ToString();
+
+            using (var connection = new SqliteConnection(connectionString))
+            {
+                try
+                {
+                    connection.Open();
+                    ExecuteSqliteCommand(connection, "PRAGMA busy_timeout = 10000;");
+
+                    (bool preHealthy, string preDetail) = VerifySqliteIntegrity(connection);
+                    if (!preHealthy)
+                    {
+                        ErrorLogService.Log("SQLite bütünlük kontrolü (Ön)", $"{Path.GetFileName(databasePath)}: {preDetail}");
+                        return (false, 0, LocalizationService.GetText(
+                            $"SQLite bütünlük denetimi başarısız oldu ({preDetail}); veritabanı güvenli şekilde atlandı.",
+                            $"SQLite integrity check failed ({preDetail}); database skipped safely."));
+                    }
+
+                    ExecuteSqliteCommand(connection, "PRAGMA wal_checkpoint(TRUNCATE);");
+                    ExecuteSqliteCommand(connection, "VACUUM;");
+                    ExecuteSqliteCommand(connection, "PRAGMA optimize;");
+
+                    (bool postHealthy, string postDetail) = VerifySqliteIntegrity(connection);
+                    if (!postHealthy)
+                        throw new InvalidDataException($"Post-VACUUM integrity check failed: {postDetail}");
+                }
+                finally
+                {
+                    try { SqliteConnection.ClearPool(connection); } catch { }
+                }
+            }
+
+            long afterSize = GetDatabaseFootprint(databasePath);
+            long freed = Math.Max(0, beforeSize - afterSize);
+            return (true, freed, LocalizationService.GetText(
+                $"SQLite veritabanı optimize edildi ({CleanerRule.FormatBytes(freed)} kazanıldı).",
+                $"SQLite database optimized ({CleanerRule.FormatBytes(freed)} reclaimed)."));
+        }
+        catch (Exception ex)
+        {
+            if (backupFiles is not null)
+            {
+                try
+                {
+                    SqliteConnection.ClearAllPools();
+                    RestoreSqliteBackup(databasePath, backupFiles);
+                }
+                catch (Exception restoreException)
+                {
+                    ErrorLogService.Log("SQLite yedek geri yükleme", restoreException);
+                }
+            }
+            ErrorLogService.Log("SQLite optimizasyonu", ex);
+            return (false, 0, LocalizationService.GetText(
+                $"SQLite optimizasyonu başarısız oldu ve yedekten geri yüklendi: {ex.Message}",
+                $"SQLite optimization failed and backup was restored: {ex.Message}"));
+        }
+    }
+
     public static async Task<(int OptimizedCount, long FreedBytes, string Message)> OptimizeSelectedSqliteDatabasesAsync(IEnumerable<SqliteDatabaseItem> items)
     {
         return await Task.Run(() =>
@@ -444,50 +540,21 @@ public static partial class NinthGenWingetAndNetworkSuiteService
 
             foreach (var db in items.Where(x => x.IsSelected))
             {
-                List<(string Source, string Backup)>? backupFiles = null;
-                try
+                (bool ok, long itemFreed, _) = OptimizeSingleSqliteDatabase(db.FullFilePath);
+                if (ok)
                 {
-                    long beforeSize = GetDatabaseFootprint(db.FullFilePath);
-                    backupFiles = BackupSqliteDatabase(db.FullFilePath);
-                    var connectionString = new SqliteConnectionStringBuilder
-                    {
-                        DataSource = db.FullFilePath,
-                        Mode = SqliteOpenMode.ReadWrite,
-                        Cache = SqliteCacheMode.Private,
-                        DefaultTimeout = 10
-                    }.ToString();
-
-                    using var connection = new SqliteConnection(connectionString);
-                    connection.Open();
-                    ExecuteSqliteCommand(connection, "PRAGMA busy_timeout = 10000;");
-                    ExecuteSqliteCommand(connection, "PRAGMA wal_checkpoint(TRUNCATE);");
-                    ExecuteSqliteCommand(connection, "VACUUM;");
-                    ExecuteSqliteCommand(connection, "PRAGMA optimize;");
                     count++;
-                    long afterSize = GetDatabaseFootprint(db.FullFilePath);
-                    freed += Math.Max(0, beforeSize - afterSize);
+                    freed += itemFreed;
                 }
-                catch (Exception ex)
+                else
                 {
                     failed++;
-                    if (backupFiles is not null)
-                    {
-                        try
-                        {
-                            RestoreSqliteBackup(db.FullFilePath, backupFiles);
-                        }
-                        catch (Exception restoreException)
-                        {
-                            ErrorLogService.Log("SQLite yedek geri yükleme", restoreException);
-                        }
-                    }
-                    ErrorLogService.Log("SQLite optimizasyonu", ex);
                 }
             }
 
             string msg = count > 0
-                ? $"{count} SQLite veritabanı VACUUM/checkpoint ile optimize edildi ({CleanerRule.FormatBytes(freed)} kazanıldı)." +
-                  (failed > 0 ? $" {failed} veritabanı kullanıldığı için atlandı." : string.Empty)
+                ? $"{count} SQLite veritabanı VACUUM/checkpoint ve PRAGMA quick_check ile optimize edildi ({CleanerRule.FormatBytes(freed)} kazanıldı)." +
+                  (failed > 0 ? $" {failed} veritabanı atlandı." : string.Empty)
                 : "Seçili veritabanları optimize edilemedi. İlgili tarayıcı/IDE uygulamalarını kapatıp tekrar deneyin.";
 
             return (count, freed, msg);
@@ -515,9 +582,13 @@ public static partial class NinthGenWingetAndNetworkSuiteService
         return total;
     }
 
-    private static List<(string Source, string Backup)> BackupSqliteDatabase(string databasePath)
+    private static List<(string Source, string Backup)> BackupSqliteDatabase(
+        string databasePath,
+        string? backupDirOverride = null)
     {
-        string backupDirectory = AppStoragePathsService.GetSqliteBackupsDirectory();
+        string backupDirectory = string.IsNullOrWhiteSpace(backupDirOverride)
+            ? AppStoragePathsService.GetSqliteBackupsDirectory()
+            : backupDirOverride;
         Directory.CreateDirectory(backupDirectory);
         string backupPrefix = Path.Combine(
             backupDirectory,

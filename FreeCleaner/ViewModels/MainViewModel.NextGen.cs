@@ -30,6 +30,9 @@ public partial class MainViewModel
                 OnPropertyChanged(nameof(AdminStatusBadge));
                 OnPropertyChanged(nameof(FavoriteButtonText));
                 OnPropertyChanged(nameof(ActiveDataDirectoryDisplay));
+                OnPropertyChanged(nameof(VaultPasswordStrengthScore));
+                OnPropertyChanged(nameof(VaultPasswordStrengthLabel));
+                OnPropertyChanged(nameof(VaultPasswordStrengthHex));
                 PopulateModuleCatalog();
                 RebuildFavoriteNavItems();
                 SaveCurrentSettings();

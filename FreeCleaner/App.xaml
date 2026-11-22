@@ -427,6 +427,10 @@
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource AccentBlueBrush}"/>
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource AccentBlueBrush}"/>
+                                <Setter TargetName="box" Property="BorderThickness" Value="1.8"/>
+                            </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="box" Property="Background" Value="{DynamicResource AccentBlueHoverBrush}"/>
                                 <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource AccentBlueBrush}"/>
@@ -436,6 +440,15 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
+        </Style>
+
+        <!-- Modern Fluent DataGrid Virtualization Defaults -->
+        <Style TargetType="DataGrid">
+            <Setter Property="EnableRowVirtualization" Value="True"/>
+            <Setter Property="EnableColumnVirtualization" Value="True"/>
+            <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
+            <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
         </Style>
 
         <!-- Modern Fluent DataGrid Column Header -->

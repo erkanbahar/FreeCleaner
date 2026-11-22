@@ -57,7 +57,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Grid.Column="0"
+                <TextBox AutomationProperties.Name="{DynamicResource Loc_ExifTitle}" Grid.Column="0"
                          Text="{Binding ExifScanFolderPath, UpdateSourceTrigger=PropertyChanged}"
                          Background="{DynamicResource BgCardBrush}"
                          Foreground="{DynamicResource TextPrimaryBrush}"
@@ -66,17 +66,17 @@
                          Padding="10,7"
                          FontSize="12.5"
                          Margin="0,0,8,0"/>
-                <Button Grid.Column="1"
+                <Button AutomationProperties.Name="{DynamicResource Loc_ExifBrowseBtn}" Grid.Column="1"
                         Style="{StaticResource SubtleButtonStyle}"
                         Content="{DynamicResource Loc_ExifBrowseBtn}"
                         Command="{Binding BrowseExifFolderCommand}"
                         Margin="0,0,6,0"/>
-                <Button Grid.Column="2"
+                <Button AutomationProperties.Name="{DynamicResource Loc_ExifScanBtn}" Grid.Column="2"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_ExifScanBtn}"
                         Command="{Binding ScanPhotosExifCommand}"
                         Margin="0,0,6,0"/>
-                <Button Grid.Column="3"
+                <Button AutomationProperties.Name="{DynamicResource Loc_ExifScrubBtn}" Grid.Column="3"
                         Style="{StaticResource CleanButtonStyle}"
                         Content="{DynamicResource Loc_ExifScrubBtn}"
                         Command="{Binding ScrubSelectedPhotosCommand}"/>
@@ -102,7 +102,7 @@
             </StackPanel>
 
             <!-- Row 3: Scanned Photos Grid -->
-            <DataGrid Grid.Row="3"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_ExifTitle}" Grid.Row="3"
                       ItemsSource="{Binding PhotoMetadataItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -166,7 +166,7 @@
                     <DataGridTemplateColumn Width="64">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource SubtleButtonStyle}"
+                                <Button AutomationProperties.Name="{DynamicResource Loc_OpenFileLocationTip}" Style="{StaticResource SubtleButtonStyle}"
                                         Content="📂"
                                         Padding="8,2"
                                         FontSize="11"

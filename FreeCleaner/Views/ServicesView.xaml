@@ -23,13 +23,13 @@
                                Foreground="{DynamicResource TextSecondaryBrush}"/>
                 </StackPanel>
 
-                <Button Style="{StaticResource PrimaryButtonStyle}"
+                <Button AutomationProperties.Name="{DynamicResource Loc_M_SvcRefreshBtn}" Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_M_SvcRefreshBtn}"
                         HorizontalAlignment="Right"
                         Command="{Binding RefreshServicesCommand}"/>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_SvcTitle}" Grid.Row="1"
                       ItemsSource="{Binding OptimizableServices}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -76,13 +76,13 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource SubtleButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_M_SvcStopBtn}" Style="{StaticResource SubtleButtonStyle}"
                                             Content="{DynamicResource Loc_M_SvcStopBtn}"
                                             Padding="8,3"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.StopServiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
-                                    <Button Style="{StaticResource SubtleButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_M_SvcStartBtn}" Style="{StaticResource SubtleButtonStyle}"
                                             Content="{DynamicResource Loc_M_SvcStartBtn}"
                                             Padding="8,3"
                                             Command="{Binding DataContext.StartServiceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

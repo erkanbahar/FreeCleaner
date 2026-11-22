@@ -25,7 +25,7 @@
                                Margin="0,3,0,0"/>
                 </StackPanel>
 
-                <Button Style="{StaticResource PrimaryButtonStyle}"
+                <Button AutomationProperties.Name="{DynamicResource Loc_M_DrvRefreshBtn}" Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_M_DrvRefreshBtn}"
                         Padding="14,7"
                         HorizontalAlignment="Right"
@@ -33,7 +33,7 @@
                         Command="{Binding ScanDriversAndHotfixesCommand}"/>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_DrvTitle}" Grid.Row="1"
                       ItemsSource="{Binding DriversAndHotfixes}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

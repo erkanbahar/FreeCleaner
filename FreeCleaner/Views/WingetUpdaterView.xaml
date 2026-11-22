@@ -29,22 +29,22 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_WingetScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_WingetScanBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanWingetUpgradesCommand}"/>
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_WingetUpgradeSelBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_WingetUpgradeSelBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding UpgradeSelectedWingetCommand}"/>
-                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_WingetUpgradeAllBtn}" Style="{StaticResource SecondaryButtonStyle}"
                             Content="{DynamicResource Loc_WingetUpgradeAllBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding UpgradeAllWingetCommand}"/>
-                    <Button Style="{StaticResource DangerButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_WingetCancelBtn}" Style="{StaticResource DangerButtonStyle}"
                             Content="{DynamicResource Loc_WingetCancelBtn}"
                             Padding="12,7"
                             Command="{Binding CancelCommand}"/>
@@ -82,7 +82,7 @@
                 </StackPanel>
             </Border>
 
-            <DataGrid Grid.Row="2"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_WingetTitle}" Grid.Row="2"
                       ItemsSource="{Binding WingetUpgrades}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

@@ -26,19 +26,19 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_BitMountBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_M_BitMountBtn}"
                             Padding="14,7"
                             Margin="0,0,8,0"
                             Command="{Binding BrowseAndMountDiskImageCommand}"/>
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_BitRefreshBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_BitRefreshBtn}"
                             Padding="14,7"
                             Command="{Binding RefreshVolumesAndBitLockerCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_BitTitle}" Grid.Row="1"
                       ItemsSource="{Binding VolumeSecurityItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -89,7 +89,7 @@
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource DangerButtonStyle}"
+                                <Button AutomationProperties.Name="{DynamicResource Loc_M_BitDismountBtn}" Style="{StaticResource DangerButtonStyle}"
                                         Content="{DynamicResource Loc_M_BitDismountBtn}"
                                         Padding="8,3"
                                         FontSize="11"

@@ -26,19 +26,19 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_TweakRestartExpBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_M_TweakRestartExpBtn}"
                             Padding="14,7"
                             Margin="0,0,8,0"
                             Command="{Binding RestartExplorerNowCommand}"/>
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_TweakRefreshBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_TweakRefreshBtn}"
                             Padding="12,7"
                             Command="{Binding RefreshWindowsTweaksCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_TweakTitle}" Grid.Row="1"
                       ItemsSource="{Binding WindowsTweaks}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -79,7 +79,7 @@
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                <Button AutomationProperties.Name="{DynamicResource Loc_M_TweakToggleBtn}" Style="{StaticResource PrimaryButtonStyle}"
                                         Content="{DynamicResource Loc_M_TweakToggleBtn}"
                                         Padding="10,4"
                                         FontSize="11"

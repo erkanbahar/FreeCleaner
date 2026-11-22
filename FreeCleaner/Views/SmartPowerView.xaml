@@ -26,12 +26,12 @@
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
-                    <Button Style="{StaticResource SubtleButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_BtnRefresh}" Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_BtnRefresh}"
                             HorizontalAlignment="Right"
                             Command="{Binding RefreshDiskAndPowerCommand}"/>
                 </Grid>
-                <DataGrid Grid.Row="1"
+                <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_SmartTitle}" Grid.Row="1"
                           ItemsSource="{Binding PhysicalDisks}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -96,7 +96,7 @@
                                FontWeight="Bold"
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                VerticalAlignment="Center"/>
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_PowerUltimateBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_PowerUltimateBtn}"
                             Padding="10,5"
                             HorizontalAlignment="Right"
@@ -104,18 +104,18 @@
                 </Grid>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_GameBoostBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_M_GameBoostBtn}"
                             Padding="12,6"
                             Margin="0,0,8,0"
                             Command="{Binding ActivateGameBoosterCommand}"/>
-                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_PowerBatteryBtn}" Style="{StaticResource SecondaryButtonStyle}"
                             Content="{DynamicResource Loc_M_PowerBatteryBtn}"
                             Padding="12,6"
                             Command="{Binding GenerateBatteryReportCommand}"/>
                 </StackPanel>
 
-                <DataGrid Grid.Row="2"
+                <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_SmartTitle}" Grid.Row="2"
                           ItemsSource="{Binding PowerPlans}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -146,7 +146,7 @@
                             </DataGridTemplateColumn.Header>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Style="{StaticResource CleanButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_M_PowerApplyBtn}" Style="{StaticResource CleanButtonStyle}"
                                             Content="{DynamicResource Loc_M_PowerApplyBtn}"
                                             Padding="8,4"
                                             Command="{Binding DataContext.ActivatePowerPlanCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

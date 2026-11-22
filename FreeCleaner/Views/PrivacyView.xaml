@@ -24,17 +24,17 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_PrivScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_PrivScanBtn}"
                             Command="{Binding ScanPrivacyTracesCommand}"
                             Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_PrivCleanBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_PrivCleanBtn}"
                             Command="{Binding CleanPrivacyTracesCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_PrivTitle}" Grid.Row="1"
                       ItemsSource="{Binding PrivacyTraces}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

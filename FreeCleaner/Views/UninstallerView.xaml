@@ -24,7 +24,7 @@
                 <Grid Grid.Row="0" Margin="0,0,0,10">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="{DynamicResource Loc_UninstAppsTitle}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                        <TextBox Text="{Binding AppSearchFilter, UpdateSourceTrigger=PropertyChanged}"
+                        <TextBox AutomationProperties.Name="{DynamicResource Loc_UninstSearchTip}" Text="{Binding AppSearchFilter, UpdateSourceTrigger=PropertyChanged}"
                                  Width="180"
                                  Background="{DynamicResource BgCardBrush}"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
@@ -33,13 +33,13 @@
                                  Padding="6,4"
                                  ToolTip="{DynamicResource Loc_UninstSearchTip}"/>
                     </StackPanel>
-                    <Button Style="{StaticResource SubtleButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_BtnRefresh}" Style="{StaticResource SubtleButtonStyle}"
                             Content="{DynamicResource Loc_BtnRefresh}"
                             HorizontalAlignment="Right"
                             Command="{Binding RefreshInstalledAppsCommand}"/>
                 </Grid>
 
-                <DataGrid Grid.Row="1"
+                <DataGrid AutomationProperties.Name="{DynamicResource Loc_UninstAppsTitle}" Grid.Row="1"
                           ItemsSource="{Binding FilteredInstalledAppsView}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -80,7 +80,7 @@
                             </DataGridTemplateColumn.Header>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Style="{StaticResource SubtleButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_UninstColBtn}" Style="{StaticResource SubtleButtonStyle}"
                                             Content="{DynamicResource Loc_UninstColBtn}"
                                             Padding="8,3"
                                             Command="{Binding DataContext.UninstallAppCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -112,19 +112,19 @@
                         <TextBlock Text="{DynamicResource Loc_UninstOrphanSubtitle}" FontSize="10.5" Foreground="{DynamicResource TextMutedBrush}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_UninstScanOrphanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_UninstScanOrphanBtn}"
                                 Padding="12,7"
                                 Command="{Binding ScanOrphanFoldersCommand}"
                                 Margin="0,0,6,0"/>
-                        <Button Style="{StaticResource CleanButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_UninstCleanOrphanBtn}" Style="{StaticResource CleanButtonStyle}"
                                 Content="{DynamicResource Loc_UninstCleanOrphanBtn}"
                                 Padding="12,7"
                                 Command="{Binding CleanOrphanFoldersCommand}"/>
                     </StackPanel>
                 </Grid>
 
-                <DataGrid Grid.Row="1"
+                <DataGrid AutomationProperties.Name="{DynamicResource Loc_UninstAppsTitle}" Grid.Row="1"
                           ItemsSource="{Binding OrphanFolders}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"

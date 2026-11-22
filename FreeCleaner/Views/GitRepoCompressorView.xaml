@@ -27,12 +27,12 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_GitScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_GitScanBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanGitReposCommand}"/>
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_GitGcBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_M_GitGcBtn}"
                             Padding="14,7"
                             Command="{Binding CompressSelectedGitReposCommand}"/>
@@ -48,21 +48,21 @@
                     Margin="0,0,0,10">
                 <WrapPanel VerticalAlignment="Center">
                     <TextBlock Text="{DynamicResource Loc_M_GitRootLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBox Text="{Binding GitWorkspacePath, UpdateSourceTrigger=PropertyChanged}"
+                    <TextBox AutomationProperties.Name="{DynamicResource Loc_M_GitTitle}" Text="{Binding GitWorkspacePath, UpdateSourceTrigger=PropertyChanged}"
                              Width="390"
                              Padding="8,5"
                              Background="{DynamicResource BgPrimaryBrush}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
                              BorderBrush="{DynamicResource BorderSubtleBrush}"
                              Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_AiBrowseScanBtn}" Style="{StaticResource SecondaryButtonStyle}"
                             Content="{DynamicResource Loc_AiBrowseScanBtn}"
                             Padding="12,5"
                             Command="{Binding BrowseGitWorkspaceCommand}"/>
                 </WrapPanel>
             </Border>
 
-            <DataGrid Grid.Row="2"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_GitTitle}" Grid.Row="2"
                       ItemsSource="{Binding GitRepoItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -112,7 +112,7 @@
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                <Button AutomationProperties.Name="{DynamicResource Loc_TreemapDiffColOpen}" Style="{StaticResource SecondaryButtonStyle}"
                                         Content="{DynamicResource Loc_TreemapDiffColOpen}"
                                         Padding="10,3"
                                         FontSize="11"

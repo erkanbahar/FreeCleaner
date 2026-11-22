@@ -32,7 +32,7 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $minLineCoverage = 32.0
+          $minLineCoverage = 36.0
           $cov = Get-ChildItem -Path TestResults -Recurse -Filter "coverage.cobertura.xml" -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($cov) {
             [xml]$x = Get-Content $cov.FullName

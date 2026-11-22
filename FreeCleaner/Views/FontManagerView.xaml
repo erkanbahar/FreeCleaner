@@ -26,31 +26,31 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <TextBox Text="{Binding FontSearchFilter, UpdateSourceTrigger=PropertyChanged}"
+                    <TextBox AutomationProperties.Name="{DynamicResource Loc_M_FontTitle}" Text="{Binding FontSearchFilter, UpdateSourceTrigger=PropertyChanged}"
                              Width="175"
                              Padding="8,6"
                              Background="{DynamicResource BgPrimaryBrush}"
                              Foreground="{DynamicResource TextPrimaryBrush}"
                              BorderBrush="{DynamicResource BorderSubtleBrush}"
                              Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_FontScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_FontScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanInstalledFontsCommand}"/>
-                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_FontOpenDirBtn}" Style="{StaticResource SecondaryButtonStyle}"
                             Content="{DynamicResource Loc_M_FontOpenDirBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding OpenWindowsFontsFolderCommand}"/>
-                    <Button Style="{StaticResource DangerButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_FontRemoveBtn}" Style="{StaticResource DangerButtonStyle}"
                             Content="{DynamicResource Loc_M_FontRemoveBtn}"
                             Padding="12,7"
                             Command="{Binding RemoveSelectedUserFontsCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_FontTitle}" Grid.Row="1"
                       ItemsSource="{Binding InstalledFonts}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

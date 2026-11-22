@@ -27,18 +27,18 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_GodModeBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_M_GodModeBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding OpenGodModeCommand}"/>
-                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_ResmonBtn}" Style="{StaticResource SecondaryButtonStyle}"
                             Content="{DynamicResource Loc_M_ResmonBtn}"
                             Padding="10,7"
                             Margin="0,0,6,0"
                             Command="{Binding LaunchSystemToolCommand}"
                             CommandParameter="resmon.exe"/>
-                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_EventViewerBtn}" Style="{StaticResource SecondaryButtonStyle}"
                             Content="{DynamicResource Loc_M_EventViewerBtn}"
                             Padding="10,7"
                             Command="{Binding LaunchSystemToolCommand}"
@@ -53,7 +53,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBox Grid.Column="0"
+                <TextBox AutomationProperties.Name="{DynamicResource Loc_M_RestoreTitle}" Grid.Column="0"
                          Text="{Binding RestorePointDescription, UpdateSourceTrigger=PropertyChanged}"
                          Background="{DynamicResource BgCardBrush}"
                          Foreground="{DynamicResource TextPrimaryBrush}"
@@ -63,21 +63,21 @@
                          VerticalContentAlignment="Center"
                          Margin="0,0,8,0"/>
 
-                <Button Grid.Column="1"
+                <Button AutomationProperties.Name="{DynamicResource Loc_M_CreateRestoreBtn}" Grid.Column="1"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_M_CreateRestoreBtn}"
                         Padding="14,7"
                         Margin="0,0,8,0"
                         Command="{Binding CreateRestorePointCommand}"/>
 
-                <Button Grid.Column="2"
+                <Button AutomationProperties.Name="{DynamicResource Loc_StartupRefreshBtn}" Grid.Column="2"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Content="{DynamicResource Loc_StartupRefreshBtn}"
                         Padding="12,7"
                         Command="{Binding RefreshRestorePointsCommand}"/>
             </Grid>
 
-            <DataGrid Grid.Row="2"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_RestoreTitle}" Grid.Row="2"
                       ItemsSource="{Binding RestorePoints}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

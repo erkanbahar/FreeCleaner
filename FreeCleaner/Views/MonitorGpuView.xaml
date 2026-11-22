@@ -26,25 +26,25 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_MonScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_MonScanBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanMonitorsAndGpuCommand}"/>
-                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_MonClearTypeBtn}" Style="{StaticResource SecondaryButtonStyle}"
                             Content="{DynamicResource Loc_M_MonClearTypeBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding LaunchSystemToolCommand}"
                             CommandParameter="cttune.exe"/>
-                    <Button Style="{StaticResource DangerButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_GpuResetBtn}" Style="{StaticResource DangerButtonStyle}"
                             Content="{DynamicResource Loc_M_GpuResetBtn}"
                             Padding="13,7"
                             Command="{Binding RestartGpuDriverCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_MonTitle}" Grid.Row="1"
                       ItemsSource="{Binding MonitorAndDisplayItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

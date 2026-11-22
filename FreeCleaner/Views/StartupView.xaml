@@ -20,13 +20,13 @@
                                Foreground="{DynamicResource TextPrimaryBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
-                <Button Style="{StaticResource PrimaryButtonStyle}"
+                <Button AutomationProperties.Name="{DynamicResource Loc_StartupRefreshBtn}" Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_StartupRefreshBtn}"
                         HorizontalAlignment="Right"
                         Command="{Binding RefreshStartupCommand}"/>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_StartupHeader}" Grid.Row="1"
                       ItemsSource="{Binding StartupItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -73,13 +73,13 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource SubtleButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_StartupToggleBtn}" Style="{StaticResource SubtleButtonStyle}"
                                             Content="{DynamicResource Loc_StartupToggleBtn}"
                                             Padding="8,4"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.ToggleStartupItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
-                                    <Button Style="{StaticResource SubtleButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_StartupDeleteBtn}" Style="{StaticResource SubtleButtonStyle}"
                                             Content="{DynamicResource Loc_StartupDeleteBtn}"
                                             Padding="8,4"
                                             Command="{Binding DataContext.DeleteStartupItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

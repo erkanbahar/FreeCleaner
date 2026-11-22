@@ -1,6 +1,8 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Security;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -50,7 +52,7 @@ public static class AppUpdateService
     {
         Version? v = typeof(AppUpdateService).Assembly.GetName().Version;
         if (v is null)
-            return "4.9.0";
+            return "5.0.0";
 
         return $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build)}";
     }
@@ -71,7 +73,17 @@ public static class AppUpdateService
 
     private static HttpClient CreateHttpClient()
     {
-        var client = new HttpClient
+        var handler = new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(10),
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+            SslOptions = new SslClientAuthenticationOptions
+            {
+                EnabledSslProtocols = SslProtocols.Tls12 | SslProtocols.Tls13
+            }
+        };
+
+        var client = new HttpClient(handler, disposeHandler: true)
         {
             Timeout = TimeSpan.FromMinutes(3)
         };
@@ -455,6 +467,20 @@ public static class AppUpdateService
                 HttpCompletionOption.ResponseHeadersRead,
                 ct).ConfigureAwait(false);
 
+            Uri? finalUri = response.RequestMessage?.RequestUri;
+            if (finalUri is not null && !IsTrustedDownloadUri(finalUri.AbsoluteUri))
+            {
+                ErrorLogService.Log("AppUpdate:UntrustedRedirect", $"Blocked untrusted redirect target: {finalUri.Host}");
+                return new UpdateDownloadResult(
+                    false,
+                    null,
+                    null,
+                    false,
+                    LocalizationService.GetText(
+                        $"Güvenlik uyarısı: Güvenilmeyen yönlendirme host'u engellendi ({finalUri.Host}).",
+                        $"Security warning: Blocked untrusted redirect host ({finalUri.Host})."));
+            }
+
             if (!response.IsSuccessStatusCode)
             {
                 return new UpdateDownloadResult(
@@ -581,6 +607,18 @@ public static class AppUpdateService
         {
             sb.AppendLine("$extractDir = Join-Path ([System.IO.Path]::GetDirectoryName($downloaded)) 'extracted'");
             sb.AppendLine("if (Test-Path $extractDir) { Remove-Item $extractDir -Recurse -Force }");
+            sb.AppendLine("Add-Type -AssemblyName System.IO.Compression.FileSystem");
+            sb.AppendLine("$extractRoot = [System.IO.Path]::GetFullPath($extractDir)");
+            sb.AppendLine("if (-not $extractRoot.EndsWith([System.IO.Path]::DirectorySeparatorChar)) { $extractRoot += [System.IO.Path]::DirectorySeparatorChar }");
+            sb.AppendLine("$zipCheck = [System.IO.Compression.ZipFile]::OpenRead($downloaded)");
+            sb.AppendLine("try {");
+            sb.AppendLine("    foreach ($entry in $zipCheck.Entries) {");
+            sb.AppendLine("        $destPath = [System.IO.Path]::GetFullPath((Join-Path $extractRoot $entry.FullName))");
+            sb.AppendLine("        if (-not $destPath.StartsWith($extractRoot, [System.StringComparison]::OrdinalIgnoreCase)) {");
+            sb.AppendLine("            throw \"Blocked unsafe Zip-Slip entry path: $($entry.FullName)\"");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
+            sb.AppendLine("} finally { $zipCheck.Dispose() }");
             sb.AppendLine("Expand-Archive -Path $downloaded -DestinationPath $extractDir -Force");
             sb.AppendLine("$newExeObj = Get-ChildItem -Path $extractDir -Filter 'FreeCleaner.exe' -Recurse | Select-Object -First 1");
             sb.AppendLine("if (-not $newExeObj) { throw 'FreeCleaner.exe could not be located inside the downloaded zip.' }");
@@ -604,6 +642,30 @@ public static class AppUpdateService
         sb.AppendLine("}");
 
         return sb.ToString();
+    }
+
+    public static bool TryCleanupStaleUpdateBackup(string? currentExePathOverride = null)
+    {
+        try
+        {
+            string? exePath = string.IsNullOrWhiteSpace(currentExePathOverride)
+                ? Environment.ProcessPath
+                : currentExePathOverride;
+
+            if (string.IsNullOrWhiteSpace(exePath))
+                return false;
+
+            string oldBackupPath = Path.GetFullPath(exePath) + ".old";
+            if (!File.Exists(oldBackupPath))
+                return false;
+
+            File.Delete(oldBackupPath);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static string EscapePsSingleQuoted(string input) => input.Replace("'", "''", StringComparison.Ordinal);

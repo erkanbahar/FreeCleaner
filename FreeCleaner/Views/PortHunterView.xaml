@@ -39,7 +39,7 @@
                            Foreground="{DynamicResource TextSecondaryBrush}"
                            Margin="0,0,10,0"/>
 
-                <TextBox Grid.Column="1"
+                <TextBox AutomationProperties.Name="{DynamicResource Loc_M_PortTitle}" Grid.Column="1"
                          Text="{Binding PortFilterText, UpdateSourceTrigger=PropertyChanged}"
                          Background="{DynamicResource BgCardBrush}"
                          Foreground="{DynamicResource TextPrimaryBrush}"
@@ -49,14 +49,14 @@
                          VerticalContentAlignment="Center"
                          Margin="0,0,8,0"/>
 
-                <Button Grid.Column="2"
+                <Button AutomationProperties.Name="{DynamicResource Loc_M_PortScanBtn}" Grid.Column="2"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_M_PortScanBtn}"
                         Padding="14,7"
                         Command="{Binding ScanListeningPortsCommand}"/>
             </Grid>
 
-            <DataGrid Grid.Row="2"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_PortTitle}" Grid.Row="2"
                       ItemsSource="{Binding ListeningPorts}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -107,7 +107,7 @@
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource DangerButtonStyle}"
+                                <Button AutomationProperties.Name="{DynamicResource Loc_M_PortKillBtn}" Style="{StaticResource DangerButtonStyle}"
                                         Content="{DynamicResource Loc_M_PortKillBtn}"
                                         Padding="8,4"
                                         Command="{Binding DataContext.KillPortProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

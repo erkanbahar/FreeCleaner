@@ -8,6 +8,21 @@ using Microsoft.Win32;
 
 namespace FreeCleaner.Services;
 
+public enum PasswordStrengthLevel
+{
+    Empty,
+    Weak,
+    Fair,
+    Strong,
+    VeryStrong
+}
+
+public sealed record PasswordStrengthEvaluation(
+    PasswordStrengthLevel Level,
+    int ScorePercent,
+    string Label,
+    string AccentColorHex);
+
 public static class EighthGenAiAndSecuritySuiteService
 {
     // ==================== 1. LOCAL AI / LLM MODEL & CACHE HUNTER ====================
@@ -328,6 +343,77 @@ Get-NetFirewallRule -Action Block -ErrorAction SilentlyContinue | Select-Object 
     public const int DefaultVaultChunkSizeBytes = 1024 * 1024;
     private const int VaultV2HeaderLength = 8 + 4 + 4 + 16 + 12;
     private const int VaultTagLength = 16;
+
+    public static PasswordStrengthEvaluation EvaluateVaultPasswordStrength(string? password, string? languageCode = null)
+    {
+        if (string.IsNullOrEmpty(password))
+        {
+            return new PasswordStrengthEvaluation(
+                PasswordStrengthLevel.Empty,
+                0,
+                LocalizationService.GetText("Parola girilmedi", "No password", languageCode),
+                "#64748B");
+        }
+
+        int score = 0;
+        if (password.Length >= 8) score += 20;
+        if (password.Length >= 12) score += 20;
+        if (password.Length >= 16) score += 15;
+
+        bool hasLower = false, hasUpper = false, hasDigit = false, hasSymbol = false;
+        var distinctChars = new HashSet<char>();
+        foreach (char c in password)
+        {
+            distinctChars.Add(c);
+            if (char.IsLower(c)) hasLower = true;
+            else if (char.IsUpper(c)) hasUpper = true;
+            else if (char.IsDigit(c)) hasDigit = true;
+            else hasSymbol = true;
+        }
+
+        if (hasLower) score += 10;
+        if (hasUpper) score += 10;
+        if (hasDigit) score += 10;
+        if (hasSymbol) score += 15;
+
+        if (password.Length < 6 || distinctChars.Count < 4)
+            score = Math.Min(score, 25);
+
+        score = Math.Clamp(score, 0, 100);
+
+        if (score < 40)
+        {
+            return new PasswordStrengthEvaluation(
+                PasswordStrengthLevel.Weak,
+                score,
+                LocalizationService.GetText("Zayıf", "Weak", languageCode),
+                "#F43F5E");
+        }
+
+        if (score < 65)
+        {
+            return new PasswordStrengthEvaluation(
+                PasswordStrengthLevel.Fair,
+                score,
+                LocalizationService.GetText("Orta", "Fair", languageCode),
+                "#F59E0B");
+        }
+
+        if (score < 85)
+        {
+            return new PasswordStrengthEvaluation(
+                PasswordStrengthLevel.Strong,
+                score,
+                LocalizationService.GetText("Güçlü", "Strong", languageCode),
+                "#38BDF8");
+        }
+
+        return new PasswordStrengthEvaluation(
+            PasswordStrengthLevel.VeryStrong,
+            score,
+            LocalizationService.GetText("Çok Güçlü", "Very Strong", languageCode),
+            "#10B981");
+    }
 
     private static void DeriveChunkNonce(ReadOnlySpan<byte> baseNonce, ulong chunkIndex, Span<byte> destination)
     {

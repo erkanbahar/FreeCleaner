@@ -58,16 +58,40 @@
                                 Command="{Binding ComputeMultiHashesCommand}"/>
                     </WrapPanel>
 
-                    <WrapPanel VerticalAlignment="Center">
+                    <WrapPanel VerticalAlignment="Center" Margin="0,0,0,8">
                         <TextBlock Text="{DynamicResource Loc_M_CryptoPassLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBox Text="{Binding VaultPasswordInput, UpdateSourceTrigger=PropertyChanged}"
+                        <PasswordBox x:Name="VaultPasswordBox"
+                                     AutomationProperties.Name="{DynamicResource Loc_M_CryptoPassLabel}"
+                                     Width="165"
+                                     Padding="7,5"
+                                     Background="{DynamicResource BgPrimaryBrush}"
+                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                     CaretBrush="{DynamicResource AccentBlueBrush}"
+                                     BorderBrush="{DynamicResource BorderSubtleBrush}"
+                                     BorderThickness="1"
+                                     Margin="0,0,4,0"
+                                     PasswordChanged="VaultPasswordBox_PasswordChanged"/>
+                        <TextBox x:Name="VaultPasswordPlainBox"
+                                 Text="{Binding VaultPasswordInput, UpdateSourceTrigger=PropertyChanged}"
                                  AutomationProperties.Name="{DynamicResource Loc_M_CryptoPassLabel}"
-                                 Width="175"
+                                 Visibility="Collapsed"
+                                 Width="165"
                                  Padding="7,5"
                                  Background="{DynamicResource BgPrimaryBrush}"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                 CaretBrush="{DynamicResource AccentBlueBrush}"
                                  BorderBrush="{DynamicResource BorderSubtleBrush}"
-                                 Margin="0,0,8,0"/>
+                                 BorderThickness="1"
+                                 Margin="0,0,4,0"/>
+                        <Button x:Name="ToggleVaultPasswordVisibilityBtn"
+                                Style="{StaticResource SubtleButtonStyle}"
+                                Content="👁"
+                                Padding="8,4"
+                                FontSize="11.5"
+                                ToolTip="{DynamicResource Loc_CryptoTogglePassTip}"
+                                AutomationProperties.Name="{DynamicResource Loc_CryptoTogglePassTip}"
+                                Margin="0,0,8,0"
+                                Click="ToggleVaultPasswordVisibility_Click"/>
                         <Button Style="{StaticResource CleanButtonStyle}"
                                 Content="{DynamicResource Loc_M_CryptoEncBtn}"
                                 AutomationProperties.Name="{DynamicResource Loc_M_CryptoEncBtn}"
@@ -89,6 +113,34 @@
                                  Background="{DynamicResource BgPrimaryBrush}"
                                  Foreground="{DynamicResource TextPrimaryBrush}"
                                  BorderBrush="{DynamicResource BorderSubtleBrush}"/>
+                    </WrapPanel>
+
+                    <WrapPanel VerticalAlignment="Center" Margin="0,8,0,0">
+                        <TextBlock Text="{DynamicResource Loc_CryptoStrengthLabel}"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,6,0"/>
+                        <ProgressBar Width="110"
+                                     Height="6"
+                                     Minimum="0"
+                                     Maximum="100"
+                                     Value="{Binding VaultPasswordStrengthScore, Mode=OneWay}"
+                                     Foreground="{Binding VaultPasswordStrengthHex, Converter={StaticResource HexToBrush}}"
+                                     Background="{DynamicResource BgCardBrush}"
+                                     BorderThickness="0"
+                                     VerticalAlignment="Center"
+                                     Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding VaultPasswordStrengthLabel}"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   Foreground="{Binding VaultPasswordStrengthHex, Converter={StaticResource HexToBrush}}"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,18,0"/>
+                        <CheckBox IsChecked="{Binding AutoClearVaultPassword}"
+                                  Content="{DynamicResource Loc_CryptoAutoClearPassCheck}"
+                                  AutomationProperties.Name="{DynamicResource Loc_CryptoAutoClearPassCheck}"
+                                  FontSize="11.5"/>
                     </WrapPanel>
                 </StackPanel>
             </Border>

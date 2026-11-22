@@ -26,24 +26,24 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource DangerButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_FwBlockExeBtn}" Style="{StaticResource DangerButtonStyle}"
                             Content="{DynamicResource Loc_M_FwBlockExeBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding BrowseAndBlockExeFirewallCommand}"/>
-                    <Button Style="{StaticResource CleanButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_FwUnblockBtn}" Style="{StaticResource CleanButtonStyle}"
                             Content="{DynamicResource Loc_M_FwUnblockBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding RemoveSelectedFirewallRulesCommand}"/>
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_FwRefreshBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_FwRefreshBtn}"
                             Padding="12,7"
                             Command="{Binding RefreshFirewallRulesCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_FwTitle}" Grid.Row="1"
                       ItemsSource="{Binding FirewallBlockRules}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

@@ -197,11 +197,11 @@ public class V46UpgradesTests
     }
 
     [Fact]
-    public void ReleasePipelineAndPublishScript_SupportReadyToRunAndVersion490()
+    public void ReleasePipelineAndPublishScript_SupportReadyToRunAndVersion500()
     {
         string repoRoot = FindRepoRoot();
         string version = AppUpdateService.CurrentVersion;
-        Assert.Equal("4.9.0", version);
+        Assert.Equal("5.0.0", version);
 
         string publishScript = File.ReadAllText(Path.Combine(repoRoot, "scripts", "Publish-Portable.ps1"), Encoding.UTF8);
         Assert.Contains("PublishReadyToRun=true", publishScript);

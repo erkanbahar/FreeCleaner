@@ -352,6 +352,8 @@ public partial class MainViewModel
     }
 
     private string _vaultPasswordInput = string.Empty;
+    private bool _autoClearVaultPassword = true;
+
     public string VaultPasswordInput
     {
         get => _vaultPasswordInput;
@@ -361,9 +363,34 @@ public partial class MainViewModel
             {
                 _vaultPasswordInput = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(VaultPasswordStrengthScore));
+                OnPropertyChanged(nameof(VaultPasswordStrengthLabel));
+                OnPropertyChanged(nameof(VaultPasswordStrengthHex));
             }
         }
     }
+
+    public bool AutoClearVaultPassword
+    {
+        get => _autoClearVaultPassword;
+        set
+        {
+            if (_autoClearVaultPassword != value)
+            {
+                _autoClearVaultPassword = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public int VaultPasswordStrengthScore
+        => EighthGenAiAndSecuritySuiteService.EvaluateVaultPasswordStrength(_vaultPasswordInput, _selectedLanguage).ScorePercent;
+
+    public string VaultPasswordStrengthLabel
+        => EighthGenAiAndSecuritySuiteService.EvaluateVaultPasswordStrength(_vaultPasswordInput, _selectedLanguage).Label;
+
+    public string VaultPasswordStrengthHex
+        => EighthGenAiAndSecuritySuiteService.EvaluateVaultPasswordStrength(_vaultPasswordInput, _selectedLanguage).AccentColorHex;
 
     private string _expectedHashInput = string.Empty;
     public string ExpectedHashInput
@@ -549,6 +576,8 @@ public partial class MainViewModel
                     HashOrOutputValue = outPath,
                     VerificationStatus = "✅ Şifreli Kasa Oluşturuldu"
                 });
+                if (AutoClearVaultPassword)
+                    VaultPasswordInput = string.Empty;
             }
         }
         finally
@@ -574,6 +603,8 @@ public partial class MainViewModel
                     HashOrOutputValue = outPath,
                     VerificationStatus = "✅ Orijinal Dosya Kurtarıldı"
                 });
+                if (AutoClearVaultPassword)
+                    VaultPasswordInput = string.Empty;
             }
         }
         finally

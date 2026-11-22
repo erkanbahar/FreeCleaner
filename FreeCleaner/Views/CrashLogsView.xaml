@@ -26,19 +26,19 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_CrashScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_CrashScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanCrashLogsCommand}"/>
-                    <Button Style="{StaticResource DangerButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_CrashCleanBtn}" Style="{StaticResource DangerButtonStyle}"
                             Content="{DynamicResource Loc_M_CrashCleanBtn}"
                             Padding="12,7"
                             Command="{Binding CleanCrashDumpsCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_CrashTitle}" Grid.Row="1"
                       ItemsSource="{Binding CrashAndEventLogs}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"

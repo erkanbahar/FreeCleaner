@@ -26,19 +26,19 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_ExtScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_ExtScanBtn}"
                             Padding="12,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanBrowserExtensionsCommand}"/>
-                    <Button Style="{StaticResource DangerButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_ExtRemoveBtn}" Style="{StaticResource DangerButtonStyle}"
                             Content="{DynamicResource Loc_M_ExtRemoveBtn}"
                             Padding="12,7"
                             Command="{Binding RemoveSelectedExtensionsCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_ExtTitle}" Grid.Row="1"
                       ItemsSource="{Binding BrowserExtensions}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -93,7 +93,7 @@
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                <Button AutomationProperties.Name="{DynamicResource Loc_OpenFileLocationTip}" Style="{StaticResource SecondaryButtonStyle}"
                                         Content="{DynamicResource Loc_OpenFileLocationTip}"
                                         Padding="8,4"
                                         Command="{Binding DataContext.OpenExtensionFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

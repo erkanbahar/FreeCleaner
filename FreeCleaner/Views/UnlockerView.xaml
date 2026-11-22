@@ -33,7 +33,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBox Grid.Column="0"
+                <TextBox AutomationProperties.Name="{DynamicResource Loc_M_UnlockerTitle}" Grid.Column="0"
                          Text="{Binding UnlockerTargetPath, UpdateSourceTrigger=PropertyChanged}"
                          Background="{DynamicResource BgCardBrush}"
                          Foreground="{DynamicResource TextPrimaryBrush}"
@@ -43,28 +43,28 @@
                          VerticalContentAlignment="Center"
                          Margin="0,0,8,0"/>
 
-                <Button Grid.Column="1"
+                <Button AutomationProperties.Name="{DynamicResource Loc_M_CryptoPickBtn}" Grid.Column="1"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Content="{DynamicResource Loc_M_CryptoPickBtn}"
                         Padding="12,7"
                         Margin="0,0,8,0"
                         Command="{Binding BrowseUnlockerFileCommand}"/>
 
-                <Button Grid.Column="2"
+                <Button AutomationProperties.Name="{DynamicResource Loc_SettingsBrowseBtn}" Grid.Column="2"
                         Style="{StaticResource SecondaryButtonStyle}"
                         Content="{DynamicResource Loc_SettingsBrowseBtn}"
                         Padding="12,7"
                         Margin="0,0,8,0"
                         Command="{Binding BrowseUnlockerFolderCommand}"/>
 
-                <Button Grid.Column="3"
+                <Button AutomationProperties.Name="{DynamicResource Loc_M_UnlockerFindBtn}" Grid.Column="3"
                         Style="{StaticResource PrimaryButtonStyle}"
                         Content="{DynamicResource Loc_M_UnlockerFindBtn}"
                         Padding="14,7"
                         Command="{Binding ScanLockingProcessesCommand}"/>
             </Grid>
 
-            <DataGrid Grid.Row="2"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_UnlockerTitle}" Grid.Row="2"
                       ItemsSource="{Binding LockingProcesses}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -105,7 +105,7 @@
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource DangerButtonStyle}"
+                                <Button AutomationProperties.Name="{DynamicResource Loc_M_UnlockerKillBtn}" Style="{StaticResource DangerButtonStyle}"
                                         Content="{DynamicResource Loc_M_UnlockerKillBtn}"
                                         Padding="8,4"
                                         Command="{Binding DataContext.KillLockingProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

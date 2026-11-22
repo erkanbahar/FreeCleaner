@@ -14,6 +14,7 @@ public partial class App : Application
     {
         base.OnStartup(e);
         Services.CrashGuardService.InstallGlobalHandlers(this);
+        Services.AppUpdateService.TryCleanupStaleUpdateBackup();
 
         _singleInstance = new Services.SingleInstanceBridgeService();
         if (!_singleInstance.TryAcquirePrimaryInstance())

@@ -36,7 +36,7 @@
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,14"/>
-                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_M_RepairDismBtn}" Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_M_RepairDismBtn}"
                                 Command="{Binding RunDismCheckCommand}"/>
                     </StackPanel>
@@ -51,7 +51,7 @@
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,14"/>
-                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_M_RepairSfcBtn}" Style="{StaticResource PrimaryButtonStyle}"
                                 Content="{DynamicResource Loc_M_RepairSfcBtn}"
                                 Command="{Binding LaunchSfcScannowCommand}"/>
                     </StackPanel>
@@ -66,7 +66,7 @@
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    TextWrapping="Wrap"
                                    Margin="0,6,0,14"/>
-                        <Button Style="{StaticResource CleanButtonStyle}"
+                        <Button AutomationProperties.Name="{DynamicResource Loc_M_RepairFontBtn}" Style="{StaticResource CleanButtonStyle}"
                                 Content="{DynamicResource Loc_M_RepairFontBtn}"
                                 Command="{Binding CleanFontAndWindowsOldCommand}"/>
                     </StackPanel>

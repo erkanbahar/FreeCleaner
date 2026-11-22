@@ -11,6 +11,10 @@ namespace FreeCleaner.Services;
 /// </summary>
 public sealed class SingleInstanceBridgeService : IDisposable
 {
+    public const int MaxIpcPayloadBytes = 16 * 1024;
+    public const int MaxIpcArgumentCount = 32;
+    public const int MaxIpcArgumentLength = 1024;
+
     public static string DefaultMutexName =>
         $"Local\\FreeCleanerPro_SingleInstance_{SanitizeToken(Environment.UserName)}";
 
@@ -21,6 +25,61 @@ public sealed class SingleInstanceBridgeService : IDisposable
     private bool _ownsMutex;
     private CancellationTokenSource? _listenerCts;
     private Task? _listenerTask;
+
+    public static string[]? TryParseBoundedIpcPayload(ReadOnlySpan<byte> utf8Bytes)
+    {
+        if (utf8Bytes.IsEmpty || utf8Bytes.Length > MaxIpcPayloadBytes)
+            return null;
+
+        try
+        {
+            string[]? parsed = JsonSerializer.Deserialize<string[]>(utf8Bytes);
+            if (parsed is null || parsed.Length > MaxIpcArgumentCount)
+                return null;
+
+            foreach (string arg in parsed)
+            {
+                if (arg is null || arg.Length > MaxIpcArgumentLength)
+                    return null;
+            }
+
+            return parsed;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static async Task<(byte[] LineBytes, bool ExceededLimit)> ReadBoundedUtf8LineAsync(
+        Stream stream,
+        int maxBytes,
+        CancellationToken ct)
+    {
+        using var ms = new MemoryStream(Math.Min(1024, maxBytes));
+        byte[] singleByte = new byte[1];
+
+        while (true)
+        {
+            int read = await stream.ReadAsync(singleByte.AsMemory(0, 1), ct).ConfigureAwait(false);
+            if (read == 0)
+                break;
+
+            byte b = singleByte[0];
+            if (b == (byte)'\n')
+                break;
+
+            if (b == (byte)'\r')
+                continue;
+
+            if (ms.Length >= maxBytes)
+                return ([], true);
+
+            ms.WriteByte(b);
+        }
+
+        return (ms.ToArray(), false);
+    }
 
     public bool TryAcquirePrimaryInstance(string? mutexName = null)
     {
@@ -52,13 +111,33 @@ public sealed class SingleInstanceBridgeService : IDisposable
                 ".",
                 targetPipe,
                 PipeDirection.Out,
-                PipeOptions.Asynchronous);
+                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
             await client.ConnectAsync(Math.Max(200, timeoutMs)).ConfigureAwait(false);
 
-            string[] payloadArray = args?.ToArray() ?? [];
+            string[] payloadArray = (args ?? [])
+                .Where(a => a is not null)
+                .Take(MaxIpcArgumentCount)
+                .Select(a => a.Length > MaxIpcArgumentLength ? a[..MaxIpcArgumentLength] : a)
+                .ToArray();
+
             string jsonLine = JsonSerializer.Serialize(payloadArray) + "\n";
             byte[] bytes = Encoding.UTF8.GetBytes(jsonLine);
+            if (bytes.Length > MaxIpcPayloadBytes)
+            {
+                int count = payloadArray.Length;
+                while (count > 0)
+                {
+                    count--;
+                    jsonLine = JsonSerializer.Serialize(payloadArray.AsSpan(0, count).ToArray()) + "\n";
+                    bytes = Encoding.UTF8.GetBytes(jsonLine);
+                    if (bytes.Length <= MaxIpcPayloadBytes)
+                        break;
+                }
+
+                if (bytes.Length > MaxIpcPayloadBytes)
+                    return false;
+            }
 
             await client.WriteAsync(bytes).ConfigureAwait(false);
             await client.FlushAsync().ConfigureAwait(false);
@@ -92,20 +171,35 @@ public sealed class SingleInstanceBridgeService : IDisposable
                         PipeDirection.In,
                         maxNumberOfServerInstances: 1,
                         PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous);
+                        PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
                     await server.WaitForConnectionAsync(ct).ConfigureAwait(false);
 
-                    using var reader = new StreamReader(server, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, leaveOpen: true);
-                    string? line = await reader.ReadLineAsync(ct).ConfigureAwait(false);
-                    if (!string.IsNullOrWhiteSpace(line))
+                    (byte[] lineBytes, bool exceededLimit) = await ReadBoundedUtf8LineAsync(
+                        server,
+                        MaxIpcPayloadBytes,
+                        ct).ConfigureAwait(false);
+
+                    if (exceededLimit)
                     {
-                        string[]? receivedArgs = JsonSerializer.Deserialize<string[]>(line);
-                        onArgsReceived(receivedArgs ?? []);
+                        ErrorLogService.Log("SingleInstanceIPC", $"Dropped oversized IPC payload exceeding {MaxIpcPayloadBytes} bytes.");
+                        continue;
+                    }
+
+                    if (lineBytes.Length == 0)
+                    {
+                        onArgsReceived([]);
+                        continue;
+                    }
+
+                    string[]? receivedArgs = TryParseBoundedIpcPayload(lineBytes);
+                    if (receivedArgs is not null)
+                    {
+                        onArgsReceived(receivedArgs);
                     }
                     else
                     {
-                        onArgsReceived([]);
+                        ErrorLogService.Log("SingleInstanceIPC", "Dropped malformed or out-of-bounds IPC payload.");
                     }
                 }
                 catch (OperationCanceledException)

@@ -29,12 +29,12 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_AiScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_AiScanBtn}"
                             Padding="13,7"
                             Margin="0,0,8,0"
                             Command="{Binding ScanAiModelCachesCommand}"/>
-                    <Button Style="{StaticResource DangerButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_AiCleanBtn}" Style="{StaticResource DangerButtonStyle}"
                             Content="{DynamicResource Loc_AiCleanBtn}"
                             Padding="13,7"
                             Command="{Binding CleanSelectedAiCachesCommand}"/>
@@ -50,7 +50,7 @@
                     Margin="0,0,0,10">
                 <WrapPanel VerticalAlignment="Center">
                     <TextBlock Text="{DynamicResource Loc_AiCustomLabel}" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBox Text="{Binding AiCustomScanFolder, UpdateSourceTrigger=PropertyChanged}"
+                    <TextBox AutomationProperties.Name="{DynamicResource Loc_AiTitle}" Text="{Binding AiCustomScanFolder, UpdateSourceTrigger=PropertyChanged}"
                              Width="390"
                              Padding="8,5"
                              Background="{DynamicResource BgCardBrush}"
@@ -58,14 +58,14 @@
                              CaretBrush="{DynamicResource AccentBlueBrush}"
                              BorderBrush="{DynamicResource BorderSubtleBrush}"
                              Margin="0,0,8,0"/>
-                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_AiBrowseScanBtn}" Style="{StaticResource SecondaryButtonStyle}"
                             Content="{DynamicResource Loc_AiBrowseScanBtn}"
                             Padding="12,5"
                             Command="{Binding BrowseAiScanFolderCommand}"/>
                 </WrapPanel>
             </Border>
 
-            <DataGrid Grid.Row="2"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_AiTitle}" Grid.Row="2"
                       ItemsSource="{Binding AiModelCaches}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -110,7 +110,7 @@
                         </DataGridTemplateColumn.Header>
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                <Button AutomationProperties.Name="{DynamicResource Loc_TreemapDiffColOpen}" Style="{StaticResource SecondaryButtonStyle}"
                                         Content="{DynamicResource Loc_TreemapDiffColOpen}"
                                         Padding="10,3"
                                         FontSize="11"

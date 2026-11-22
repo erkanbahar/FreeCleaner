@@ -31,14 +31,14 @@
                               Foreground="{DynamicResource AccentAmberBrush}"
                               VerticalAlignment="Center"
                               Margin="0,0,14,0"/>
-                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                    <Button AutomationProperties.Name="{DynamicResource Loc_M_SecProcScanBtn}" Style="{StaticResource PrimaryButtonStyle}"
                             Content="{DynamicResource Loc_M_SecProcScanBtn}"
                             Padding="14,7"
                             Command="{Binding ScanProcessSecurityCommand}"/>
                 </StackPanel>
             </Grid>
 
-            <DataGrid Grid.Row="1"
+            <DataGrid AutomationProperties.Name="{DynamicResource Loc_M_SecProcTitle}" Grid.Row="1"
                       ItemsSource="{Binding ProcessSecurityItems}"
                       AutoGenerateColumns="False"
                       CanUserAddRows="False"
@@ -95,14 +95,14 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Style="{StaticResource SecondaryButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_StartupColLocation}" Style="{StaticResource SecondaryButtonStyle}"
                                             Content="{DynamicResource Loc_StartupColLocation}"
                                             Padding="8,3"
                                             FontSize="11"
                                             Margin="0,0,6,0"
                                             Command="{Binding DataContext.OpenProcessSecurityFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
-                                    <Button Style="{StaticResource DangerButtonStyle}"
+                                    <Button AutomationProperties.Name="{DynamicResource Loc_M_KillBtn}" Style="{StaticResource DangerButtonStyle}"
                                             Content="{DynamicResource Loc_M_KillBtn}"
                                             Padding="8,3"
                                             FontSize="11"

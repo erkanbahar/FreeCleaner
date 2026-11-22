@@ -849,7 +849,10 @@ public static class LocalizationService
         ["Loc_A11y_ShredQueueGrid"] = "Kalıcı imha (shredder) dosya ve klasör kuyruğu",
         ["Loc_A11y_SimilarPhotoFolderInput"] = "Benzer fotoğraf taraması için klasör yolu",
         ["Loc_A11y_SimilarPhotoGrid"] = "Bulunan benzer ve kopya fotoğraf grupları listesi",
-        ["Loc_A11y_CleanerFilesGrid"] = "Tarama sonucunda bulunan temizlenebilir dosyalar listesi"
+        ["Loc_A11y_CleanerFilesGrid"] = "Tarama sonucunda bulunan temizlenebilir dosyalar listesi",
+        ["Loc_CryptoTogglePassTip"] = "Parolayı Göster / Gizle",
+        ["Loc_CryptoAutoClearPassCheck"] = "İşlem sonrası parolayı otomatik temizle",
+        ["Loc_CryptoStrengthLabel"] = "Parola Gücü"
     };
 
     private static readonly Dictionary<string, string> EnStrings = new(StringComparer.Ordinal)
@@ -1683,7 +1686,10 @@ public static class LocalizationService
         ["Loc_A11y_ShredQueueGrid"] = "Secure shredder target files and folders queue",
         ["Loc_A11y_SimilarPhotoFolderInput"] = "Folder path for similar photo duplicate scan",
         ["Loc_A11y_SimilarPhotoGrid"] = "Detected similar and duplicate photo groups list",
-        ["Loc_A11y_CleanerFilesGrid"] = "Cleanable files discovered during system scan"
+        ["Loc_A11y_CleanerFilesGrid"] = "Cleanable files discovered during system scan",
+        ["Loc_CryptoTogglePassTip"] = "Show / Hide Password",
+        ["Loc_CryptoAutoClearPassCheck"] = "Auto-clear password after operation",
+        ["Loc_CryptoStrengthLabel"] = "Password Strength"
     };
 
     public static IReadOnlyCollection<string> GetAllKeys(string? langCode)
