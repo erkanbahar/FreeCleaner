@@ -445,7 +445,7 @@ public class V51UpgradesTests
     public void Architecture_V51_ReleaseWingetRegex_AttestV4_NavigationPartial_AndCoverageFloor()
     {
         string repoRoot = FindRepoRoot();
-        Assert.Equal("5.1.0", AppUpdateService.CurrentVersion);
+        Assert.Equal("5.2.0", AppUpdateService.CurrentVersion);
 
         string navVmPath = Path.Combine(repoRoot, "FreeCleaner", "ViewModels", "MainViewModel.Navigation.cs");
         Assert.True(File.Exists(navVmPath), "Expected MainViewModel.Navigation.cs to exist.");

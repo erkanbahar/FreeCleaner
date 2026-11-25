@@ -254,7 +254,7 @@ public class V48UpgradesTests
     public void Architecture_V48_Arm64ReleaseAndCiCoverageSummary_ConfiguredForVersion500()
     {
         string repoRoot = FindRepoRoot();
-        Assert.Equal("5.1.0", AppUpdateService.CurrentVersion);
+        Assert.Equal("5.2.0", AppUpdateService.CurrentVersion);
 
         string publishScript = File.ReadAllText(Path.Combine(repoRoot, "scripts", "Publish-Portable.ps1"), Encoding.UTF8);
         Assert.Contains("win-arm64", publishScript);

@@ -22,6 +22,7 @@ public class CleanerConfigData
     public int AutoMonitorThresholdMb { get; set; } = 1024;
     public bool MinimizeToTrayOnClose { get; set; }
     public bool UseRecycleBinSafety { get; set; } = true;
+    public bool OnlyOldTempFiles { get; set; } = true;
     public string RiskFilter { get; set; } = "Tümü";
     public bool ScheduledMaintenanceEnabled { get; set; }
     public int ScheduledMaintenanceIntervalHours { get; set; } = 168;

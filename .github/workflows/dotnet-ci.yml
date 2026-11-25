@@ -67,3 +67,34 @@ jobs:
           name: test-results-and-coverage
           path: TestResults/
           retention-days: 14
+
+  ui-smoke-test:
+    # Opens the real WPF window and visits every section in TR + EN (see scripts/smoke-test.ps1).
+    # Non-blocking until it has a few green runs on hosted Windows runners.
+    runs-on: windows-latest
+    needs: build-and-test
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build application
+        run: dotnet build FreeCleaner/FreeCleaner.csproj --configuration Release
+
+      - name: Run UI smoke test
+        shell: pwsh
+        run: ./scripts/smoke-test.ps1 -Configuration Release -NoBuild -Screenshots -ReportDirectory "${{ runner.temp }}/FreeCleaner-smoke"
+
+      - name: Upload smoke test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-smoke-test-report
+          path: ${{ runner.temp }}/FreeCleaner-smoke/
+          retention-days: 14

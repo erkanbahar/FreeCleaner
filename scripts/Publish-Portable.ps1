@@ -50,7 +50,7 @@ if (Test-Path $exePath) {
 if ($GenerateWingetManifests) {
     [xml]$csprojXml = Get-Content -Path $projPath -Encoding UTF8
     $ver = $csprojXml.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
-    if ([string]::IsNullOrWhiteSpace($ver)) { $ver = '5.1.0' }
+    if ([string]::IsNullOrWhiteSpace($ver)) { $ver = '5.2.0' }
     $tag = "v$ver"
     $wingetSourceDir = Join-Path $repoRoot 'installer\winget'
     $wingetOutDir = Join-Path $outDir 'winget'

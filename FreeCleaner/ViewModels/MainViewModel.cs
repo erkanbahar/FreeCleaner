@@ -175,6 +175,7 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
     private bool _isBusy;
     private bool _hasAnalyzed;
     private bool _useRecycleBinSafety = true;
+    private bool _onlyOldTempFiles = true;
     private long _totalDetectedBytes;
     private int _totalDetectedFiles;
     private long _lastFreedBytes;
@@ -341,6 +342,7 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
     public ICommand DeselectAllRulesCommand { get; }
     public ICommand OpenFileLocationCommand { get; }
     public ICommand OpenRecycleBinCommand { get; }
+    public ICommand OpenDataFolderCommand { get; }
     public ICommand RefreshMetricsCommand { get; }
 
     // Startup Manager Commands
@@ -642,6 +644,8 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
             : 168;
         _minimizeToTrayOnClose = savedConfig.MinimizeToTrayOnClose;
         _useRecycleBinSafety = savedConfig.UseRecycleBinSafety;
+        _onlyOldTempFiles = savedConfig.OnlyOldTempFiles;
+        ApplyTempAgeFilter();
         _riskFilter = savedConfig.RiskFilter is "Düşük" or "Orta" or "Yüksek"
             ? savedConfig.RiskFilter
             : "Tümü";
@@ -726,6 +730,7 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
         DeselectAllRulesCommand = new RelayCommand(_ => SetVisibleRulesSelection(false), _ => !IsBusy);
         OpenFileLocationCommand = new RelayCommand(OpenFileLocation);
         OpenRecycleBinCommand = new RelayCommand(_ => OpenRecycleBin());
+        OpenDataFolderCommand = new RelayCommand(_ => OpenDataFolder());
         RefreshMetricsCommand = new RelayCommand(_ => RefreshSystemMetrics());
 
         // Startup Commands
@@ -1486,6 +1491,25 @@ public partial class MainViewModel : INotifyPropertyChanged, IDisposable
             }
         }
     }
+
+    /// <summary>Leave temp files younger than 24 hours alone (they usually belong to running programs).</summary>
+    public bool OnlyOldTempFiles
+    {
+        get => _onlyOldTempFiles;
+        set
+        {
+            if (_onlyOldTempFiles != value)
+            {
+                _onlyOldTempFiles = value;
+                ApplyTempAgeFilter();
+                OnPropertyChanged();
+                SaveCurrentSettings();
+            }
+        }
+    }
+
+    private void ApplyTempAgeFilter()
+        => _engine.TempMinimumAge = _onlyOldTempFiles ? CleanerEngine.DefaultTempMinimumAge : TimeSpan.Zero;
 
     public bool UseRecycleBinSafety
     {

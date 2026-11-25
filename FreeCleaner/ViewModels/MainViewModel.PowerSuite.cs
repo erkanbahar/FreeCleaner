@@ -367,6 +367,7 @@ public partial class MainViewModel
             AutoMonitorThresholdMb = AutoMonitorThresholdMb,
             MinimizeToTrayOnClose = MinimizeToTrayOnClose,
             UseRecycleBinSafety = UseRecycleBinSafety,
+            OnlyOldTempFiles = OnlyOldTempFiles,
             RiskFilter = RiskFilter,
             ScheduledMaintenanceEnabled = ScheduledMaintenanceEnabled,
             ScheduledMaintenanceIntervalHours = ScheduledMaintenanceIntervalHours,
@@ -509,6 +510,7 @@ public partial class MainViewModel
             AutoMonitorEnabled = imported.AutoMonitorEnabled;
             MinimizeToTrayOnClose = imported.MinimizeToTrayOnClose;
             UseRecycleBinSafety = imported.UseRecycleBinSafety;
+            OnlyOldTempFiles = imported.OnlyOldTempFiles;
             RiskFilter = imported.RiskFilter;
             ScheduledMaintenanceIntervalHours = imported.ScheduledMaintenanceIntervalHours;
             ScheduledMaintenanceEnabled = imported.ScheduledMaintenanceEnabled;

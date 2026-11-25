@@ -17,6 +17,14 @@ public static partial class AppStoragePathsService
     public const string PortableFlagFileName = "portable.flag";
     private static readonly JsonSerializerOptions IndentedJsonOptions = new() { WriteIndented = true };
     private static readonly AsyncLocal<string?> ScopedDataDirectoryOverride = new();
+    private static string? _processDataDirectoryOverride;
+
+    /// <summary>
+    /// Redirects GetDataDirectory() for the whole process (used by the UI smoke test so the user's real
+    /// settings, history and logs are never written). Null restores the normal location.
+    /// </summary>
+    public static void SetProcessDataDirectoryOverride(string? directoryPath)
+        => _processDataDirectoryOverride = string.IsNullOrWhiteSpace(directoryPath) ? null : Path.GetFullPath(directoryPath);
 
     private sealed class DataDirectoryScope(string? previousValue) : IDisposable
     {
@@ -75,6 +83,9 @@ public static partial class AppStoragePathsService
         {
             return ScopedDataDirectoryOverride.Value!;
         }
+
+        if (string.IsNullOrWhiteSpace(baseDirOverride) && _processDataDirectoryOverride is not null)
+            return _processDataDirectoryOverride;
 
         return IsPortableModeEnabled(baseDirOverride)
             ? GetPortableDataDirectory(baseDirOverride)

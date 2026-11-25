@@ -81,6 +81,13 @@ public partial class MainViewModel
                 "Review detected items and click 'Clean Now' to reclaim space.",
                 _selectedLanguage);
             AddLog($"Analiz tamamlandı: {TotalDetectedFiles:N0} dosya ({TotalDetectedFormatted}) tespit edildi.");
+
+            string analysisNotes = CleanupPlanSummary.DescribeAnalysisNotes(_engine.LastAnalysisNotes, _selectedLanguage);
+            if (analysisNotes.Length > 0)
+            {
+                CurrentOperationDetail = analysisNotes;
+                AddLog($"[BİLGİ] {CleanupPlanSummary.DescribeAnalysisNotes(_engine.LastAnalysisNotes, "tr-TR")}");
+            }
         }
         catch (OperationCanceledException)
         {
@@ -145,10 +152,15 @@ public partial class MainViewModel
                 "Selected files will be permanently deleted (locked in-use files are safely skipped).",
                 _selectedLanguage);
 
+        string planSummary = CleanupPlanSummary.Describe(
+            DiscoveredFiles.Where(file => file.IsSelected),
+            UseRecycleBinSafety,
+            _selectedLanguage);
+
         var confirm = ShowDialog(
             LocalizationService.GetText(
-                $"Toplam {selectedCount:N0} adet gereksiz öğe ({selectedSize}) temizlenecek.\n\nMod: {modeDescription}\n\nTemizleme işlemini onaylıyor musunuz?",
-                $"Clean {selectedCount:N0} selected items ({selectedSize})?\n\nMode: {modeDescription}",
+                $"Toplam {selectedCount:N0} adet gereksiz öğe ({selectedSize}) temizlenecek.\n\n{planSummary}\n\nMod: {modeDescription}\n\nTemizleme işlemini onaylıyor musunuz?",
+                $"Clean {selectedCount:N0} selected items ({selectedSize})?\n\n{planSummary}\n\nMode: {modeDescription}",
                 _selectedLanguage),
             LocalizationService.GetText("FreeCleaner - Temizleme Onayı", "FreeCleaner - Cleanup Confirmation", _selectedLanguage),
             MessageBoxButton.YesNo,
@@ -253,7 +265,7 @@ public partial class MainViewModel
             RecordCleanupHistory("Akıllı Temizlik", summary.FreedBytes, summary.DeletedFilesCount);
 
             var remaining = DiscoveredFiles
-                .Where(x => x.Status is not ("Silindi" or "Boşaltıldı" or "Zaten Silinmiş" or "Geri Dönüşüm'e Taşındı"))
+                .Where(x => !x.IsCleaned)
                 .ToList();
 
             DiscoveredFiles.Clear();
@@ -269,8 +281,8 @@ public partial class MainViewModel
                 _selectedLanguage);
             CurrentOperationDetail = summary.SkippedFilesCount > 0
                 ? LocalizationService.GetText(
-                    $"Süre: {summary.Elapsed.TotalSeconds:F1} sn • {summary.SkippedFilesCount:N0} kilitli dosya atlandı.",
-                    $"Elapsed: {summary.Elapsed.TotalSeconds:F1}s • {summary.SkippedFilesCount:N0} locked files skipped.",
+                    $"Süre: {summary.Elapsed.TotalSeconds:F1} sn • {CleanupPlanSummary.DescribeSkipped(summary, _selectedLanguage)}.",
+                    $"Elapsed: {summary.Elapsed.TotalSeconds:F1}s • {CleanupPlanSummary.DescribeSkipped(summary, _selectedLanguage)}.",
                     _selectedLanguage)
                 : LocalizationService.GetText(
                     $"Süre: {summary.Elapsed.TotalSeconds:F1} sn • Tüm seçili öğeler temizlendi.",
@@ -282,9 +294,17 @@ public partial class MainViewModel
                 StatusMessage,
                 ToastSeverity.Success);
 
-            AddLog($"[TAMAMLANDI] {CleanerRule.FormatBytes(summary.FreedBytes)} boş alan kazanıldı ({summary.DeletedFilesCount:N0} silindi, {summary.SkippedFilesCount:N0} kilitli dosya atlandı).");
-            foreach (var detail in summary.Logs.Where(log => log.StartsWith("[ATLANDI]", StringComparison.Ordinal)).Take(20))
+            string skippedText = summary.SkippedFilesCount > 0
+                ? $", {CleanupPlanSummary.DescribeSkipped(summary, "tr-TR")}"
+                : string.Empty;
+            AddLog($"[TAMAMLANDI] {CleanerRule.FormatBytes(summary.FreedBytes)} boş alan kazanıldı ({summary.DeletedFilesCount:N0} silindi{skippedText}).");
+            var skippedDetails = summary.Logs
+                .Where(log => log.StartsWith("[ATLANDI]", StringComparison.Ordinal) || log.StartsWith("[SKIPPED]", StringComparison.Ordinal))
+                .ToList();
+            foreach (var detail in skippedDetails.Take(20))
                 AddLog(detail);
+            if (skippedDetails.Count > 20)
+                AddLog($"[ATLANDI] … ve {skippedDetails.Count - 20:N0} dosya daha (ayrıntı listede).");
         }
         catch (OperationCanceledException)
         {

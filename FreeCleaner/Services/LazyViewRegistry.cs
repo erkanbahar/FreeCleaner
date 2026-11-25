@@ -9,6 +9,7 @@ public sealed class LazyViewRegistry
     private readonly Dictionary<string, object> _cache = new(StringComparer.OrdinalIgnoreCase);
 
     public int RegisteredCount => _factories.Count;
+    public IReadOnlyCollection<string> RegisteredKeys => _factories.Keys.ToList();
     public int LoadedCount => _cache.Count;
 
     public void Register(string sectionKey, Func<object> factory)

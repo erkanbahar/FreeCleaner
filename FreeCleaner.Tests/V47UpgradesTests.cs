@@ -390,6 +390,6 @@ public class V47UpgradesTests
 
         string releaseYml = File.ReadAllText(Path.Combine(repoRoot, ".github", "workflows", "release.yml"), Encoding.UTF8);
         Assert.Contains("attest-build-provenance", releaseYml);
-        Assert.Equal("5.1.0", AppUpdateService.CurrentVersion);
+        Assert.Equal("5.2.0", AppUpdateService.CurrentVersion);
     }
 }
