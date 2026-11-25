@@ -136,6 +136,10 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
+          body: |
+            **Free download, open source (MIT).** Verify files with `SHA256SUMS.txt` and the build provenance attestation.
+
+            🔏 [Code signing policy](https://github.com/erkanbahar/FreeCleaner/blob/main/CODE_SIGNING_POLICY.md) • 🔒 [Privacy policy](https://github.com/erkanbahar/FreeCleaner/blob/main/PRIVACY.md)
           files: |
             dist/FreeCleaner-Portable-win-x64-*.zip
             dist/FreeCleaner-Portable-win-arm64-*.zip
