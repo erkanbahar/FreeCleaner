@@ -4,8 +4,89 @@ using FreeCleaner.Models;
 
 namespace FreeCleaner.Services;
 
+public enum DeleteFailureKind
+{
+    None,
+    InUse,
+    AccessDenied,
+    Other
+}
+
+/// <summary>What the last <see cref="CleanerEngine.AnalyzeAsync"/> run deliberately left out, so the UI can explain it.</summary>
+public sealed class AnalysisNotes
+{
+    public int SkippedRecentTempFiles { get; set; }
+    public long SkippedRecentTempBytes { get; set; }
+    public List<string> SkippedAdminOnlyPaths { get; } = [];
+}
+
 public class CleanerEngine
 {
+    /// <summary>Rules whose files are only cleaned once they are older than <see cref="TempMinimumAge"/>.</summary>
+    public static readonly IReadOnlySet<string> TempRuleIds = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "sys_user_temp",
+        "sys_win_temp"
+    };
+
+    public static readonly TimeSpan DefaultTempMinimumAge = TimeSpan.FromHours(24);
+
+    /// <summary>
+    /// Temp files written more recently than this are left alone: they usually belong to programs that are still running.
+    /// <see cref="TimeSpan.Zero"/> disables the filter.
+    /// </summary>
+    public TimeSpan TempMinimumAge { get; set; } = TimeSpan.Zero;
+
+    /// <summary>Test hook; when null the real process elevation is used.</summary>
+    public bool? IsElevatedOverride { get; set; }
+
+    public AnalysisNotes LastAnalysisNotes { get; private set; } = new();
+
+    /// <summary>
+    /// Locations a standard user can list but not clean (Windows folder, machine-wide error reports).
+    /// Scanning them without elevation only produces "access denied" noise and misleading totals.
+    /// </summary>
+    public static bool IsAdminOnlyPath(string path, string? windowsDir = null, string? programDataDir = null)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        string winDir = windowsDir ?? Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+        string programData = programDataDir ?? Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+        return IsUnder(path, winDir) ||
+               (!string.IsNullOrWhiteSpace(programData) && IsUnder(path, Path.Combine(programData, "Microsoft", "Windows", "WER")));
+
+        static bool IsUnder(string candidate, string root)
+        {
+            if (string.IsNullOrWhiteSpace(root))
+                return false;
+            string c = candidate.Replace('/', '\\').TrimEnd('\\');
+            string r = root.Replace('/', '\\').TrimEnd('\\');
+            return c.Equals(r, StringComparison.OrdinalIgnoreCase) ||
+                   c.StartsWith(r + "\\", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>Maps a delete exception to a user-facing reason. Win32 32/33 = sharing/lock violation, 5 = access denied.</summary>
+    public static DeleteFailureKind ClassifyDeleteFailure(Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        if (exception is UnauthorizedAccessException or System.Security.SecurityException)
+            return DeleteFailureKind.AccessDenied;
+        if (exception is IOException)
+        {
+            int win32 = exception.HResult & 0xFFFF;
+            return win32 switch
+            {
+                32 or 33 => DeleteFailureKind.InUse,
+                5 => DeleteFailureKind.AccessDenied,
+                _ => DeleteFailureKind.Other
+            };
+        }
+        return DeleteFailureKind.Other;
+    }
+
     public static List<CleanerRule> GetDefaultRules()
     {
         string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
@@ -458,6 +539,13 @@ public class CleanerEngine
         var allDiscoveredItems = new List<ScannedFileItem>();
         var visitedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var exclusions = excludedPaths ?? [];
+        var notes = new AnalysisNotes();
+        LastAnalysisNotes = notes;
+        bool isElevated = IsElevatedOverride ?? UltimateSystemSuiteService.IsRunningAsAdministrator();
+        TimeSpan tempMinimumAge = TempMinimumAge;
+        DateTime tempCutoff = DateTime.Now - tempMinimumAge;
+        int skippedRecentCount = 0;
+        long skippedRecentBytes = 0;
 
         foreach (var rule in rules)
         {
@@ -478,6 +566,7 @@ public class CleanerEngine
             int completedRules = 0;
             object itemsLock = new();
             object pathsLock = new();
+            object notesLock = new();
             var options = new ParallelOptions
             {
                 CancellationToken = cancellationToken,
@@ -524,10 +613,23 @@ public class CleanerEngine
                 }
                 else
                 {
+                    bool applyAgeFilter = tempMinimumAge > TimeSpan.Zero && TempRuleIds.Contains(rule.Id);
+                    int adminSkippedTargets = 0;
                     foreach (var target in rule.Targets)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        if (string.IsNullOrWhiteSpace(target.BasePath) || !Directory.Exists(target.BasePath))
+                        if (string.IsNullOrWhiteSpace(target.BasePath))
+                            continue;
+
+                        if (!isElevated && IsAdminOnlyPath(target.BasePath))
+                        {
+                            adminSkippedTargets++;
+                            lock (notesLock)
+                                notes.SkippedAdminOnlyPaths.Add(target.BasePath);
+                            continue;
+                        }
+
+                        if (!Directory.Exists(target.BasePath))
                             continue;
 
                         foreach (var file in EnumerateFilesSafe(target.BasePath, target.SearchPattern, target.Recursive, cancellationToken))
@@ -553,6 +655,13 @@ public class CleanerEngine
                                 continue;
                             }
 
+                            if (applyAgeFilter && lastWrite > tempCutoff)
+                            {
+                                Interlocked.Increment(ref skippedRecentCount);
+                                Interlocked.Add(ref skippedRecentBytes, fileLen);
+                                continue;
+                            }
+
                             var item = new ScannedFileItem
                             {
                                 RuleId = rule.Id,
@@ -574,6 +683,16 @@ public class CleanerEngine
                             Interlocked.Increment(ref runningTotalCount);
                         }
                     }
+
+                    if (ruleCount == 0 && adminSkippedTargets > 0 && adminSkippedTargets == rule.Targets.Count)
+                    {
+                        rule.DetectedSizeBytes = 0;
+                        rule.DetectedFileCount = 0;
+                        rule.StatusText = LocalizationService.GetText("Yönetici gerekli", "Requires administrator");
+                        int pct = (int)(Interlocked.Increment(ref completedRules) * 100.0 / activeRules.Count);
+                        progress?.Report((pct, rule.Name, Interlocked.Read(ref runningTotalBytes), Volatile.Read(ref runningTotalCount)));
+                        return;
+                    }
                 }
 
                 rule.DetectedSizeBytes = ruleBytes;
@@ -592,6 +711,9 @@ public class CleanerEngine
                     Volatile.Read(ref runningTotalCount)));
             });
         }, cancellationToken);
+
+        notes.SkippedRecentTempFiles = skippedRecentCount;
+        notes.SkippedRecentTempBytes = skippedRecentBytes;
 
         return allDiscoveredItems
             .OrderByDescending(x => x.SizeBytes)
@@ -633,6 +755,7 @@ public class CleanerEngine
                     deleted = RecycleBinHelper.EmptyRecycleBin();
                     if (deleted)
                     {
+                        item.IsCleaned = true;
                         item.Status = LocalizationService.GetText("Boşaltıldı", "Emptied");
                         summary.Logs.Add(LocalizationService.GetText(
                             $"[BAŞARILI] Geri Dönüşüm Kutusu boşaltıldı ({item.FormattedSize})",
@@ -653,6 +776,7 @@ public class CleanerEngine
                         if (!File.Exists(item.FullPath))
                         {
                             deleted = true;
+                            item.IsCleaned = true;
                             item.Status = LocalizationService.GetText("Zaten Silinmiş", "Already Deleted");
                         }
                         else if (moveToRecycleBinInsteadOfPermanentDelete)
@@ -661,8 +785,13 @@ public class CleanerEngine
                             item.Status = deleted
                                 ? LocalizationService.GetText("Geri Dönüşüm'e Taşındı", "Moved to Recycle Bin")
                                 : LocalizationService.GetText("Kilitli / Kullanımda", "Locked / In Use");
-                            if (!deleted)
+                            if (deleted)
                             {
+                                item.IsCleaned = true;
+                            }
+                            else
+                            {
+                                summary.InUseCount++;
                                 summary.Logs.Add(LocalizationService.GetText(
                                     $"[ATLANDI] {item.FullPath}: Geri Dönüşüm Kutusu'na taşınamadı.",
                                     $"[SKIPPED] {item.FullPath}: Could not move to Recycle Bin."));
@@ -678,14 +807,34 @@ public class CleanerEngine
                             }
                             File.Delete(item.FullPath);
                             deleted = true;
+                            item.IsCleaned = true;
                             item.Status = LocalizationService.GetText("Silindi", "Deleted");
                         }
                     }
-                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
                     {
                         deleted = false;
-                        item.Status = LocalizationService.GetText("Kilitli (Kullanımda)", "Locked (In Use)");
-                        summary.Logs.Add($"[ATLANDI] {item.FullPath}: {ex.Message}");
+                        switch (ClassifyDeleteFailure(ex))
+                        {
+                            case DeleteFailureKind.InUse:
+                                summary.InUseCount++;
+                                item.Status = LocalizationService.GetText("Kullanımda", "In Use");
+                                summary.Logs.Add(LocalizationService.GetText(
+                                    $"[ATLANDI] Kullanımda: {item.FullPath}",
+                                    $"[SKIPPED] In use: {item.FullPath}"));
+                                break;
+                            case DeleteFailureKind.AccessDenied:
+                                summary.AccessDeniedCount++;
+                                item.Status = LocalizationService.GetText("Yetki Yok (Yönetici Gerekli)", "Access Denied (Admin Required)");
+                                summary.Logs.Add(LocalizationService.GetText(
+                                    $"[ATLANDI] Yetki yok: {item.FullPath}",
+                                    $"[SKIPPED] Access denied: {item.FullPath}"));
+                                break;
+                            default:
+                                item.Status = LocalizationService.GetText("Atlandı", "Skipped");
+                                summary.Logs.Add($"[ATLANDI] {item.FullPath}: {ex.Message}");
+                                break;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -719,9 +868,10 @@ public class CleanerEngine
             // Try cleaning up empty subdirectories in Temp folders safely
             foreach (var rule in rules.Where(r => r.IsSelected && !r.IsRecycleBin))
             {
+                TimeSpan keepYoungerThan = TempRuleIds.Contains(rule.Id) ? TempMinimumAge : TimeSpan.Zero;
                 foreach (var target in rule.Targets.Where(t => t.Recursive && t.SearchPattern == "*"))
                 {
-                    DeleteEmptySubdirectoriesSafe(target.BasePath);
+                    DeleteEmptySubdirectoriesSafe(target.BasePath, keepYoungerThan);
                 }
             }
         }, cancellationToken);
@@ -816,17 +966,22 @@ public class CleanerEngine
         }
     }
 
-    private static void DeleteEmptySubdirectoriesSafe(string rootDir)
+    private static void DeleteEmptySubdirectoriesSafe(string rootDir, TimeSpan keepYoungerThan)
     {
         if (string.IsNullOrWhiteSpace(rootDir) || !Directory.Exists(rootDir))
             return;
 
+        DateTime cutoff = DateTime.Now - keepYoungerThan;
         try
         {
             foreach (string subDir in Directory.GetDirectories(rootDir))
             {
                 try
                 {
+                    // A freshly created empty folder usually belongs to a program that is still running.
+                    if (keepYoungerThan > TimeSpan.Zero && Directory.GetLastWriteTime(subDir) > cutoff)
+                        continue;
+
                     if (Directory.GetFiles(subDir, "*", SearchOption.AllDirectories).Length == 0)
                     {
                         Directory.Delete(subDir, recursive: true);

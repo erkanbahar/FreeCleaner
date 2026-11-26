@@ -17,6 +17,9 @@ public class ScannedFileItem : INotifyPropertyChanged
     public required DateTime LastModified { get; init; }
     public RiskLevel RiskLevel { get => Risk; init => Risk = value; }
     public bool IsRecycleBinItem { get; init; }
+
+    /// <summary>True once the item was deleted, moved to the Recycle Bin or found already gone. Language independent (unlike <see cref="Status"/>).</summary>
+    public bool IsCleaned { get; set; }
     public RiskLevel Risk { get; init; } = RiskLevel.Medium;
     public string RiskLabel => Risk switch
     {
@@ -63,6 +66,10 @@ public class CleanSummaryResult
 {
     public int DeletedFilesCount { get; set; }
     public int SkippedFilesCount { get; set; }
+    /// <summary>Skipped because another process holds the file open (sharing / lock violation).</summary>
+    public int InUseCount { get; set; }
+    /// <summary>Skipped because the current user may not delete the file (usually needs administrator rights).</summary>
+    public int AccessDeniedCount { get; set; }
     public long FreedBytes { get; set; }
     public TimeSpan Elapsed { get; set; }
     public List<string> Logs { get; set; } = [];

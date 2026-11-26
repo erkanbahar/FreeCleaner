@@ -1,14 +1,16 @@
-# FreeCleaner Pro v5.1 (.NET 10 WPF)
+# FreeCleaner Pro v5.2 (.NET 10 WPF)
 
 [![FreeCleaner .NET 10 CI](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml/badge.svg)](https://github.com/erkanbahar/FreeCleaner/actions/workflows/dotnet-ci.yml)
 ![.NET 10](https://img.shields.io/badge/.NET-10.0--windows-512BD4?logo=dotnet)
 ![Platform](https://img.shields.io/badge/Windows-10%20%7C%2011%20(x64%20%7C%20arm64)-0078D6?logo=windows)
 ![Modules](https://img.shields.io/badge/Modules-57%20Tools-10B981)
-![Tests](https://img.shields.io/badge/Tests-112%20Passing-22C55E)
+![Tests](https://img.shields.io/badge/Tests-141%20Passing-22C55E)
 ![Language](https://img.shields.io/badge/Language-English%20%7C%20T%C3%BCrk%C3%A7e-38BDF8)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-> 🌐 **Language / Dil:** [English](#english) • [Türkçe](#türkçe) • 📋 [Changelog](CHANGELOG.md)
+> 🌐 **Language / Dil:** [English](#english) • [Türkçe](#türkçe) • 📋 [Changelog](CHANGELOG.md) • 🔏 [Code signing policy](CODE_SIGNING_POLICY.md) • 🔒 [Privacy policy](PRIVACY.md)
+
+**Download:** [GitHub Releases](https://github.com/erkanbahar/FreeCleaner/releases/latest) — free and open source (MIT).
 
 ---
 
@@ -149,6 +151,12 @@ dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release -
 dotnet run --project FreeCleaner/FreeCleaner.csproj
 ```
 
+#### UI Smoke Test
+```powershell
+.\scripts\smoke-test.ps1 -Screenshots   # visits every section in TR + EN; report in %TEMP%\FreeCleaner-smoke
+```
+Nothing is deleted: dialogs are answered "No"/"Cancel" automatically and settings/logs go to a temporary data folder.
+
 #### Single-File Portable `.exe` (`win-x64` / `win-arm64`) & Windows Installer (`Setup .exe`)
 ```powershell
 .\scripts\Publish-Portable.ps1
@@ -159,6 +167,14 @@ dotnet run --project FreeCleaner/FreeCleaner.csproj
 ISCC.exe /DMyAppVersion=4.8.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
 ```
 Outputs `artifacts/portable/FreeCleaner.exe` (or `artifacts/portable-arm64/FreeCleaner.exe`). Pushing a `v*` tag (e.g., `git tag v4.8.0 && git push origin v4.8.0`) triggers `.github/workflows/release.yml` to verify tests, build `PublishReadyToRun` x64 + native ARM64 executables with warnings-as-errors, generate SLSA build provenance attestations, and publish Standard Portable `.zip` (`win-x64` & `win-arm64`), USB (`portable.flag`) `.zip`, Windows Setup `.exe` installer, pre-hashed `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe`, and `SHA256SUMS.txt` on GitHub Releases.
+
+---
+
+### Code signing policy
+
+Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org) (application pending; until approval, releases are unsigned and verified with `SHA256SUMS.txt` and SLSA attestations).
+Roles: committer, reviewer and signing approver — [Erkan Bahar (@erkanbahar)](https://github.com/erkanbahar). Details: [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md).
+Privacy: no telemetry; the only automatic network request is the daily update check against GitHub, which can be switched off — see [PRIVACY.md](PRIVACY.md).
 
 ---
 
@@ -301,6 +317,12 @@ dotnet test FreeCleaner.Tests/FreeCleaner.Tests.csproj --configuration Release -
 dotnet run --project FreeCleaner/FreeCleaner.csproj
 ```
 
+#### Arayüz Testi (Smoke Test)
+```powershell
+.\scripts\smoke-test.ps1 -Screenshots   # tüm bölümleri TR + EN gezer; rapor %TEMP%\FreeCleaner-smoke içinde
+```
+Hiçbir şey silinmez: diyaloglar otomatik "Hayır"/"İptal" ile yanıtlanır, ayarlar ve günlükler geçici bir veri klasörüne yazılır.
+
 #### Tek Dosya Taşınabilir `.exe` (`win-x64` / `win-arm64`) & Windows Setup Kurulumu
 ```powershell
 .\scripts\Publish-Portable.ps1
@@ -311,3 +333,9 @@ dotnet run --project FreeCleaner/FreeCleaner.csproj
 ISCC.exe /DMyAppVersion=4.8.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe installer\FreeCleaner.iss
 ```
 Çıktı dosyası `artifacts/portable/FreeCleaner.exe` (veya `artifacts/portable-arm64/FreeCleaner.exe`) konumunda oluşturulur. GitHub üzerinde `v*` (örneğin `git tag v4.8.0 && git push origin v4.8.0`) etiketi gönderildiğinde `.github/workflows/release.yml` otomatik olarak testleri çalıştırıp `PublishReadyToRun` x64 + yerel ARM64 derlemeleri ve SLSA attestation ile Standart Taşınabilir `.zip` (`win-x64` & `win-arm64`), USB (`portable.flag`) `.zip`, Windows Setup `.exe`, gerçek hash'li `FreeCleaner-Winget-Manifests-*.zip`, `FreeCleaner.exe` ve `SHA256SUMS.txt` dosyasını GitHub Releases sayfasında yayınlar.
+
+### Kod İmzalama Politikası (Code signing policy)
+
+Ücretsiz kod imzalama [SignPath.io](https://signpath.io) tarafından, sertifika [SignPath Foundation](https://signpath.org) tarafından sağlanmaktadır (başvuru değerlendirmede; onaylanana kadar sürümler imzasızdır ve `SHA256SUMS.txt` ile SLSA attestation üzerinden doğrulanır).
+Roller: commit, inceleme ve imzalama onayı — [Erkan Bahar (@erkanbahar)](https://github.com/erkanbahar). Ayrıntılar: [CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md).
+Gizlilik: telemetri yoktur; tek otomatik ağ isteği kapatılabilen günlük güncelleme kontrolüdür — bkz. [PRIVACY.md](PRIVACY.md).

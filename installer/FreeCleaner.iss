@@ -1,9 +1,9 @@
 ; FreeCleaner Pro - Inno Setup 6 Installer Script
 ; Build locally after publishing portable exe:
-;   ISCC.exe /DMyAppVersion=5.1.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe FreeCleaner.iss
+;   ISCC.exe /DMyAppVersion=5.2.0 /DSourceExe=..\artifacts\portable\FreeCleaner.exe FreeCleaner.iss
 
 #ifndef MyAppVersion
-  #define MyAppVersion "5.1.0"
+  #define MyAppVersion "5.2.0"
 #endif
 
 #ifndef SourceExe
@@ -43,6 +43,10 @@ SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#MyAppExeName}
 VersionInfoVersion={#MyAppVersion}.0
+VersionInfoProductName={#MyAppName}
+VersionInfoProductVersion={#MyAppVersion}
+; Privacy policy is shown before installation (SignPath Foundation requirement, see CODE_SIGNING_POLICY.md).
+InfoBeforeFile=..\PRIVACY.md
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -55,6 +59,8 @@ Name: "portableflag"; Description: "Enable local Portable Mode (portable.flag)";
 [Files]
 Source: "{#SourceExe}"; DestDir: "{app}"; DestName: "{#MyAppExeName}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\PRIVACY.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"

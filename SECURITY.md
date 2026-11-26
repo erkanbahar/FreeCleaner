@@ -4,8 +4,8 @@
 
 | Version | Supported |
 | :--- | :--- |
-| `4.x` (Latest) | ✅ Active security & bug fixes |
-| `< 4.0` | ❌ Upgrade to latest `4.x` release |
+| `5.x` (Latest) | ✅ Active security & bug fixes |
+| `< 5.0` | ❌ Upgrade to latest `5.x` release |
 
 ## Security Architecture Highlights
 

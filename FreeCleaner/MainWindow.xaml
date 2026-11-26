@@ -1003,6 +1003,12 @@
                                           FontSize="11"
                                           Cursor="Hand"
                                           Content="{DynamicResource Loc_SafetyCheckBox}"/>
+                                <CheckBox IsChecked="{Binding OnlyOldTempFiles}"
+                                          Foreground="{DynamicResource TextSecondaryBrush}"
+                                          FontSize="11"
+                                          Cursor="Hand"
+                                          Margin="0,4,0,0"
+                                          Content="{DynamicResource Loc_SettingsOnlyOldTempCheck}"/>
                                 <Button Style="{StaticResource SubtleButtonStyle}"
                                         Content="{DynamicResource Loc_OpenRecycleBinBtn}"
                                         Command="{Binding OpenRecycleBinCommand}"

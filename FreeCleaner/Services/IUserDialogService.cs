@@ -40,14 +40,56 @@ public interface IUserDialogService
         AppDialogIcon icon = AppDialogIcon.Information);
 }
 
-public sealed class WpfUserDialogService : IUserDialogService
+/// <summary>
+/// Answers dialogs without showing them: confirmations get "No"/"Cancel", so nothing destructive runs.
+/// Every dialog is recorded for the smoke-test report.
+/// </summary>
+public sealed class UnattendedDialogService : IUserDialogService
 {
+    private readonly List<string> _log = [];
+
+    public IReadOnlyList<string> Log
+    {
+        get
+        {
+            lock (_log)
+                return _log.ToList();
+        }
+    }
+
     public AppDialogResult Show(
         string message,
         string title,
         AppDialogButtons buttons = AppDialogButtons.OK,
         AppDialogIcon icon = AppDialogIcon.Information)
     {
+        AppDialogResult answer = buttons switch
+        {
+            AppDialogButtons.YesNo => AppDialogResult.No,
+            AppDialogButtons.YesNoCancel => AppDialogResult.Cancel,
+            _ => AppDialogResult.OK
+        };
+        string flat = (message ?? string.Empty).Replace("\r", " ", StringComparison.Ordinal).Replace("\n", " ", StringComparison.Ordinal);
+        lock (_log)
+            _log.Add($"[{icon}] '{title}' -> {answer}: {flat}");
+        return answer;
+    }
+}
+
+public sealed class WpfUserDialogService : IUserDialogService
+{
+    /// <summary>When set (UI smoke test), every dialog is answered by this service instead of being shown.</summary>
+    public static IUserDialogService? UnattendedOverride { get; set; }
+
+    public AppDialogResult Show(
+        string message,
+        string title,
+        AppDialogButtons buttons = AppDialogButtons.OK,
+        AppDialogIcon icon = AppDialogIcon.Information)
+    {
+        if (UnattendedOverride is { } unattended)
+            return unattended.Show(message, title, buttons, icon);
+
         Application? app = Application.Current;
         if (app is null)
             return ShowFallbackWin32MessageBox(message, title, buttons, icon);

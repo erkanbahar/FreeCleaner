@@ -31,7 +31,7 @@ public class V43UpgradesTests
         Assert.NotNull(asmVer);
         string expected = $"{asmVer.Major}.{asmVer.Minor}.{Math.Max(0, asmVer.Build)}";
         Assert.Equal(expected, AppUpdateService.CurrentVersion);
-        Assert.Equal("5.1.0", AppUpdateService.CurrentVersion);
+        Assert.Equal("5.2.0", AppUpdateService.CurrentVersion);
     }
 
     [Fact]

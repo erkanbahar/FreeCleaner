@@ -577,6 +577,30 @@ public partial class MainViewModel
         }
     }
 
+    /// <summary>Opens the folder holding settings, activity.log and errors.log (AppData or portable data\).</summary>
+    private void OpenDataFolder()
+    {
+        string dataDir = AppStoragePathsService.GetDataDirectory();
+        try
+        {
+            Directory.CreateDirectory(dataDir);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                ArgumentList = { dataDir },
+                UseShellExecute = false
+            });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            StatusMessage = LocalizationService.GetText(
+                $"Veri klasörü açılamadı: {ex.Message}",
+                $"Could not open the data folder: {ex.Message}",
+                _selectedLanguage);
+            AddLog($"[HATA] Veri klasörü açılamadı: {ex.Message}");
+        }
+    }
+
     private void OpenRecycleBin()
     {
         try

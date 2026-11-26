@@ -14,6 +14,15 @@ public partial class App : Application
     {
         base.OnStartup(e);
         Services.CrashGuardService.InstallGlobalHandlers(this);
+
+        var smokeOptions = Services.SmokeTestOptions.Parse(e.Args);
+        if (smokeOptions.Enabled)
+        {
+            StartSmokeTest(smokeOptions);
+            return;
+        }
+
+        Services.BindingErrorListener.Install();
         Services.AppUpdateService.TryCleanupStaleUpdateBackup();
 
         _singleInstance = new Services.SingleInstanceBridgeService();
@@ -82,6 +91,45 @@ public partial class App : Application
                 }
             };
         }
+    }
+
+    /// <summary>
+    /// <c>--smoke-test</c>: no single-instance check, no CLI actions, dialogs answered automatically,
+    /// settings and logs redirected to a temporary folder; exits with the test result.
+    /// </summary>
+    private void StartSmokeTest(Services.SmokeTestOptions options)
+    {
+        var dialogs = new Services.UnattendedDialogService();
+        Services.WpfUserDialogService.UnattendedOverride = dialogs;
+        Services.CrashGuardService.UnattendedCrashSink = SmokeTestRunner.RecordUnhandled;
+        SmokeTestRunner.PrepareIsolatedDataDirectory(options);
+        Services.BindingErrorListener.Install();
+
+        var startupConfig = Services.ExclusionAndSettingsService.Load();
+        Services.LocalizationService.ApplyLanguage(startupConfig.SelectedLanguage);
+        Services.ThemeManagerService.ApplyTheme(startupConfig.SelectedTheme);
+
+        var window = new MainWindow();
+        MainWindow = window;
+        window.Loaded += async (_, _) =>
+        {
+            int exitCode = 1;
+            try
+            {
+                if (window.DataContext is ViewModels.MainViewModel vm)
+                    exitCode = await SmokeTestRunner.RunAsync(window, vm, options, dialogs);
+            }
+            catch (Exception ex)
+            {
+                SmokeTestRunner.RecordUnhandled("SmokeTest", ex);
+            }
+            finally
+            {
+                window.CloseForSmokeTest();
+                Shutdown(exitCode);
+            }
+        };
+        window.Show();
     }
 
     protected override void OnExit(ExitEventArgs e)

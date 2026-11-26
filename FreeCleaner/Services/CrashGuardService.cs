@@ -157,6 +157,11 @@ public static class CrashGuardService
         }
     }
 
+    /// <summary>
+    /// When set (UI smoke test), unhandled UI exceptions are reported here and no crash dialog is shown.
+    /// </summary>
+    public static Action<string, Exception>? UnattendedCrashSink { get; set; }
+
     public static void InstallGlobalHandlers(Application app)
     {
         ArgumentNullException.ThrowIfNull(app);
@@ -177,6 +182,12 @@ public static class CrashGuardService
         {
             CrashReportResult result = WriteCrashReport("DispatcherUI", e.Exception);
             e.Handled = true;
+
+            if (UnattendedCrashSink is { } sink)
+            {
+                sink("DispatcherUI", e.Exception);
+                return;
+            }
 
             bool isEnglish = LocalizationService.CurrentLanguage.StartsWith("en", StringComparison.OrdinalIgnoreCase);
             string title = LocalizationService.Get("Loc_CrashDialogTitle");
@@ -265,6 +276,7 @@ public static class CrashGuardService
     private static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
         WriteCrashReport("UnobservedTask", e.Exception);
+        UnattendedCrashSink?.Invoke("UnobservedTask", e.Exception);
         e.SetObserved();
     }
 }

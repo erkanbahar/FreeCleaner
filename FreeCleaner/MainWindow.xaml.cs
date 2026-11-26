@@ -117,6 +117,25 @@ public partial class MainWindow : Window
         _lazyViews.Register("GitRepoCompressor", () => new GitRepoCompressorView { DataContext = DataContext });
     }
 
+    /// <summary>Section keys that have a lazily created page (used by the UI smoke test).</summary>
+    internal IReadOnlyCollection<string> LazySectionKeys => _lazyViews.RegisteredKeys;
+
+    internal bool HasLazySectionView(string sectionKey) => _lazyViews.HasView(sectionKey);
+
+    /// <summary>True when the page of <paramref name="sectionKey"/> is the one currently displayed.</summary>
+    internal bool IsLazySectionShown(string sectionKey)
+        => _lazyViews.HasView(sectionKey) &&
+           LazyModuleHost.IsVisible &&
+           LazyModuleHost.Content is not null &&
+           ReferenceEquals(LazyModuleHost.Content, _lazyViews.GetOrCreate(sectionKey));
+
+    /// <summary>Closes the window for real even when "minimize to tray on close" is on.</summary>
+    internal void CloseForSmokeTest()
+    {
+        _forceExit = true;
+        Close();
+    }
+
     private void SyncLazyModuleHost(string? sectionKey)
     {
         if (_lazyViews.HasView(sectionKey))

@@ -6,6 +6,18 @@
 
 ## English
 
+### [5.2.0] - 2026-11-25
+#### Safer Temp Cleaning, Clear Skip Reasons, Cleanup Plan Breakdown, Binding-Error Logging & UI Smoke Test
+- **24-Hour Temp Age Filter (`CleanerEngine.TempMinimumAge`, Settings → Cleanup Safety)**: `User Temp` / `Windows Temp` files written in the last 24 hours are no longer offered for deletion (they usually belong to programs that are still running); fresh empty temp folders are kept too. On by default, can be switched off; the analysis status line reports how many files were kept.
+- **Administrator-Only Locations Skipped Without Elevation**: Targets under `%WINDIR%` (`Windows\Temp`, `SoftwareDistribution\Download`, `Logs\CBS`) and `%ProgramData%\Microsoft\Windows\WER` are not scanned in Standard User Mode, so totals no longer include files that can't be deleted; affected rules show "Requires administrator".
+- **Clear Skip Reasons (`CleanerEngine.ClassifyDeleteFailure`)**: Files that could not be deleted are now reported as **In Use** (Win32 32/33) or **Access Denied (Admin Required)** with counts in the completion line; English `[SKIPPED]` details now reach the activity log as well.
+- **Fix: Cleaned Items Stayed in the List in English Mode**: The post-cleanup filter compared Turkish status strings; it now uses the language-independent `ScannedFileItem.IsCleaned` flag.
+- **Cleanup Plan Breakdown in the Confirmation Dialog (`CleanupPlanSummary`)**: Per-rule sizes (largest first) and how much goes to the Recycle Bin versus is deleted permanently.
+- **Binding-Error Logging (`BindingErrorListener`)**: Broken XAML bindings are written once per session to `errors.log` as `[BINDING]` instead of failing silently.
+- **UI Smoke Test (`--smoke-test`, `scripts/smoke-test.ps1`, CI `ui-smoke-test` job)**: Opens the real window, visits every section in `tr-TR` and `en-US`, fails on missing pages, binding errors or unhandled exceptions, optionally saves screenshots. Dialogs are answered "No"/"Cancel" automatically and settings/logs go to a temporary data folder.
+- **Settings → "Open Data & Log Folder"** button next to the support bundle.
+- **Tests**: Added `V52UpgradesTests.cs` (29 tests; suite total 141).
+
 ### [5.1.0] - 2026-11-22
 #### 8-Category Reorganized Navigation, `Alt+←`/`Alt+→` History & UX Polish, `MainViewModel.Navigation.cs`, Winget Regex Fix & `112` Tests
 - **8 Balanced Categories, Pinned Top/Bottom Anchors & Auto-Reveal (`MainWindow.xaml` + `MainWindow.xaml.cs` + `MainViewModel.Dashboard.cs`)**: Reorganized the left sidebar into **8 domain categories** (`Cleaning & Maintenance`, `Disk, Storage & Files`, `Performance, Boot & Hardware`, `Apps, Updates & Drivers`, `Windows 11, System & Repair`, `Network, Wi-Fi & Firewall`, `Security, Privacy & Vault`, `Developer & AI Tools`) with distinct per-category `Segoe MDL2 Assets` icons, permanently pinned `Dashboard` (top) and `Settings` (bottom) anchors, automatic active-module reveal (`IsExpanded` + `BringIntoView`), and synchronized Command Palette (`Ctrl+K`) categories.
@@ -113,6 +125,18 @@
 ---
 
 ## Türkçe
+
+### [5.2.0] - 2026-11-25
+#### Daha Güvenli Geçici Dosya Temizliği, Net Atlama Nedenleri, Temizlik Planı Dökümü, Bağlama Hatası Kaydı & Arayüz Testi
+- **24 Saat Geçici Dosya Filtresi (`CleanerEngine.TempMinimumAge`, Ayarlar → Temizlik Güvenliği)**: `Kullanıcı Temp` / `Windows Temp` içinde son 24 saatte yazılmış dosyalar artık silinmek üzere önerilmiyor (genellikle hâlâ çalışan programlara ait); yeni oluşturulmuş boş geçici klasörler de korunuyor. Varsayılan olarak açık, kapatılabilir; analiz sonunda kaç dosyanın korunduğu yazılıyor.
+- **Yönetici Gerektiren Konumlar Yönetici Değilken Atlanıyor**: `%WINDIR%` altındaki hedefler (`Windows\Temp`, `SoftwareDistribution\Download`, `Logs\CBS`) ve `%ProgramData%\Microsoft\Windows\WER` Standart Kullanıcı Modunda taranmıyor; toplamlar artık silinemeyecek dosyaları içermiyor, ilgili kurallar "Yönetici gerekli" gösteriyor.
+- **Net Atlama Nedenleri (`CleanerEngine.ClassifyDeleteFailure`)**: Silinemeyen dosyalar **Kullanımda** (Win32 32/33) veya **Yetki Yok (Yönetici Gerekli)** olarak ayrılıyor ve sayıları temizlik sonu satırında gösteriliyor; İngilizce `[SKIPPED]` ayrıntıları da artık işlem günlüğüne yazılıyor.
+- **Düzeltme: İngilizce Modda Temizlenen Öğeler Listede Kalıyordu**: Temizlik sonrası filtre Türkçe durum metinlerini karşılaştırıyordu; artık dilden bağımsız `ScannedFileItem.IsCleaned` bayrağı kullanılıyor.
+- **Onay Penceresinde Temizlik Planı Dökümü (`CleanupPlanSummary`)**: Kural bazında boyutlar (büyükten küçüğe) ve Geri Dönüşüm Kutusu'na gidecek / kalıcı silinecek miktar.
+- **Bağlama Hatası Kaydı (`BindingErrorListener`)**: Bozuk XAML bağlamaları sessizce kaybolmak yerine oturum başına bir kez `errors.log` dosyasına `[BINDING]` olarak yazılıyor.
+- **Arayüz Testi (`--smoke-test`, `scripts/smoke-test.ps1`, CI `ui-smoke-test` işi)**: Gerçek pencereyi açar, tüm bölümleri `tr-TR` ve `en-US` ile gezer; eksik sayfa, bağlama hatası veya yakalanmamış hata varsa başarısız olur, isteğe bağlı ekran görüntüsü alır. Diyaloglar otomatik "Hayır"/"İptal" ile yanıtlanır, ayarlar ve günlükler geçici bir veri klasörüne yazılır.
+- **Ayarlar → "Veri ve Günlük Klasörünü Aç"** butonu (teşhis paketinin yanında).
+- **Testler**: `V52UpgradesTests.cs` eklendi (29 test; toplam 141).
 
 ### [5.1.0] - 2026-11-22
 #### 8 Kategorili Yeniden Düzenlenen Menü, `Alt+←`/`Alt+→` Geçmişi, `MainViewModel.Navigation.cs`, Winget Regex Düzeltmesi & `112` Test
