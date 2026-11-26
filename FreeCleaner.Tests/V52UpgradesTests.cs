@@ -85,6 +85,8 @@ public class V52UpgradesTests
             await File.WriteAllTextAsync(oldFile, "old-old");
             await File.WriteAllTextAsync(newFile, "new");
             File.SetLastWriteTime(oldFile, DateTime.Now.AddDays(-3));
+            // Older than the engine's built-in 60-second guard for folders named "Temp", newer than the 24-hour filter.
+            File.SetLastWriteTime(newFile, DateTime.Now.AddHours(-2));
 
             var engine = new CleanerEngine { TempMinimumAge = TimeSpan.FromHours(24), IsElevatedOverride = true };
 
@@ -118,6 +120,8 @@ public class V52UpgradesTests
         {
             string file = Path.Combine(dir, "a.tmp");
             await File.WriteAllTextAsync(file, "abc");
+            // Files written in the last 60 seconds inside a "Temp" folder are skipped by design.
+            File.SetLastWriteTime(file, DateTime.Now.AddHours(-1));
             var engine = new CleanerEngine { IsElevatedOverride = true };
             var rule = MakeRule("dev_other", "Other", new ScanTarget(dir));
 
