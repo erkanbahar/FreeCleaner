@@ -10,7 +10,7 @@
 
 > 🌐 **Language / Dil:** [English](#english) • [Türkçe](#türkçe) • 📋 [Changelog](CHANGELOG.md) • 🔏 [Code signing policy](CODE_SIGNING_POLICY.md) • 🔒 [Privacy policy](PRIVACY.md)
 
-**Download / İndir:** [GitHub Releases](https://github.com/erkanbahar/FreeCleaner/releases/latest) — `FreeCleaner-Setup-win-x64-v5.2.0.exe` (installer), `FreeCleaner-Portable-*.zip` (portable, x64 / ARM64) or `FreeCleaner.exe`. Free and open source (MIT); verify downloads with `SHA256SUMS.txt`.
+**Download / İndir:** [GitHub Releases](https://github.com/erkanbahar/FreeCleaner/releases/latest) — `FreeCleaner-Portable-win-x64-*.zip` / `FreeCleaner-Portable-win-arm64-*.zip` (portable), `FreeCleaner-Portable-USB-win-x64-*.zip` (USB, `portable.flag`) or `FreeCleaner.exe`; the `FreeCleaner-Setup-win-x64-*.exe` installer is attached starting with the next release (v5.2.0 shipped without it). Free and open source (MIT); verify downloads with `SHA256SUMS.txt`.
 
 ---
 

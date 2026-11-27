@@ -62,7 +62,7 @@ jobs:
         shell: pwsh
         run: |
           $tag = $env:GITHUB_REF_NAME
-          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v5.2.0" }
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v5.2.1" }
           $ver = $tag.TrimStart('v', 'V')
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           New-Item -ItemType Directory -Force -Path release_usb | Out-Null
@@ -84,12 +84,17 @@ jobs:
           }
           $setupOut = "dist/FreeCleaner-Setup-win-x64-$tag.exe"
           if (Test-Path $iscc) {
-            & $iscc "/DMyAppVersion=$ver" "/DSourceExe=..\release_out\FreeCleaner.exe" "/DOutputDirPath=..\dist" "/O..\dist" "installer\FreeCleaner.iss"
+            # OutputDirPath is relative to installer\FreeCleaner.iss (= <repo>\dist). Do not pass /O: it is relative to the
+            # working directory and previously wrote the installer outside dist\, so it was never uploaded.
+            & $iscc "/DMyAppVersion=$ver" "/DSourceExe=..\release_out\FreeCleaner.exe" "/DOutputDirPath=..\dist" "installer\FreeCleaner.iss"
+            if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
             $builtSetup = Get-ChildItem "dist/FreeCleaner-Setup-win-x64-*.exe" | Select-Object -First 1
             if ($builtSetup -and $builtSetup.FullName -ne (Join-Path (Resolve-Path "dist").Path (Split-Path -Leaf $setupOut))) {
               Move-Item -Path $builtSetup.FullName -Destination $setupOut -Force
             }
           }
+          # Releases are immutable: fail instead of publishing a release without the installer.
+          if (-not (Test-Path $setupOut)) { throw "Setup installer was not produced: $setupOut" }
 
           $exeHash = (Get-FileHash -Path "release_out/FreeCleaner.exe" -Algorithm SHA256).Hash.ToLowerInvariant()
           $zipHash = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToLowerInvariant()

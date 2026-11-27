@@ -345,7 +345,7 @@ public class V49UpgradesTests
     public void Architecture_V49_AccessibilityAutomationProperties_ShortcutsOverlay_AndCiCoverageFloor_ForVersion500()
     {
         string repoRoot = FindRepoRoot();
-        Assert.Equal("5.2.0", AppUpdateService.CurrentVersion);
+        Assert.Equal("5.2.1", AppUpdateService.CurrentVersion);
 
         string appXaml = File.ReadAllText(Path.Combine(repoRoot, "FreeCleaner", "App.xaml"), Encoding.UTF8);
         Assert.Contains("Property=\"IsKeyboardFocused\" Value=\"True\"", appXaml, StringComparison.Ordinal);
