@@ -201,7 +201,7 @@ public class V46UpgradesTests
     {
         string repoRoot = FindRepoRoot();
         string version = AppUpdateService.CurrentVersion;
-        Assert.Equal("5.2.0", version);
+        Assert.Equal("5.2.1", version);
 
         string publishScript = File.ReadAllText(Path.Combine(repoRoot, "scripts", "Publish-Portable.ps1"), Encoding.UTF8);
         Assert.Contains("PublishReadyToRun=true", publishScript);

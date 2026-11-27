@@ -284,7 +284,7 @@ public class V50UpgradesTests
     public void Architecture_V50_CiCoverageFloorRaisedTo36_AndReleaseConfiguredForVersion500()
     {
         string repoRoot = FindRepoRoot();
-        Assert.Equal("5.2.0", AppUpdateService.CurrentVersion);
+        Assert.Equal("5.2.1", AppUpdateService.CurrentVersion);
 
         string ciYml = File.ReadAllText(Path.Combine(repoRoot, ".github", "workflows", "dotnet-ci.yml"), Encoding.UTF8);
         var floorMatch = System.Text.RegularExpressions.Regex.Match(ciYml, @"\$minLineCoverage\s*=\s*(\d+(?:\.\d+)?)");
@@ -293,6 +293,6 @@ public class V50UpgradesTests
         Assert.True(floor >= 36.0, $"Expected CI coverage floor >= 36.0, got {floor}");
 
         string releaseYml = File.ReadAllText(Path.Combine(repoRoot, ".github", "workflows", "release.yml"), Encoding.UTF8);
-        Assert.Contains("v5.2.0", releaseYml, StringComparison.Ordinal);
+        Assert.Contains("v5.2.1", releaseYml, StringComparison.Ordinal);
     }
 }
