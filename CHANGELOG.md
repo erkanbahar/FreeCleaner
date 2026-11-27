@@ -6,6 +6,12 @@
 
 ## English
 
+### [5.2.1] - 2026-11-27
+#### Windows Setup Installer Is Attached to Releases Again
+- **Fix: Release Workflow Lost the Installer**: Inno Setup's `/O..\dist` switch is resolved against the working directory, so `FreeCleaner-Setup-win-x64-*.exe` was written outside `dist\` and never uploaded (v5.1.0 and v5.2.0 shipped without it). The workflow now relies on `OutputDirPath` (relative to `installer\FreeCleaner.iss`), stops on ISCC errors and fails if the installer is missing, because releases are immutable.
+- **README**: Download line lists only the files that are actually published.
+- No application code changes compared with 5.2.0.
+
 ### [5.2.0] - 2026-11-25
 #### Safer Temp Cleaning, Clear Skip Reasons, Cleanup Plan Breakdown, Binding-Error Logging & UI Smoke Test
 - **24-Hour Temp Age Filter (`CleanerEngine.TempMinimumAge`, Settings → Cleanup Safety)**: `User Temp` / `Windows Temp` files written in the last 24 hours are no longer offered for deletion (they usually belong to programs that are still running); fresh empty temp folders are kept too. On by default, can be switched off; the analysis status line reports how many files were kept.
@@ -125,6 +131,12 @@
 ---
 
 ## Türkçe
+
+### [5.2.1] - 2026-11-27
+#### Windows Kurulum Dosyası Yeniden Sürümlere Ekleniyor
+- **Düzeltme: Yayın İş Akışı Kurulum Dosyasını Kaybediyordu**: Inno Setup'ın `/O..\dist` parametresi çalışma klasörüne göre çözüldüğü için `FreeCleaner-Setup-win-x64-*.exe` `dist\` dışına yazılıyor ve hiç yüklenmiyordu (v5.1.0 ve v5.2.0 kurulum dosyasız yayınlandı). İş akışı artık `OutputDirPath` (`installer\FreeCleaner.iss` dosyasına göre) kullanıyor, ISCC hatasında duruyor ve kurulum dosyası yoksa yayını durduruyor; sürümler sonradan değiştirilemediği için.
+- **README**: İndirme satırı yalnızca gerçekten yayınlanan dosyaları listeliyor.
+- 5.2.0'a göre uygulama kodunda değişiklik yok.
 
 ### [5.2.0] - 2026-11-25
 #### Daha Güvenli Geçici Dosya Temizliği, Net Atlama Nedenleri, Temizlik Planı Dökümü, Bağlama Hatası Kaydı & Arayüz Testi
