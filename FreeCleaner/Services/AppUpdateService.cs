@@ -52,7 +52,7 @@ public static class AppUpdateService
     {
         Version? v = typeof(AppUpdateService).Assembly.GetName().Version;
         if (v is null)
-            return "5.2.0";
+            return "5.2.1";
 
         return $"{v.Major}.{v.Minor}.{Math.Max(0, v.Build)}";
     }
